@@ -9,6 +9,10 @@ import {
 } from "react";
 import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 
+import {
+  QuranPlayButton,
+  useQuranAudioPlayer,
+} from "@/components/public/quran-audio-player";
 import { SurahCommand } from "@/components/public/surah-command";
 import { TajweedLegend } from "@/components/public/tajweed-legend";
 import {
@@ -175,7 +179,8 @@ function MushafLines({
   // the edge-to-edge justified lines every other page uses. Short surahs
   // that fit entirely on one page (An-Nas, Al-Falaq, etc.) read better the
   // same way, so they get the same treatment.
-  const isCenteredPage = pageNumber === 1 || pageNumber === 2 || singlePageChapter;
+  const isCenteredPage =
+    pageNumber === 1 || pageNumber === 2 || singlePageChapter;
 
   // Fetch the one (or two, at a page boundary) QCF page font(s) actually
   // used by the words on screen — never the whole 604-font set at once.
@@ -274,6 +279,17 @@ export function QuranReader({
   const hasMultiplePages = selectedChapter.lastPage > selectedChapter.firstPage;
   const previousChapter = chaptersById.get(selectedChapterId - 1);
   const nextChapter = chaptersById.get(selectedChapterId + 1);
+
+  const verseLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        Array.from({ length: selectedChapter.versesCount }, (_, i) => [
+          String(i + 1),
+          `Verset ${i + 1}`,
+        ]),
+      ),
+    [selectedChapter.versesCount],
+  );
 
   // Load the initial page once on mount. `mushafId` is read once here rather
   // than added to the deps: useSyncExternalStore resolves the restored
@@ -410,6 +426,11 @@ export function QuranReader({
     goToVerse(selectedChapterId, verseNumber);
   }
 
+  const audioPlayer = useQuranAudioPlayer({
+    chapters,
+    selectedChapterId,
+  });
+
   return (
     <div>
       <div className="sticky top-[63px] z-20 -mx-6 border-b bg-background/95 backdrop-blur-sm">
@@ -422,6 +443,7 @@ export function QuranReader({
           <Select
             value={String(selectedVerseNumber)}
             onValueChange={handleVerseSelect}
+            items={verseLabels}
           >
             <SelectTrigger size="sm" className="w-24">
               <SelectValue placeholder="Verset" />
@@ -483,6 +505,8 @@ export function QuranReader({
         <TajweedLegend show={tajweedEnabled} />
       </div>
 
+      {audioPlayer.elements}
+
       <div className="mx-auto mt-8 max-w-3xl space-y-6">
         {pages.length === 0 && (
           <div className="space-y-4">
@@ -516,9 +540,17 @@ export function QuranReader({
                       <h2 className="font-heading text-2xl font-bold">
                         {chapter.id}. Sourate {chapter.nameSimple}
                       </h2>
-                      <p className="text-muted-foreground">
-                        {chapter.nameTranslated}
-                      </p>
+                      <div className="flex gap-4 items-center">
+                        <p className="text-muted-foreground">
+                          {chapter.nameTranslated}
+                        </p>
+                        <QuranPlayButton
+                          isPlaying={audioPlayer.isPlaying}
+                          audioLoading={audioPlayer.audioLoading}
+                          onClick={audioPlayer.handlePlayButtonClick}
+                          className="mx-auto sm:mx-0"
+                        />
+                      </div>
                     </div>
                   </Card>
                   {chapter.hasBismillah && (

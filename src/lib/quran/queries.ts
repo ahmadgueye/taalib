@@ -1,5 +1,10 @@
 import { quranFetch } from "@/lib/quran/client";
-import type { QuranChapter, QuranPage, QuranVerse } from "@/lib/quran/types";
+import type {
+  QuranChapter,
+  QuranPage,
+  QuranReciter,
+  QuranVerse,
+} from "@/lib/quran/types";
 
 export const MUSHAF_TOTAL_PAGES = 604;
 
@@ -108,4 +113,42 @@ export async function getVersePage(
     86400
   );
   return data.verse.page_number;
+}
+
+type RecitationsResponse = {
+  recitations: {
+    id: number;
+    reciter_name: string;
+    style: string | null;
+  }[];
+};
+
+export async function getRecitations(): Promise<QuranReciter[]> {
+  const data = await quranFetch<RecitationsResponse>(
+    "/resources/recitations",
+    { language: "fr" },
+    86400
+  );
+
+  return data.recitations.map((r) => ({
+    id: r.id,
+    name: r.reciter_name,
+    style: r.style,
+  }));
+}
+
+type ChapterAudioResponse = {
+  audio_file: { audio_url: string };
+};
+
+export async function getChapterAudioUrl(
+  recitationId: number,
+  chapterId: number
+): Promise<string> {
+  const data = await quranFetch<ChapterAudioResponse>(
+    `/chapter_recitations/${recitationId}/${chapterId}`,
+    {},
+    86400
+  );
+  return data.audio_file.audio_url;
 }

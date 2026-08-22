@@ -32,3 +32,9 @@ export type QuranPage = {
   pageNumber: number;
   verses: QuranVerse[];
 };
+
+export type QuranReciter = {
+  id: number;
+  name: string;
+  style: string | null;
+};
