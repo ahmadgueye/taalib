@@ -57,7 +57,10 @@ type VersesByPageResponse = {
   }[];
 };
 
-export async function getVersesByPage(pageNumber: number): Promise<QuranPage> {
+export async function getVersesByPage(
+  pageNumber: number,
+  mushafId: 1 | 19 = 1
+): Promise<QuranPage> {
   const data = await quranFetch<VersesByPageResponse>(
     `/verses/by_page/${pageNumber}`,
     {
@@ -66,6 +69,7 @@ export async function getVersesByPage(pageNumber: number): Promise<QuranPage> {
       word_fields: "text_uthmani,char_type_name,code_v2,v2_page",
       translations: FRENCH_TRANSLATION_RESOURCE_ID,
       per_page: 50,
+      mushaf: mushafId,
     },
     3600
   );

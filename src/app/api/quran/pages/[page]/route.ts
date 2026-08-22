@@ -4,7 +4,7 @@ import { getVersesByPage, MUSHAF_TOTAL_PAGES } from "@/lib/quran/queries";
 
 type Context = { params: Promise<{ page: string }> };
 
-export async function GET(_request: Request, { params }: Context) {
+export async function GET(request: Request, { params }: Context) {
   const { page } = await params;
   const pageNumber = Number(page);
 
@@ -16,6 +16,9 @@ export async function GET(_request: Request, { params }: Context) {
     return NextResponse.json({ error: "Invalid page number" }, { status: 400 });
   }
 
-  const result = await getVersesByPage(pageNumber);
+  const mushafParam = new URL(request.url).searchParams.get("mushaf");
+  const mushafId = mushafParam === "19" ? 19 : 1;
+
+  const result = await getVersesByPage(pageNumber, mushafId);
   return NextResponse.json({ ...result, totalPages: MUSHAF_TOTAL_PAGES });
 }

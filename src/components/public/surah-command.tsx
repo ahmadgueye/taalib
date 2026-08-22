@@ -33,7 +33,7 @@ export function SurahCommand({
         onClick={() => setOpen(true)}
       >
         <span>
-          {selectedChapter.id}. {selectedChapter.nameTranslated}
+          {selectedChapter.id}. {selectedChapter.nameSimple}
         </span>
         <ChevronsUpDown className="size-4 text-muted-foreground" />
       </Button>
@@ -51,6 +51,7 @@ export function SurahCommand({
               key={chapter.id}
               value={`${chapter.id} ${chapter.nameSimple} ${chapter.nameTranslated}`}
               keywords={[chapter.nameArabic]}
+              className="pr-14"
               onSelect={() => {
                 onSelect(chapter.id);
                 setOpen(false);
@@ -61,7 +62,11 @@ export function SurahCommand({
               <span className="text-muted-foreground">
                 ({chapter.nameSimple})
               </span>
-              <span dir="rtl" lang="ar" className="ml-auto font-arabic">
+              <span
+                dir="rtl"
+                lang="ar"
+                className="absolute right-2 top-1/2 -translate-y-1/2 font-calligraphy"
+              >
                 {chapter.nameArabic}
               </span>
             </CommandItem>
