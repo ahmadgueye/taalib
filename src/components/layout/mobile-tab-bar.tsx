@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Home, ScrollText, Search } from "lucide-react";
+import { BookMarked, BookOpen, Home, ScrollText, Search } from "lucide-react";
 
 import { cn, isNavActive } from "@/lib/utils";
 
 const tabs = [
   { href: "/", label: "Accueil", icon: Home, exact: true },
   { href: "/cours", label: "Cours", icon: BookOpen },
+  { href: "/coran", label: "Coran", icon: BookMarked },
   { href: "/hadiths", label: "Ahadith", icon: ScrollText },
   { href: "/recherche", label: "Recherche", icon: Search },
 ];

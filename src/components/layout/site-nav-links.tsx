@@ -7,6 +7,7 @@ import { cn, isNavActive } from "@/lib/utils";
 
 const links = [
   { href: "/cours", label: "Cours" },
+  { href: "/coran", label: "Coran" },
   { href: "/hadiths", label: "Hadith" },
   { href: "/recherche", label: "Recherche", title: "Recherche (⌘K)" },
 ];
