@@ -3,7 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BackButton } from "@/components/public/back-button";
+import { ProgressRing } from "@/components/public/progress-ring";
 import { RessourcesHadithsTabs } from "@/components/public/ressources-hadiths-tabs";
+import { getCurrentProfile } from "@/lib/auth/get-session";
+import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
 import { getThematiqueBySlug } from "@/lib/db/queries/thematiques";
 import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 
@@ -29,6 +32,18 @@ export default async function ThematiqueDetailPage({ params }: Props) {
 
   if (!t) notFound();
 
+  const profile = await getCurrentProfile();
+  const completedIds = profile
+    ? await getCompletedRessourceIds(
+        profile.id,
+        t.ressources.map((r) => r.id)
+      )
+    : undefined;
+  const progress =
+    completedIds && t.ressources.length > 0
+      ? (completedIds.size / t.ressources.length) * 100
+      : undefined;
+
   return (
     <div className="animate-in fade-in duration-300">
       <BackButton />
@@ -43,18 +58,24 @@ export default async function ThematiqueDetailPage({ params }: Props) {
         / <span className="text-foreground">{t.title}</span>
       </nav>
 
-      <h1 className="mt-4 font-heading text-3xl font-semibold tracking-tight">
-        {t.title}
-      </h1>
-      {t.description && (
-        <p className="mt-2 text-muted-foreground">{t.description}</p>
-      )}
+      <div className="mt-4 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-3xl font-semibold tracking-tight">
+            {t.title}
+          </h1>
+          {t.description && (
+            <p className="mt-2 text-muted-foreground">{t.description}</p>
+          )}
+        </div>
+        {progress !== undefined && <ProgressRing value={progress} />}
+      </div>
 
       <RessourcesHadithsTabs
         ressources={t.ressources}
         hadiths={t.hadiths}
         coursTitle={t.cours.title}
         thematiqueTitle={t.title}
+        completedIds={completedIds}
       />
     </div>
   );

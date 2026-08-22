@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import { MarkCompleteButton } from "@/components/public/mark-complete-button";
 import { ressourceTypeConfig } from "@/lib/ressource-types";
 import { stripMarkdown } from "@/lib/metadata";
 import type { RessourceType } from "@/lib/db/queries/search";
@@ -12,6 +13,7 @@ export function RessourceItem({
   url,
   content,
   description,
+  completed,
 }: {
   id: string;
   title: string;
@@ -19,6 +21,7 @@ export function RessourceItem({
   url: string | null;
   content?: string | null;
   description?: string | null;
+  completed?: boolean;
 }) {
   const { label, icon: Icon } = ressourceTypeConfig[type];
   const header = (
@@ -31,12 +34,20 @@ export function RessourceItem({
     </>
   );
 
+  const markCompleteSlot = completed !== undefined && (
+    <div className="relative z-10 mt-3 flex justify-end">
+      <MarkCompleteButton
+        key={`${id}-${completed}`}
+        ressourceId={id}
+        completed={completed}
+      />
+    </div>
+  );
+
   if (type === "texte") {
     return (
-      <Link
-        href={`/ressources/${id}`}
-        className="block border p-4 transition-colors hover:bg-muted"
-      >
+      <div className="relative border p-4 transition-colors hover:bg-muted">
+        <Link href={`/ressources/${id}`} className="absolute inset-0" />
         {header}
         {content && (
           <p className="mt-2 text-sm text-muted-foreground">
@@ -46,21 +57,24 @@ export function RessourceItem({
         <span className="mt-2 inline-block text-sm underline underline-offset-4">
           Lire la suite
         </span>
-      </Link>
+        {markCompleteSlot}
+      </div>
     );
   }
 
   return (
-    <a
-      href={url ?? undefined}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block border p-4 transition-colors hover:bg-muted"
-    >
+    <div className="relative border p-4 transition-colors hover:bg-muted">
+      <a
+        href={url ?? undefined}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute inset-0"
+      />
       {header}
       {description && (
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       )}
-    </a>
+      {markCompleteSlot}
+    </div>
   );
 }

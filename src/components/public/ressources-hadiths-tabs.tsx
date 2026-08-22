@@ -26,11 +26,13 @@ export function RessourcesHadithsTabs({
   hadiths,
   coursTitle,
   thematiqueTitle,
+  completedIds,
 }: {
   ressources: RessourceListItem[];
   hadiths: HadithListItem[];
   coursTitle: string;
   thematiqueTitle: string;
+  completedIds?: Set<string>;
 }) {
   return (
     <Tabs defaultValue="ressources" className="mt-8">
@@ -57,6 +59,7 @@ export function RessourcesHadithsTabs({
                 url={r.url}
                 content={r.content}
                 description={r.description}
+                completed={completedIds?.has(r.id)}
               />
             ))}
           </div>

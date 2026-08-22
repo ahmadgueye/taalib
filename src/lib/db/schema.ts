@@ -91,6 +91,22 @@ export const ressources = pgTable("ressources", {
     .defaultNow(),
 });
 
+export const ressourceProgress = pgTable(
+  "ressource_progress",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    ressourceId: uuid("ressource_id")
+      .notNull()
+      .references(() => ressources.id, { onDelete: "cascade" }),
+    completedAt: timestamp("completed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.ressourceId] })]
+);
+
 export const hadiths = pgTable("hadiths", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   thematiqueId: uuid("thematique_id")
@@ -176,7 +192,22 @@ export const ressourcesRelations = relations(ressources, ({ one, many }) => ({
     references: [thematiques.id],
   }),
   seanceRessources: many(seanceRessources),
+  ressourceProgress: many(ressourceProgress),
 }));
+
+export const ressourceProgressRelations = relations(
+  ressourceProgress,
+  ({ one }) => ({
+    user: one(profiles, {
+      fields: [ressourceProgress.userId],
+      references: [profiles.id],
+    }),
+    ressource: one(ressources, {
+      fields: [ressourceProgress.ressourceId],
+      references: [ressources.id],
+    }),
+  })
+);
 
 export const hadithsRelations = relations(hadiths, ({ one }) => ({
   thematique: one(thematiques, {

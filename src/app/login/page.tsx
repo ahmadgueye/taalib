@@ -15,7 +15,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function LoginPage() {
+type Props = {
+  searchParams: Promise<{ next?: string }>;
+};
+
+export default async function LoginPage({ searchParams }: Props) {
+  const { next } = await searchParams;
+
   return (
     <div className="flex min-h-full flex-1 flex-col items-center justify-center px-6 py-16">
       <Link
@@ -26,13 +32,13 @@ export default function LoginPage() {
       </Link>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="font-heading">Espace contributeurs</CardTitle>
+          <CardTitle className="font-heading">Connexion</CardTitle>
           <CardDescription>
-            Réservé aux personnes autorisées à ajouter des ressources.
+            Connecte-toi pour suivre ta progression dans les cours.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <GoogleLoginButton />
+          <GoogleLoginButton next={next} />
         </CardContent>
       </Card>
     </div>

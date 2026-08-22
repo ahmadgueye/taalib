@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 
 import { BackButton } from "@/components/public/back-button";
 import { EntityCard } from "@/components/public/entity-card";
-import { getCoursBySlug } from "@/lib/db/queries/cours";
+import { getCurrentProfile } from "@/lib/auth/get-session";
+import { getCoursBySlug, getCoursOutline } from "@/lib/db/queries/cours";
+import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
 import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 
 type Props = {
@@ -30,6 +32,25 @@ export default async function CoursDetailPage({ params }: Props) {
   const c = await getCoursBySlug(slug);
 
   if (!c) notFound();
+
+  const profile = await getCurrentProfile();
+  const outline = profile ? await getCoursOutline(c.id) : null;
+  const completedIds = profile
+    ? await getCompletedRessourceIds(
+        profile.id,
+        (outline?.thematiques ?? []).flatMap((t) => t.ressources.map((r) => r.id))
+      )
+    : undefined;
+
+  function progressFor(thematiqueId: string) {
+    if (!completedIds) return undefined;
+    const thematique = outline?.thematiques.find((t) => t.id === thematiqueId);
+    if (!thematique || thematique.ressources.length === 0) return undefined;
+    const completed = thematique.ressources.filter((r) =>
+      completedIds.has(r.id)
+    ).length;
+    return (completed / thematique.ressources.length) * 100;
+  }
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -75,6 +96,7 @@ export default async function CoursDetailPage({ params }: Props) {
                   href={`/thematiques/${t.slug}`}
                   title={t.title}
                   description={t.description}
+                  progress={progressFor(t.id)}
                 />
               ))}
             </div>
