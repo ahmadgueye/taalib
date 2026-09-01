@@ -232,7 +232,7 @@ export function useQuranAudioPlayer({
       {playerVisible &&
         mounted &&
         createPortal(
-          <div className="fixed right-4 bottom-20 z-[45] w-72 rounded-xl border bg-popover p-3 shadow-lg ring-1 ring-foreground/10 sm:right-6 sm:bottom-6">
+          <div className="fixed right-4 bottom-20 z-45 w-72 rounded-xl border bg-popover p-3 shadow-lg ring-1 ring-foreground/10 sm:right-6 sm:bottom-6">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">

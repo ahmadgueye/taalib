@@ -60,7 +60,7 @@ function CommandDialog({
         )}
         showCloseButton={showCloseButton}
       >
-        <Command className="[&_[cmdk-group-heading]]:px-2">{children}</Command>
+        <Command className="**:[[cmdk-group-heading]]:px-2">{children}</Command>
       </DialogContent>
     </Dialog>
   )
