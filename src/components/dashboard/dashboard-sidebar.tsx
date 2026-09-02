@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   Calendar,
+  HelpCircle,
   LayoutDashboard,
   Link as LinkIcon,
   ListTree,
@@ -22,6 +23,7 @@ const navItems = [
   { href: "/dashboard/thematiques", label: "Thématiques", icon: ListTree },
   { href: "/dashboard/ressources", label: "Ressources", icon: LinkIcon },
   { href: "/dashboard/hadiths", label: "Hadiths", icon: Quote },
+  { href: "/dashboard/quiz", label: "Quiz", icon: HelpCircle },
   { href: "/dashboard/seances", label: "Séances", icon: Calendar },
 ];
 

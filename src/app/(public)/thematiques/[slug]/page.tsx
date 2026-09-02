@@ -7,6 +7,7 @@ import { ProgressRing } from "@/components/public/progress-ring";
 import { RessourcesHadithsTabs } from "@/components/public/ressources-hadiths-tabs";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
+import { getQuizScores } from "@/lib/db/queries/quiz-tentatives";
 import { getThematiqueBySlug } from "@/lib/db/queries/thematiques";
 import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 
@@ -37,6 +38,12 @@ export default async function ThematiqueDetailPage({ params }: Props) {
     ? await getCompletedRessourceIds(
         profile.id,
         t.ressources.map((r) => r.id)
+      )
+    : undefined;
+  const quizScores = profile
+    ? await getQuizScores(
+        profile.id,
+        t.quiz.map((q) => q.id)
       )
     : undefined;
   const progress =
@@ -73,9 +80,11 @@ export default async function ThematiqueDetailPage({ params }: Props) {
       <RessourcesHadithsTabs
         ressources={t.ressources}
         hadiths={t.hadiths}
+        quiz={t.quiz}
         coursTitle={t.cours.title}
         thematiqueTitle={t.title}
         completedIds={completedIds}
+        quizScores={quizScores}
       />
     </div>
   );

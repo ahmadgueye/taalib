@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { ressources, thematiques } from "@/lib/db/schema";
+import { quiz, ressources, thematiques } from "@/lib/db/schema";
 
 export async function getAllThematiques() {
   return db.query.thematiques.findMany({
@@ -33,6 +33,11 @@ export async function getThematiqueBySlug(slug: string) {
         orderBy: [asc(ressources.orderIndex)],
       },
       hadiths: true,
+      quiz: {
+        where: eq(quiz.status, "published"),
+        orderBy: [asc(quiz.orderIndex)],
+        with: { questions: { columns: { id: true } } },
+      },
     },
   });
 
