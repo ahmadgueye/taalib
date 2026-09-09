@@ -54,10 +54,18 @@ export function RessourceItem({
             {stripMarkdown(content, 240)}
           </p>
         )}
-        <span className="mt-2 inline-block text-sm underline underline-offset-4">
-          Lire la suite
-        </span>
-        {markCompleteSlot}
+        <div className="relative z-10 mt-3 flex items-center justify-between">
+          <span className="text-sm underline underline-offset-4">
+            Lire la suite
+          </span>
+          {completed !== undefined && (
+            <MarkCompleteButton
+              key={`${id}-${completed}`}
+              ressourceId={id}
+              completed={completed}
+            />
+          )}
+        </div>
       </div>
     );
   }

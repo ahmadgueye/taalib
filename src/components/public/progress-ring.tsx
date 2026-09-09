@@ -14,7 +14,7 @@ export function ProgressRing({
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (clamped / 100) * circumference;
   // Scale the label with the ring so "100%" never overflows small rings.
-  const fontSize = Math.max(8, Math.round(size * 0.28));
+  const fontSize = Math.max(8, Math.round(size * 0.22));
 
   return (
     <div
@@ -42,7 +42,7 @@ export function ProgressRing({
           className="fill-none stroke-emerald-600 transition-[stroke-dashoffset] duration-300 dark:stroke-emerald-400"
         />
       </svg>
-      <span className="absolute font-medium tabular-nums" style={{ fontSize }}>
+      <span className="absolute font-normal tabular-nums" style={{ fontSize }}>
         {label ?? `${Math.round(clamped)}%`}
       </span>
     </div>
