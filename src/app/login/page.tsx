@@ -8,7 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { FieldSeparator } from "@/components/ui/field";
 import { GoogleLoginButton } from "@/components/public/google-login-button";
+import { MagicLinkForm } from "@/components/public/magic-link-form";
 
 export const metadata: Metadata = {
   title: "Connexion — Taalib",
@@ -26,9 +28,11 @@ export default async function LoginPage({ searchParams }: Props) {
     <div className="flex min-h-full flex-1 flex-col items-center justify-center px-6 py-16">
       <Link
         href="/"
-        className="mb-8 font-heading text-lg font-semibold tracking-tight"
+        lang="ar"
+        className="flex mb-8 items-center gap-2 font-logo-arabic text-2xl font-bold tracking-tight"
       >
-        Taalib
+        {/* <BookOpen className="size-5" /> */}
+        طالب
       </Link>
       <Card className="w-full max-w-sm">
         <CardHeader>
@@ -37,8 +41,10 @@ export default async function LoginPage({ searchParams }: Props) {
             Connecte-toi pour suivre ta progression dans les cours.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-4">
           <GoogleLoginButton next={next} />
+          <FieldSeparator>ou</FieldSeparator>
+          <MagicLinkForm next={next} />
         </CardContent>
       </Card>
     </div>

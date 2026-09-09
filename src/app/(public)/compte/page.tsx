@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { EntityCard } from "@/components/public/entity-card";
+import { FullNameForm } from "@/components/public/full-name-form";
 import {
   Card,
   CardContent,
@@ -20,7 +21,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function ComptePage() {
+type Props = {
+  searchParams: Promise<{ next?: string }>;
+};
+
+export default async function ComptePage({ searchParams }: Props) {
+  const { next } = await searchParams;
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login?next=/compte");
 
@@ -39,7 +45,15 @@ export default async function ComptePage() {
           </CardTitle>
           <CardDescription>{profile.email}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-6">
+          {!profile.fullName && (
+            <div>
+              <p className="mb-3 text-sm text-muted-foreground">
+                Ajoute ton nom pour compléter ton profil.
+              </p>
+              <FullNameForm next={next} />
+            </div>
+          )}
           <SignOutButton />
         </CardContent>
       </Card>

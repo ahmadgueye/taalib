@@ -1,5 +1,8 @@
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
+import { db } from "@/lib/db";
+import { profiles } from "@/lib/db/schema";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -9,8 +12,23 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const {
+      error,
+      data: { user },
+    } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && user) {
+      const [profile] = await db
+        .select({ fullName: profiles.fullName })
+        .from(profiles)
+        .where(eq(profiles.id, user.id))
+        .limit(1);
+
+      if (!profile?.fullName) {
+        const onboardingUrl = new URL("/compte", origin);
+        onboardingUrl.searchParams.set("next", next);
+        return NextResponse.redirect(onboardingUrl);
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
