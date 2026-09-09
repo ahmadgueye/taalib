@@ -24,7 +24,7 @@ export default async function HadithsListPage() {
           Aucun hadith pour le moment.
         </p>
       ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div className="mt-8 grid gap-4 sm:grid-cols-1">
           {hadithsList.map((h) => (
             <HadithCard
               key={h.id}

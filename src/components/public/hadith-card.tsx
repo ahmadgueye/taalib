@@ -26,7 +26,7 @@ export function HadithCard({
           <Badge variant="outline" className="w-fit">
             {coursTitle}
           </Badge>
-          <CardTitle className="mt-1 font-heading">{title}</CardTitle>
+          {/* <CardTitle className="mt-1 font-heading">{title}</CardTitle> */}
           <p
             dir="rtl"
             lang="ar"
