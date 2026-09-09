@@ -31,16 +31,25 @@ function createPersistedState<T>(
   defaultValue: T,
   parse: (raw: string) => T | undefined,
 ) {
+  const listeners = new Set<() => void>();
+  function subscribe(listener: () => void) {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  }
   function getSnapshot(): T {
     const raw = window.localStorage.getItem(key);
     if (raw === null) return defaultValue;
     const parsed = parse(raw);
     return parsed === undefined ? defaultValue : parsed;
   }
+  function getServerSnapshot(): T {
+    return defaultValue;
+  }
   function setStored(next: T) {
     window.localStorage.setItem(key, String(next));
+    listeners.forEach((listener) => listener());
   }
-  return { getSnapshot, setStored };
+  return { subscribe, getSnapshot, getServerSnapshot, setStored };
 }
 
 const reciterStore = createPersistedState<number>(
@@ -78,9 +87,11 @@ export function useQuranAudioPlayer({
   );
   const selectedChapter = chaptersById.get(selectedChapterId);
 
-  // Read once: this only needs to reflect the persisted value at mount, the
-  // same way quran-reader.tsx's other settings do.
-  const [reciterId, setReciterId] = useState(() => reciterStore.getSnapshot());
+  const reciterId = useSyncExternalStore(
+    reciterStore.subscribe,
+    reciterStore.getSnapshot,
+    reciterStore.getServerSnapshot,
+  );
   const [reciters, setReciters] = useState<QuranReciter[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [playerVisible, setPlayerVisible] = useState(false);
@@ -155,7 +166,6 @@ export function useQuranAudioPlayer({
 
   function handlePickReciter(reciter: QuranReciter) {
     reciterStore.setStored(reciter.id);
-    setReciterId(reciter.id);
     setDialogOpen(false);
     setPlayerVisible(true);
     playChapterAudio(selectedChapterId, reciter.id);
