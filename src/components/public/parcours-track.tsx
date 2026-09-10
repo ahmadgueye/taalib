@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Check, Lock } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { ProgressRing } from "@/components/public/progress-ring";
 import type { ParcoursStep } from "@/lib/db/queries/parcours";
 import { cn } from "@/lib/utils";
 
@@ -87,10 +86,10 @@ function StepCard({
     );
   }
 
-  const showProgressRing =
-    state === "active" &&
-    step.ressourceProgress &&
-    step.ressourceProgress.total > 0;
+  const ressourceProgress =
+    state === "active" && step.ressourceProgress && step.ressourceProgress.total > 0
+      ? step.ressourceProgress
+      : null;
 
   return (
     <Link
@@ -114,23 +113,36 @@ function StepCard({
             Terminé
           </Badge>
         )}
-        {showProgressRing && (
-          <ProgressRing
-            value={
-              (step.ressourceProgress!.completed /
-                step.ressourceProgress!.total) *
-              100
-            }
-            size={34}
-            strokeWidth={3.5}
-          />
-        )}
-        {state === "active" && !step.ressourceProgress && (
+        {state === "active" && !ressourceProgress && (
           <Badge variant="secondary" className="shrink-0">
             Aperçu
           </Badge>
         )}
       </div>
+
+      {ressourceProgress && (
+        <div className="mt-3">
+          <div className="h-1.5 w-full bg-muted">
+            <div
+              className="h-full bg-emerald-600 dark:bg-emerald-400"
+              style={{
+                width: `${(ressourceProgress.completed / ressourceProgress.total) * 100}%`,
+              }}
+            />
+          </div>
+          <div className="mt-1 flex items-center justify-between text-xs tabular-nums text-muted-foreground">
+            <span>
+              {ressourceProgress.completed}/{ressourceProgress.total} leçons
+            </span>
+            <span>
+              {Math.round(
+                (ressourceProgress.completed / ressourceProgress.total) * 100
+              )}
+              %
+            </span>
+          </div>
+        </div>
+      )}
     </Link>
   );
 }
