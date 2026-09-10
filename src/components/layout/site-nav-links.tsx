@@ -7,8 +7,9 @@ import { cn, isNavActive } from "@/lib/utils";
 
 const links = [
   { href: "/cours", label: "Cours" },
-  { href: "/hadiths", label: "Ahadith" },
-  { href: "/recherche", label: "Recherche", title: "Recherche (⌘K)" },
+  { href: "/coran", label: "Quran" },
+  { href: "/hadiths", label: "Hadith" },
+  { href: "/parcours", label: "Parcours" },
 ];
 
 export function SiteNavLinks({ className }: { className?: string }) {
@@ -25,7 +26,6 @@ export function SiteNavLinks({ className }: { className?: string }) {
         <Link
           key={link.href}
           href={link.href}
-          title={link.title}
           className={cn(
             "hover:text-foreground",
             isNavActive(pathname, link.href) && "font-medium text-foreground",

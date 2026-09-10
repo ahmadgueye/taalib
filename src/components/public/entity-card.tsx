@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ProgressIndicator } from "@/components/public/progress-indicator";
 import { cn } from "@/lib/utils";
 
 export function EntityCard({
@@ -17,6 +18,7 @@ export function EntityCard({
   description,
   accent = false,
   badge,
+  progress,
 }: {
   href: string;
   title: string;
@@ -32,6 +34,7 @@ export function EntityCard({
       | "ghost"
       | "link";
   };
+  progress?: number;
 }) {
   return (
     <Link href={href}>
@@ -50,7 +53,10 @@ export function EntityCard({
               {badge.label}
             </Badge>
           )}
-          <CardAction className="self-center">
+          {progress !== undefined && (
+            <ProgressIndicator value={progress} className="mt-2 text-xs" />
+          )}
+          <CardAction className="flex items-center self-center">
             <ChevronRight className="size-4 text-muted-foreground" />
           </CardAction>
         </CardHeader>

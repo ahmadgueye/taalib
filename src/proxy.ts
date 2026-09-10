@@ -10,6 +10,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  if (!user && request.nextUrl.pathname.startsWith("/compte")) {
+    const redirectUrl = new URL("/login", request.url);
+    redirectUrl.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
   return supabaseResponse;
 }
 

@@ -1,6 +1,8 @@
 import { db } from "./index";
 import {
   cours,
+  parcours,
+  parcoursEtapes,
   ressources,
   seanceRessources,
   seanceThematiques,
@@ -33,7 +35,7 @@ async function main() {
     ])
     .returning();
 
-  const [tawhid, piliersFoi, priere, jeune] = await db
+  const [tawhid, piliersFoi, priere, jeune, naissanceProphete] = await db
     .insert(thematiques)
     .values([
       {
@@ -63,6 +65,13 @@ async function main() {
         title: "Le jeûne",
         description: "Règles du jeûne du mois de Ramadan.",
         orderIndex: 1,
+      },
+      {
+        coursId: sira.id,
+        slug: slugify("La naissance du Prophète"),
+        title: "La naissance du Prophète ﷺ",
+        description: "Contexte et récit de la naissance du Prophète ﷺ.",
+        orderIndex: 0,
       },
     ])
     .returning();
@@ -137,11 +146,32 @@ async function main() {
     { seanceId: seanceRevision2.id, ressourceId: priereLien.id },
   ]);
 
+  const [parcoursFondamental] = await db
+    .insert(parcours)
+    .values({
+      slug: slugify("Parcours fondamental"),
+      title: "Parcours fondamental",
+      description:
+        "Une progression imposée à travers les fondamentaux : la croyance, puis la pratique, puis la biographie prophétique.",
+    })
+    .returning();
+
+  await db.insert(parcoursEtapes).values([
+    { parcoursId: parcoursFondamental.id, thematiqueId: tawhid.id, orderIndex: 0 },
+    { parcoursId: parcoursFondamental.id, thematiqueId: priere.id, orderIndex: 1 },
+    {
+      parcoursId: parcoursFondamental.id,
+      thematiqueId: naissanceProphete.id,
+      orderIndex: 2,
+    },
+  ]);
+
   console.log("Seed ok:", {
     cours: [aqida.title, fiqh.title, sira.title],
-    thematiques: 4,
+    thematiques: 5,
     ressources: 5,
     seances: 2,
+    parcours: parcoursFondamental.title,
   });
 }
 

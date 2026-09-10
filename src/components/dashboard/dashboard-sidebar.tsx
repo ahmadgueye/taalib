@@ -5,9 +5,11 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   Calendar,
+  HelpCircle,
   LayoutDashboard,
   Link as LinkIcon,
   ListTree,
+  Milestone,
   Quote,
   Users,
 } from "lucide-react";
@@ -19,9 +21,11 @@ import { cn, isNavActive } from "@/lib/utils";
 const navItems = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/dashboard/cours", label: "Cours", icon: BookOpen },
+  { href: "/dashboard/parcours", label: "Parcours", icon: Milestone },
   { href: "/dashboard/thematiques", label: "Thématiques", icon: ListTree },
   { href: "/dashboard/ressources", label: "Ressources", icon: LinkIcon },
   { href: "/dashboard/hadiths", label: "Hadiths", icon: Quote },
+  { href: "/dashboard/quiz", label: "Quiz", icon: HelpCircle },
   { href: "/dashboard/seances", label: "Séances", icon: Calendar },
 ];
 

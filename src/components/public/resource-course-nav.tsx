@@ -20,7 +20,6 @@ type OutlineRessource = {
   id: string;
   title: string;
   type: RessourceType;
-  url: string | null;
 };
 
 type OutlineThematique = {
@@ -101,15 +100,6 @@ export function ResourceCourseNav({
                     const { label, icon: Icon } =
                       ressourceTypeConfig[ressource.type];
                     const isCurrent = ressource.id === currentRessourceId;
-                    const isInternal = ressource.type === "texte";
-
-                    const content = (
-                      <>
-                        <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-                        <span className="truncate">{ressource.title}</span>
-                        <span className="sr-only">({label})</span>
-                      </>
-                    );
 
                     const itemClassName = cn(
                       "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted",
@@ -118,24 +108,15 @@ export function ResourceCourseNav({
 
                     return (
                       <li key={ressource.id}>
-                        {isInternal ? (
-                          <Link
-                            href={`/ressources/${ressource.id}`}
-                            className={itemClassName}
-                            aria-current={isCurrent ? "page" : undefined}
-                          >
-                            {content}
-                          </Link>
-                        ) : (
-                          <a
-                            href={ressource.url ?? undefined}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={itemClassName}
-                          >
-                            {content}
-                          </a>
-                        )}
+                        <Link
+                          href={`/ressources/${ressource.id}`}
+                          className={itemClassName}
+                          aria-current={isCurrent ? "page" : undefined}
+                        >
+                          <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                          <span className="truncate">{ressource.title}</span>
+                          <span className="sr-only">({label})</span>
+                        </Link>
                       </li>
                     );
                   })}

@@ -24,9 +24,9 @@ export function HadithCard({
       <Card className="h-full transition-colors hover:bg-muted">
         <CardHeader className="space-y-2">
           <Badge variant="outline" className="w-fit">
-            {coursTitle} · {thematiqueTitle}
+            {coursTitle}
           </Badge>
-          <CardTitle className="mt-1 font-heading">{title}</CardTitle>
+          {/* <CardTitle className="mt-1 font-heading">{title}</CardTitle> */}
           <p
             dir="rtl"
             lang="ar"

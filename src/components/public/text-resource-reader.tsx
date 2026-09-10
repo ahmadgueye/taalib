@@ -45,9 +45,11 @@ function setStoredStep(next: number) {
 export function TextResourceReader({
   content,
   courseNav,
+  footerAction,
 }: {
   content: string;
   courseNav?: ReactNode;
+  footerAction?: ReactNode;
 }) {
   const step = useSyncExternalStore(subscribeStep, getStepSnapshot, getServerStepSnapshot);
 
@@ -80,6 +82,11 @@ export function TextResourceReader({
       <div className="mt-6 text-justify">
         <MarkdownContent content={content} className={sizeSteps[step]} />
       </div>
+      {footerAction && (
+        <div className="mt-8 flex justify-end border-t pt-6">
+          {footerAction}
+        </div>
+      )}
     </div>
   );
 }
