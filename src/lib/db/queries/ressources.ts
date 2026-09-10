@@ -1,7 +1,7 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { ressources } from "@/lib/db/schema";
+import { quiz, ressources } from "@/lib/db/schema";
 
 export async function getAllRessources() {
   return db.query.ressources.findMany({
@@ -29,7 +29,21 @@ export async function getRessourceById(id: string) {
 export async function getPublishedRessourceById(id: string) {
   const result = await db.query.ressources.findFirst({
     where: and(eq(ressources.id, id), eq(ressources.status, "published")),
-    with: { thematique: { with: { cours: true } } },
+    with: {
+      thematique: {
+        with: {
+          cours: true,
+          ressources: {
+            where: eq(ressources.status, "published"),
+            orderBy: [asc(ressources.orderIndex)],
+          },
+          quiz: {
+            where: eq(quiz.status, "published"),
+            orderBy: [asc(quiz.orderIndex)],
+          },
+        },
+      },
+    },
   });
 
   return result ?? null;

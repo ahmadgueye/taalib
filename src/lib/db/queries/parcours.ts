@@ -91,8 +91,8 @@ export type ParcoursStep = {
 };
 
 // Une étape est "terminée" quand tous les quiz publiés de sa thématique
-// ont été réussis (meilleur score ≥ seuil du quiz). Sans quiz, elle ne peut
-// jamais se terminer : c'est la condition même du parcours imposé.
+// ont été réussis (meilleur score ≥ seuil du quiz). Sans quiz, rien ne la
+// bloque : elle est considérée terminée dès qu'elle devient active.
 export async function getParcoursProgress(
   parcoursWithEtapes: ParcoursWithProgress,
   userId: string | null
@@ -124,16 +124,16 @@ export async function getParcoursProgress(
     });
 
     const thematiqueComplete =
-      quizzes.length > 0 &&
+      quizzes.length === 0 ||
       quizSummaries.every(
         (q) => q.bestPercent !== null && q.bestPercent >= q.passingScore
       );
 
-    const state: ParcoursStepState = thematiqueComplete
-      ? "completed"
-      : previousComplete
-        ? "active"
-        : "locked";
+    const state: ParcoursStepState = !previousComplete
+      ? "locked"
+      : thematiqueComplete
+        ? "completed"
+        : "active";
 
     let ressourceProgress: { completed: number; total: number } | undefined;
     if (state === "active" && userId) {
@@ -152,7 +152,7 @@ export async function getParcoursProgress(
       ressourceProgress,
     });
 
-    previousComplete = thematiqueComplete;
+    previousComplete = state === "completed";
   }
 
   return steps;
