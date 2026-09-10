@@ -35,7 +35,7 @@ async function main() {
     ])
     .returning();
 
-  const [tawhid, piliersFoi, priere, jeune] = await db
+  const [tawhid, piliersFoi, priere, jeune, naissanceProphete] = await db
     .insert(thematiques)
     .values([
       {
@@ -65,6 +65,13 @@ async function main() {
         title: "Le jeûne",
         description: "Règles du jeûne du mois de Ramadan.",
         orderIndex: 1,
+      },
+      {
+        coursId: sira.id,
+        slug: slugify("La naissance du Prophète"),
+        title: "La naissance du Prophète ﷺ",
+        description: "Contexte et récit de la naissance du Prophète ﷺ.",
+        orderIndex: 0,
       },
     ])
     .returning();
@@ -150,14 +157,18 @@ async function main() {
     .returning();
 
   await db.insert(parcoursEtapes).values([
-    { parcoursId: parcoursFondamental.id, coursId: aqida.id, orderIndex: 0 },
-    { parcoursId: parcoursFondamental.id, coursId: fiqh.id, orderIndex: 1 },
-    { parcoursId: parcoursFondamental.id, coursId: sira.id, orderIndex: 2 },
+    { parcoursId: parcoursFondamental.id, thematiqueId: tawhid.id, orderIndex: 0 },
+    { parcoursId: parcoursFondamental.id, thematiqueId: priere.id, orderIndex: 1 },
+    {
+      parcoursId: parcoursFondamental.id,
+      thematiqueId: naissanceProphete.id,
+      orderIndex: 2,
+    },
   ]);
 
   console.log("Seed ok:", {
     cours: [aqida.title, fiqh.title, sira.title],
-    thematiques: 4,
+    thematiques: 5,
     ressources: 5,
     seances: 2,
     parcours: parcoursFondamental.title,

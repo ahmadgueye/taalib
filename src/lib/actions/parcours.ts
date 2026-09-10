@@ -90,36 +90,45 @@ export async function deleteParcours(id: string) {
   revalidatePath("/");
 }
 
-const addEtapeSchema = z.object({
-  coursId: z.string().trim().min(1, "Le cours est requis."),
+const addEtapesSchema = z.object({
+  thematiqueIds: z
+    .array(z.string().trim().min(1))
+    .min(1, "Sélectionnez au moins une thématique."),
 });
 
-export async function addEtape(
+export async function addEtapes(
   parcoursId: string,
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
   await requireContributor();
-  const parsed = addEtapeSchema.safeParse({
-    coursId: formData.get("coursId"),
+  const parsed = addEtapesSchema.safeParse({
+    thematiqueIds: formData.getAll("thematiqueIds"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const [{ nextIndex }] = await db
-    .select({ nextIndex: max(parcoursEtapes.orderIndex) })
-    .from(parcoursEtapes)
-    .where(eq(parcoursEtapes.parcoursId, parcoursId));
-
   try {
-    await db.insert(parcoursEtapes).values({
-      parcoursId,
-      coursId: parsed.data.coursId,
-      orderIndex: (nextIndex ?? -1) + 1,
+    await db.transaction(async (tx) => {
+      const [{ nextIndex }] = await tx
+        .select({ nextIndex: max(parcoursEtapes.orderIndex) })
+        .from(parcoursEtapes)
+        .where(eq(parcoursEtapes.parcoursId, parcoursId));
+
+      const startIndex = (nextIndex ?? -1) + 1;
+      await tx.insert(parcoursEtapes).values(
+        parsed.data.thematiqueIds.map((thematiqueId, index) => ({
+          parcoursId,
+          thematiqueId,
+          orderIndex: startIndex + index,
+        }))
+      );
     });
   } catch {
-    return { error: "Ce cours fait déjà partie du parcours." };
+    return {
+      error: "Une ou plusieurs thématiques font déjà partie de ce parcours.",
+    };
   }
 
   revalidatePath("/dashboard/parcours");

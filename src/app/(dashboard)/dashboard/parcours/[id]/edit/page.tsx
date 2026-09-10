@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { AddEtapeForm } from "@/components/dashboard/add-etape-form";
 import { ParcoursEtapesList } from "@/components/dashboard/parcours-etapes-list";
 import { ParcoursForm } from "@/components/dashboard/parcours-form";
-import { getAllCours } from "@/lib/db/queries/cours";
+import { getAllThematiques } from "@/lib/db/queries/thematiques";
 import { getParcoursById } from "@/lib/db/queries/parcours";
 
 type Props = {
@@ -12,15 +12,17 @@ type Props = {
 
 export default async function EditParcoursPage({ params }: Props) {
   const { id } = await params;
-  const [p, allCours] = await Promise.all([
+  const [p, allThematiques] = await Promise.all([
     getParcoursById(id),
-    getAllCours(),
+    getAllThematiques(),
   ]);
 
   if (!p) notFound();
 
-  const usedCoursIds = new Set(p.etapes.map((e) => e.coursId));
-  const availableCours = allCours.filter((c) => !usedCoursIds.has(c.id));
+  const usedThematiqueIds = new Set(p.etapes.map((e) => e.thematiqueId));
+  const availableThematiques = allThematiques.filter(
+    (t) => !usedThematiqueIds.has(t.id)
+  );
 
   return (
     <div>
@@ -36,8 +38,9 @@ export default async function EditParcoursPage({ params }: Props) {
           Étapes du parcours
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          L&apos;ordre détermine la progression imposée : un cours ne se
-          débloque que lorsque tous les quiz du cours précédent sont réussis.
+          L&apos;ordre détermine la progression imposée : une thématique ne se
+          débloque que lorsque tous les quiz de la thématique précédente sont
+          réussis.
         </p>
 
         {p.etapes.length > 0 && (
@@ -46,14 +49,22 @@ export default async function EditParcoursPage({ params }: Props) {
               parcoursId={p.id}
               etapes={p.etapes.map((e) => ({
                 id: e.id,
-                coursTitle: e.cours.title,
+                label: `${e.thematique.cours.title} — ${e.thematique.title}`,
               }))}
             />
           </div>
         )}
 
         <div className="mt-4">
-          <AddEtapeForm parcoursId={p.id} coursOptions={availableCours} />
+          <AddEtapeForm
+            key={availableThematiques.map((t) => t.id).join(",")}
+            parcoursId={p.id}
+            thematiqueOptions={availableThematiques.map((t) => ({
+              id: t.id,
+              title: t.title,
+              coursTitle: t.cours.title,
+            }))}
+          />
         </div>
       </div>
     </div>

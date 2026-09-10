@@ -9,19 +9,19 @@ export function ParcoursEtapesList({
   etapes,
 }: {
   parcoursId: string;
-  etapes: { id: string; coursTitle: string }[];
+  etapes: { id: string; label: string }[];
 }) {
   return (
     <SortableReorderList
       key={etapes.map((e) => e.id).join(",")}
-      items={etapes.map((e) => ({ id: e.id, label: e.coursTitle }))}
+      items={etapes.map((e) => ({ id: e.id, label: e.label }))}
       onReorder={reorderEtapes.bind(null, parcoursId)}
       renderTrailing={(item) => {
         const etape = etapes.find((e) => e.id === item.id)!;
         return (
           <DeleteButton
             action={removeEtape.bind(null, etape.id, parcoursId)}
-            itemLabel={etape.coursTitle}
+            itemLabel={etape.label}
           />
         );
       }}

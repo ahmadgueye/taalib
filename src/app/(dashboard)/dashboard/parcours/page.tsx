@@ -55,7 +55,7 @@ export default async function DashboardParcoursPage() {
                   <TableCell className="text-muted-foreground">
                     {p.etapes.length === 0
                       ? "Aucune étape"
-                      : p.etapes.map((e) => e.cours.title).join(" → ")}
+                      : p.etapes.map((e) => e.thematique.title).join(" → ")}
                   </TableCell>
                   <TableCell className="flex justify-end gap-1">
                     <Button

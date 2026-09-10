@@ -6,9 +6,9 @@ import { getCurrentProfile } from "@/lib/auth/get-session";
 import { coursStatusConfig } from "@/lib/cours-status";
 import { getAllCours } from "@/lib/db/queries/cours";
 import {
-  getCoursHorsParcours,
   getFirstParcours,
   getParcoursProgress,
+  getThematiquesHorsParcours,
 } from "@/lib/db/queries/parcours";
 
 export default async function Home() {
@@ -66,9 +66,9 @@ export default async function Home() {
     );
   }
 
-  const [steps, coursLibres] = await Promise.all([
+  const [steps, thematiquesLibres] = await Promise.all([
     getParcoursProgress(parcours, profile?.id ?? null),
-    getCoursHorsParcours(parcours.id),
+    getThematiquesHorsParcours(parcours.id),
   ]);
 
   return (
@@ -106,7 +106,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {coursLibres.length > 0 && (
+      {thematiquesLibres.length > 0 && (
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-heading text-xl font-semibold">
@@ -120,19 +120,19 @@ export default async function Home() {
             </Link>
           </div>
           <p className="mb-4 -mt-2 text-sm text-muted-foreground">
-            Ces cours restent accessibles librement, sans ordre imposé.
+            Ces thématiques restent accessibles librement, sans ordre imposé.
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
-            {coursLibres.map((c) => (
+            {thematiquesLibres.map((t) => (
               <EntityCard
-                key={c.id}
-                href={`/cours/${c.slug}`}
-                title={c.title}
-                description={c.description}
+                key={t.id}
+                href={`/thematiques/${t.slug}`}
+                title={t.title}
+                description={t.description}
                 badge={
-                  c.status === "coming_soon"
+                  t.cours.status === "coming_soon"
                     ? coursStatusConfig.coming_soon
-                    : { label: "Libre", variant: "outline" }
+                    : { label: t.cours.title, variant: "outline" }
                 }
               />
             ))}

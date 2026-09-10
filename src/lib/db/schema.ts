@@ -267,15 +267,15 @@ export const parcoursEtapes = pgTable(
     parcoursId: uuid("parcours_id")
       .notNull()
       .references(() => parcours.id, { onDelete: "cascade" }),
-    coursId: uuid("cours_id")
+    thematiqueId: uuid("thematique_id")
       .notNull()
-      .references(() => cours.id, { onDelete: "cascade" }),
+      .references(() => thematiques.id, { onDelete: "cascade" }),
     orderIndex: integer("order_index").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (table) => [unique().on(table.parcoursId, table.coursId)]
+  (table) => [unique().on(table.parcoursId, table.thematiqueId)]
 );
 
 export const coursRelations = relations(cours, ({ many }) => ({
@@ -427,9 +427,9 @@ export const parcoursEtapesRelations = relations(
       fields: [parcoursEtapes.parcoursId],
       references: [parcours.id],
     }),
-    cours: one(cours, {
-      fields: [parcoursEtapes.coursId],
-      references: [cours.id],
+    thematique: one(thematiques, {
+      fields: [parcoursEtapes.thematiqueId],
+      references: [thematiques.id],
     }),
   })
 );

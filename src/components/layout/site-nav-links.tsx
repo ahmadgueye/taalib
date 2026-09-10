@@ -26,7 +26,6 @@ export function SiteNavLinks({ className }: { className?: string }) {
         <Link
           key={link.href}
           href={link.href}
-          title={link.title}
           className={cn(
             "hover:text-foreground",
             isNavActive(pathname, link.href) && "font-medium text-foreground",

@@ -34,7 +34,7 @@ export default async function ParcoursListPage() {
               description={
                 p.description ??
                 (p.etapes.length > 0
-                  ? p.etapes.map((e) => e.cours.title).join(" → ")
+                  ? p.etapes.map((e) => e.thematique.title).join(" → ")
                   : null)
               }
             />

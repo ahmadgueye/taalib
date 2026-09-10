@@ -20,7 +20,9 @@ export function ParcoursTrack({ steps }: { steps: ParcoursStep[] }) {
             <StepMarker state={step.state} index={index + 1} />
             <StepCard
               step={step}
-              previousTitle={index > 0 ? steps[index - 1].cours.title : null}
+              previousTitle={
+                index > 0 ? steps[index - 1].thematique.title : null
+              }
             />
           </li>
         ))}
@@ -65,15 +67,20 @@ function StepCard({
   step: ParcoursStep;
   previousTitle: string | null;
 }) {
-  const { cours, state } = step;
+  const { thematique, state } = step;
 
   if (state === "locked") {
     return (
       <div className="flex-1 border border-dashed bg-muted p-4">
-        <div className="font-medium text-muted-foreground">{cours.title}</div>
-        {cours.description && (
+        <div className="text-xs text-muted-foreground">
+          {thematique.cours.title}
+        </div>
+        <div className="font-medium text-muted-foreground">
+          {thematique.title}
+        </div>
+        {thematique.description && (
           <p className="mt-1 text-sm text-muted-foreground">
-            {cours.description}
+            {thematique.description}
           </p>
         )}
         <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -93,15 +100,18 @@ function StepCard({
 
   return (
     <Link
-      href={`/cours/${cours.slug}`}
+      href={`/thematiques/${thematique.slug}`}
       className="flex-1 border p-4 transition-colors hover:bg-muted"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="font-medium">{cours.title}</div>
-          {cours.description && (
+          <div className="text-xs text-muted-foreground">
+            {thematique.cours.title}
+          </div>
+          <div className="font-medium">{thematique.title}</div>
+          {thematique.description && (
             <p className="mt-1 text-sm text-muted-foreground">
-              {cours.description}
+              {thematique.description}
             </p>
           )}
         </div>

@@ -1,0 +1,2 @@
+ALTER TABLE "parcours_etapes" ADD COLUMN "thematique_id" uuid;--> statement-breakpoint
+ALTER TABLE "parcours_etapes" ADD CONSTRAINT "parcours_etapes_thematique_id_thematiques_id_fk" FOREIGN KEY ("thematique_id") REFERENCES "public"."thematiques"("id") ON DELETE cascade ON UPDATE no action;
