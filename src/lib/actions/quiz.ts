@@ -16,6 +16,7 @@ const quizSchema = z.object({
   description: z.string().trim().optional(),
   thematiqueId: z.string().trim().min(1, "La thématique est requise."),
   status: z.enum(["draft", "published"]),
+  passingScore: z.coerce.number().int().min(0).max(100),
 });
 
 export async function createQuiz(
@@ -28,6 +29,7 @@ export async function createQuiz(
     description: formData.get("description"),
     thematiqueId: formData.get("thematiqueId"),
     status: formData.get("status"),
+    passingScore: formData.get("passingScore"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
@@ -40,6 +42,7 @@ export async function createQuiz(
       description: parsed.data.description || null,
       thematiqueId: parsed.data.thematiqueId,
       status: parsed.data.status,
+      passingScore: parsed.data.passingScore,
       addedBy: profile.id,
     })
     .returning({ id: quiz.id });
@@ -60,6 +63,7 @@ export async function updateQuiz(
     description: formData.get("description"),
     thematiqueId: formData.get("thematiqueId"),
     status: formData.get("status"),
+    passingScore: formData.get("passingScore"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
@@ -72,6 +76,7 @@ export async function updateQuiz(
       description: parsed.data.description || null,
       thematiqueId: parsed.data.thematiqueId,
       status: parsed.data.status,
+      passingScore: parsed.data.passingScore,
       updatedAt: new Date(),
     })
     .where(eq(quiz.id, id));

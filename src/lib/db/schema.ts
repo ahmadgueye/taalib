@@ -8,6 +8,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -121,6 +122,7 @@ export const quiz = pgTable("quiz", {
   title: text("title").notNull(),
   description: text("description"),
   status: ressourceStatusEnum("status").notNull().default("published"),
+  passingScore: integer("passing_score").notNull().default(80),
   addedBy: uuid("added_by").references(() => profiles.id),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -242,6 +244,38 @@ export const seanceRessources = pgTable(
       .references(() => ressources.id, { onDelete: "cascade" }),
   },
   (table) => [primaryKey({ columns: [table.seanceId, table.ressourceId] })]
+);
+
+export const parcours = pgTable("parcours", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  description: text("description"),
+  createdBy: uuid("created_by").references(() => profiles.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const parcoursEtapes = pgTable(
+  "parcours_etapes",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    parcoursId: uuid("parcours_id")
+      .notNull()
+      .references(() => parcours.id, { onDelete: "cascade" }),
+    coursId: uuid("cours_id")
+      .notNull()
+      .references(() => cours.id, { onDelete: "cascade" }),
+    orderIndex: integer("order_index").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.parcoursId, table.coursId)]
 );
 
 export const coursRelations = relations(cours, ({ many }) => ({
@@ -378,6 +412,24 @@ export const seanceRessourcesRelations = relations(
     ressource: one(ressources, {
       fields: [seanceRessources.ressourceId],
       references: [ressources.id],
+    }),
+  })
+);
+
+export const parcoursRelations = relations(parcours, ({ many }) => ({
+  etapes: many(parcoursEtapes),
+}));
+
+export const parcoursEtapesRelations = relations(
+  parcoursEtapes,
+  ({ one }) => ({
+    parcours: one(parcours, {
+      fields: [parcoursEtapes.parcoursId],
+      references: [parcours.id],
+    }),
+    cours: one(cours, {
+      fields: [parcoursEtapes.coursId],
+      references: [cours.id],
     }),
   })
 );

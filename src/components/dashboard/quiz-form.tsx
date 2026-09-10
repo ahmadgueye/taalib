@@ -37,6 +37,7 @@ export function QuizForm({
     description: string | null;
     thematiqueId: string;
     status: "draft" | "published";
+    passingScore: number;
   };
 }) {
   const action = quiz ? updateQuiz.bind(null, quiz.id) : createQuiz;
@@ -104,6 +105,22 @@ export function QuizForm({
               ))}
             </SelectContent>
           </Select>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="passingScore">Score minimum pour réussir</FieldLabel>
+          <Input
+            id="passingScore"
+            name="passingScore"
+            type="number"
+            min={0}
+            max={100}
+            defaultValue={quiz?.passingScore ?? 80}
+            required
+          />
+          <FieldDescription>
+            En pourcentage. Utilisé pour débloquer l&apos;étape suivante d&apos;un
+            parcours.
+          </FieldDescription>
         </Field>
         {state?.error && <FieldError>{state.error}</FieldError>}
         <SubmitButton>

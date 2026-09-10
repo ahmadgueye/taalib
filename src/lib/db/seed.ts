@@ -1,6 +1,8 @@
 import { db } from "./index";
 import {
   cours,
+  parcours,
+  parcoursEtapes,
   ressources,
   seanceRessources,
   seanceThematiques,
@@ -137,11 +139,28 @@ async function main() {
     { seanceId: seanceRevision2.id, ressourceId: priereLien.id },
   ]);
 
+  const [parcoursFondamental] = await db
+    .insert(parcours)
+    .values({
+      slug: slugify("Parcours fondamental"),
+      title: "Parcours fondamental",
+      description:
+        "Une progression imposée à travers les fondamentaux : la croyance, puis la pratique, puis la biographie prophétique.",
+    })
+    .returning();
+
+  await db.insert(parcoursEtapes).values([
+    { parcoursId: parcoursFondamental.id, coursId: aqida.id, orderIndex: 0 },
+    { parcoursId: parcoursFondamental.id, coursId: fiqh.id, orderIndex: 1 },
+    { parcoursId: parcoursFondamental.id, coursId: sira.id, orderIndex: 2 },
+  ]);
+
   console.log("Seed ok:", {
     cours: [aqida.title, fiqh.title, sira.title],
     thematiques: 4,
     ressources: 5,
     seances: 2,
+    parcours: parcoursFondamental.title,
   });
 }
 
