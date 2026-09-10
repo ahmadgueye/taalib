@@ -5,6 +5,7 @@ import {
   Geist_Mono,
   Noto_Naskh_Arabic,
   Scheherazade_New,
+  Amiri,
 } from "next/font/google";
 import "./globals.css";
 
@@ -36,6 +37,12 @@ const scheherazadeNew = Scheherazade_New({
   variable: "--font-logo-arabic",
   subsets: ["arabic"],
   weight: ["700"],
+});
+
+const amiri = Amiri({
+  variable: "--font-calligraphy",
+  subsets: ["arabic"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -70,7 +77,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${inter.variable} ${newsreader.variable} ${geistMono.variable} ${notoNaskhArabic.variable} ${scheherazadeNew.variable} h-full antialiased`}
+      className={`${inter.variable} ${newsreader.variable} ${geistMono.variable} ${notoNaskhArabic.variable} ${scheherazadeNew.variable} ${amiri.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>

@@ -1,8 +1,10 @@
 "use client";
 
 import { HadithCard } from "@/components/public/hadith-card";
+import { QuizItem } from "@/components/public/quiz-item";
 import { RessourceItem } from "@/components/public/ressource-item";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { QuizScore } from "@/lib/db/queries/quiz-tentatives";
 
 type RessourceListItem = {
   id: string;
@@ -21,16 +23,29 @@ type HadithListItem = {
   translationFr: string;
 };
 
+type QuizListItem = {
+  id: string;
+  title: string;
+  description: string | null;
+  questions: unknown[];
+};
+
 export function RessourcesHadithsTabs({
   ressources,
   hadiths,
+  quiz,
   coursTitle,
   thematiqueTitle,
+  completedIds,
+  quizScores,
 }: {
   ressources: RessourceListItem[];
   hadiths: HadithListItem[];
+  quiz?: QuizListItem[];
   coursTitle: string;
   thematiqueTitle: string;
+  completedIds?: Set<string>;
+  quizScores?: Map<string, QuizScore>;
 }) {
   return (
     <Tabs defaultValue="ressources" className="mt-8">
@@ -39,6 +54,7 @@ export function RessourcesHadithsTabs({
           Ressources ({ressources.length})
         </TabsTrigger>
         <TabsTrigger value="hadiths">Hadiths ({hadiths.length})</TabsTrigger>
+        {quiz && <TabsTrigger value="quiz">Quiz ({quiz.length})</TabsTrigger>}
       </TabsList>
 
       <TabsContent value="ressources">
@@ -57,6 +73,7 @@ export function RessourcesHadithsTabs({
                 url={r.url}
                 content={r.content}
                 description={r.description}
+                completed={completedIds?.has(r.id)}
               />
             ))}
           </div>
@@ -84,6 +101,29 @@ export function RessourcesHadithsTabs({
           </div>
         )}
       </TabsContent>
+
+      {quiz && (
+        <TabsContent value="quiz">
+          {quiz.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Aucun quiz pour cette thématique pour le moment.
+            </p>
+          ) : (
+            <div className="mt-4 grid gap-3">
+              {quiz.map((q) => (
+                <QuizItem
+                  key={q.id}
+                  id={q.id}
+                  title={q.title}
+                  description={q.description}
+                  questionCount={q.questions.length}
+                  score={quizScores?.get(q.id)}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

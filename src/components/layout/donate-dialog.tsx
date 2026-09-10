@@ -75,7 +75,7 @@ export function DonateDialog() {
                 value={preset}
                 className={cn(
                   "flex-1 rounded-lg border border-input px-2.5 py-1.5 text-sm font-medium transition-colors hover:bg-muted",
-                  "data-[pressed]:border-primary data-[pressed]:bg-primary data-[pressed]:text-primary-foreground",
+                  "data-pressed:border-primary data-pressed:bg-primary data-pressed:text-primary-foreground",
                 )}
               >
                 {preset} FCFA

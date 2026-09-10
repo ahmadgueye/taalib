@@ -66,15 +66,16 @@ export default async function RecherchePage({ searchParams }: Props) {
   const typesValues = toArray(params.types);
   const rtypeValues = toArray(params.rtype);
 
-  const selectedTypes = typesValues.length
-    ? (typesValues.filter((t) =>
-        ALL_ENTITY_TYPES.includes(t as EntityType)
-      ) as EntityType[])
-    : ALL_ENTITY_TYPES;
-  const selectedRessourceTypes = rtypeValues.length
-    ? (rtypeValues.filter((t) =>
-        ALL_RESSOURCE_TYPES.includes(t as RessourceType)
-      ) as RessourceType[])
+  const checkedTypes = typesValues.filter((t) =>
+    ALL_ENTITY_TYPES.includes(t as EntityType)
+  ) as EntityType[];
+  const checkedRessourceTypes = rtypeValues.filter((t) =>
+    ALL_RESSOURCE_TYPES.includes(t as RessourceType)
+  ) as RessourceType[];
+
+  const selectedTypes = checkedTypes.length ? checkedTypes : ALL_ENTITY_TYPES;
+  const selectedRessourceTypes = checkedRessourceTypes.length
+    ? checkedRessourceTypes
     : ALL_RESSOURCE_TYPES;
 
   const hasSearched = params.q !== undefined;
@@ -92,9 +93,10 @@ export default async function RecherchePage({ searchParams }: Props) {
       </h1>
 
       <SearchForm
+        key={`${q}-${checkedTypes.join(",")}-${checkedRessourceTypes.join(",")}`}
         q={q}
-        selectedTypes={selectedTypes}
-        selectedRessourceTypes={selectedRessourceTypes}
+        selectedTypes={checkedTypes}
+        selectedRessourceTypes={checkedRessourceTypes}
         typeLabels={typeLabels}
       />
 

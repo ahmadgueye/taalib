@@ -29,7 +29,13 @@ export type SortableReorderItem = {
   sublabel?: string;
 };
 
-function SortableRow({ item }: { item: SortableReorderItem }) {
+function SortableRow({
+  item,
+  trailing,
+}: {
+  item: SortableReorderItem;
+  trailing?: React.ReactNode;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
 
@@ -57,6 +63,7 @@ function SortableRow({ item }: { item: SortableReorderItem }) {
           <div className="text-xs text-muted-foreground">{item.sublabel}</div>
         )}
       </div>
+      {trailing}
     </li>
   );
 }
@@ -64,9 +71,11 @@ function SortableRow({ item }: { item: SortableReorderItem }) {
 export function SortableReorderList({
   items,
   onReorder,
+  renderTrailing,
 }: {
   items: SortableReorderItem[];
   onReorder: (orderedIds: string[]) => Promise<{ error?: string } | undefined>;
+  renderTrailing?: (item: SortableReorderItem) => React.ReactNode;
 }) {
   const [ordered, setOrdered] = useState(items);
   const [isPending, startTransition] = useTransition();
@@ -117,7 +126,11 @@ export function SortableReorderList({
       >
         <ul className={cn("flex flex-col gap-2", isPending && "opacity-70")}>
           {ordered.map((item) => (
-            <SortableRow key={item.id} item={item} />
+            <SortableRow
+              key={item.id}
+              item={item}
+              trailing={renderTrailing?.(item)}
+            />
           ))}
         </ul>
       </SortableContext>
