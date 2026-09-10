@@ -5,12 +5,15 @@ import { notFound } from "next/navigation";
 import { BackButton } from "@/components/public/back-button";
 import { NextChapterButton } from "@/components/public/next-chapter-button";
 import { PdfEmbed } from "@/components/public/pdf-embed";
+import { ProgressIndicator } from "@/components/public/progress-indicator";
 import { ResourceCourseNav } from "@/components/public/resource-course-nav";
 import { ExternalLinkCard } from "@/components/public/external-link-card";
 import { ResourceViewerShell } from "@/components/public/resource-viewer-shell";
 import { TextResourceReader } from "@/components/public/text-resource-reader";
 import { VideoEmbed } from "@/components/public/video-embed";
+import { getCurrentProfile } from "@/lib/auth/get-session";
 import { getCoursOutline } from "@/lib/db/queries/cours";
+import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
 import { getPublishedRessourceById } from "@/lib/db/queries/ressources";
 import {
   defaultDescription,
@@ -91,6 +94,18 @@ export default async function RessourceDetailPage({ params }: Props) {
           label: "Terminer la thématique",
         };
 
+  const profile = await getCurrentProfile();
+  const completedIds = profile
+    ? await getCompletedRessourceIds(
+        profile.id,
+        thematiqueRessources.map((ressource) => ressource.id),
+      )
+    : undefined;
+  const progress =
+    completedIds && thematiqueRessources.length > 0
+      ? (completedIds.size / thematiqueRessources.length) * 100
+      : undefined;
+
   const courseNav = (
     <ResourceCourseNav
       coursTitle={r.thematique.cours.title}
@@ -127,6 +142,9 @@ export default async function RessourceDetailPage({ params }: Props) {
       </h1>
       {r.description && (
         <p className="mt-2 text-muted-foreground">{r.description}</p>
+      )}
+      {progress !== undefined && (
+        <ProgressIndicator value={progress} className="mt-3" />
       )}
 
       <div className="mt-6">

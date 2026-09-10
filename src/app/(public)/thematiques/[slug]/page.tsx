@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BackButton } from "@/components/public/back-button";
-import { ProgressRing } from "@/components/public/progress-ring";
+import { ProgressIndicator } from "@/components/public/progress-indicator";
 import { RessourcesHadithsTabs } from "@/components/public/ressources-hadiths-tabs";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
@@ -65,16 +65,16 @@ export default async function ThematiqueDetailPage({ params }: Props) {
         / <span className="text-foreground">{t.title}</span>
       </nav>
 
-      <div className="mt-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-3xl font-semibold tracking-tight">
-            {t.title}
-          </h1>
-          {t.description && (
-            <p className="mt-2 text-muted-foreground">{t.description}</p>
-          )}
-        </div>
-        {progress !== undefined && <ProgressRing value={progress} />}
+      <div className="mt-4">
+        <h1 className="font-heading text-3xl font-semibold tracking-tight">
+          {t.title}
+        </h1>
+        {t.description && (
+          <p className="mt-2 text-muted-foreground">{t.description}</p>
+        )}
+        {progress !== undefined && (
+          <ProgressIndicator value={progress} className="mt-3" />
+        )}
       </div>
 
       <RessourcesHadithsTabs

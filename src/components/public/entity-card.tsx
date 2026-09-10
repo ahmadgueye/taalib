@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ProgressRing } from "@/components/public/progress-ring";
+import { ProgressIndicator } from "@/components/public/progress-indicator";
 import { cn } from "@/lib/utils";
 
 export function EntityCard({
@@ -53,10 +53,10 @@ export function EntityCard({
               {badge.label}
             </Badge>
           )}
-          <CardAction className="flex items-center gap-2 self-center">
-            {progress !== undefined && (
-              <ProgressRing value={progress} size={34} strokeWidth={3.5} />
-            )}
+          {progress !== undefined && (
+            <ProgressIndicator value={progress} className="mt-2 text-xs" />
+          )}
+          <CardAction className="flex items-center self-center">
             <ChevronRight className="size-4 text-muted-foreground" />
           </CardAction>
         </CardHeader>
