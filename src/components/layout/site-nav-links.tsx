@@ -9,7 +9,7 @@ const links = [
   { href: "/cours", label: "Cours" },
   { href: "/coran", label: "Quran" },
   { href: "/hadiths", label: "Hadith" },
-  { href: "/recherche", label: "Recherche", title: "Recherche (⌘K)" },
+  { href: "/parcours", label: "Parcours" },
 ];
 
 export function SiteNavLinks({ className }: { className?: string }) {

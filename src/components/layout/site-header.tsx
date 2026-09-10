@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UserRound } from "lucide-react";
+import { Search, UserRound } from "lucide-react";
 
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { DonateDialog } from "@/components/layout/donate-dialog";
@@ -39,6 +39,15 @@ export function SiteHeader({
         <div className="flex items-center justify-end gap-2">
           {/* <DonateDialog /> */}
           <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Recherche (⌘K)"
+            render={<Link href="/recherche" />}
+            nativeButton={false}
+          >
+            <Search className="size-4" />
+          </Button>
           {profile ? (
             <DropdownMenu>
               <DropdownMenuTrigger
