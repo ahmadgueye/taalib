@@ -92,7 +92,8 @@ export type ParcoursStep = {
 
 // Une étape est "terminée" quand tous les quiz publiés de sa thématique
 // ont été réussis (meilleur score ≥ seuil du quiz). Sans quiz, rien ne la
-// bloque : elle est considérée terminée dès qu'elle devient active.
+// bloque : elle est considérée terminée dès qu'elle devient active. Un
+// visiteur non connecté n'a par définition rien "terminé".
 export async function getParcoursProgress(
   parcoursWithEtapes: ParcoursWithProgress,
   userId: string | null
@@ -124,10 +125,11 @@ export async function getParcoursProgress(
     });
 
     const thematiqueComplete =
-      quizzes.length === 0 ||
-      quizSummaries.every(
-        (q) => q.bestPercent !== null && q.bestPercent >= q.passingScore
-      );
+      userId !== null &&
+      (quizzes.length === 0 ||
+        quizSummaries.every(
+          (q) => q.bestPercent !== null && q.bestPercent >= q.passingScore
+        ));
 
     const state: ParcoursStepState = !previousComplete
       ? "locked"
