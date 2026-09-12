@@ -40,17 +40,16 @@ export function SearchCommand() {
   }, []);
 
   useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
+    if (query.trim().length < 2) return;
     const timeout = setTimeout(() => {
       searchCatalogueAction(query).then(setResults);
     }, 200);
     return () => clearTimeout(timeout);
   }, [query]);
 
-  const grouped = results.reduce<Record<string, SearchResult[]>>(
+  const visibleResults = query.trim().length < 2 ? [] : results;
+
+  const grouped = visibleResults.reduce<Record<string, SearchResult[]>>(
     (acc, r) => {
       (acc[r.type] ??= []).push(r);
       return acc;
@@ -77,7 +76,7 @@ export function SearchCommand() {
         onValueChange={setQuery}
       />
       <CommandList>
-        {query.trim().length >= 2 && results.length === 0 && (
+        {query.trim().length >= 2 && visibleResults.length === 0 && (
           <CommandEmpty>Aucun résultat.</CommandEmpty>
         )}
         {Object.entries(grouped).map(([type, items]) => (

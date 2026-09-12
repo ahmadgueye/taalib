@@ -29,7 +29,7 @@ export default function Image() {
           maxWidth: 900,
         }}
       >
-        Catalogue de ressources authentiques pour étudier les bases de l'Islam.
+        Catalogue de ressources authentiques pour étudier les bases de l&apos;Islam.
       </div>
     </div>,
     { ...size },

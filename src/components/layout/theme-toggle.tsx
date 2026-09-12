@@ -1,17 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Switch } from "@base-ui/react/switch";
 import { Moon, Sun } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+const noopSubscribe = () => () => {};
+
+// Le thème résolu n'est connu qu'après hydratation (dépend du localStorage) ;
+// useSyncExternalStore force un unique re-render post-hydratation sans
+// déclencher un setState synchrone dans un effet.
+function useMounted() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false
+  );
+}
+
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useMounted();
 
   const isDark = mounted && resolvedTheme === "dark";
 
