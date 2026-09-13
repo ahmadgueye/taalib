@@ -34,8 +34,16 @@ export type MushafId = 1 | 19;
 export const TAJWEED_DARK_PALETTE = "--TajweedDark";
 const TAJWEED_DARK_PALETTE_INDEX = 1;
 
-const loadedPages = new Set<string>();
+const pageFontPromises = new Map<string, Promise<void>>();
+const readyPages = new Set<string>();
 const registeredPalettes = new Set<string>();
+
+// Synchronous check so a component that mounts after a page's font already
+// finished loading (e.g. scrolling back to it) can report "ready" on its
+// very first render, instead of waiting a tick for a .then() to fire.
+export function isQcfPageFontReady(page: number, mushafId: MushafId = 1): boolean {
+  return readyPages.has(`${mushafId}:${page}`);
+}
 
 export function qcfFontFamily(page: number, mushafId: MushafId = 1): string {
   const prefix = mushafId === 19 ? "QCF4" : "QCF2";
@@ -59,15 +67,15 @@ function registerDarkPalette(family: string) {
   );
 }
 
-export async function loadQcfPageFont(
+export function loadQcfPageFont(
   page: number,
   mushafId: MushafId = 1,
 ): Promise<void> {
-  if (typeof document === "undefined") return;
+  if (typeof document === "undefined") return Promise.resolve();
 
   const cacheKey = `${mushafId}:${page}`;
-  if (loadedPages.has(cacheKey)) return;
-  loadedPages.add(cacheKey);
+  const cached = pageFontPromises.get(cacheKey);
+  if (cached) return cached;
 
   const family = qcfFontFamily(page, mushafId);
   const src =
@@ -75,12 +83,21 @@ export async function loadQcfPageFont(
       ? `url(${QCF_V4_TAJWEED_FONT_CDN}/p${page}.woff2) format("woff2")`
       : `url(${QCF_V2_FONT_CDN}/QCF2${String(page).padStart(3, "0")}.ttf) format("truetype")`;
 
-  try {
-    const fontFace = new FontFace(family, src);
-    document.fonts.add(fontFace);
-    await fontFace.load();
-    if (mushafId === 19) registerDarkPalette(family);
-  } catch {
-    loadedPages.delete(cacheKey);
-  }
+  const promise = (async () => {
+    try {
+      // display: "block" is a defensive complement, not the primary fix: it
+      // only buys an invisible period capped at ~3s per spec. The real fix
+      // is the caller gating rendering on this promise (see quran-reader.tsx).
+      const fontFace = new FontFace(family, src, { display: "block" });
+      document.fonts.add(fontFace);
+      await fontFace.load();
+      if (mushafId === 19) registerDarkPalette(family);
+      readyPages.add(cacheKey);
+    } catch {
+      pageFontPromises.delete(cacheKey);
+    }
+  })();
+
+  pageFontPromises.set(cacheKey, promise);
+  return promise;
 }

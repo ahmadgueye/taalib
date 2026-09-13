@@ -16,6 +16,7 @@ import {
 import { SurahCommand } from "@/components/public/surah-command";
 import { TajweedLegend } from "@/components/public/tajweed-legend";
 import {
+  isQcfPageFontReady,
   loadQcfPageFont,
   qcfFontFamily,
   type MushafId,
@@ -159,6 +160,50 @@ function groupIntoLines(verses: QuranVerse[]): Map<number, LineWord[]> {
   return lines;
 }
 
+// Stable identity across re-renders as long as the words on screen haven't
+// actually changed — safe to use as an effect dependency below.
+function useNeededGlyphPages(lines: Map<number, LineWord[]>): number[] {
+  return useMemo(() => {
+    const pages = new Set<number>();
+    for (const words of lines.values()) {
+      for (const word of words) pages.add(word.glyphPage);
+    }
+    return Array.from(pages).sort((a, b) => a - b);
+  }, [lines]);
+}
+
+// Triggers loadQcfPageFont for every page currently needed and reports once
+// all of them have actually finished loading — not just "requested", since
+// loadQcfPageFont's cache can be shared with an earlier still-in-flight
+// caller. isQcfPageFontReady covers the "already loaded from an earlier
+// visit" case synchronously, avoiding a one-tick flash on revisits.
+function useQcfFontsReady(pages: number[], mushafId: MushafId): boolean {
+  const [readyKeys, setReadyKeys] = useState<ReadonlySet<string>>(
+    () => new Set()
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    pages.forEach((page) => {
+      const key = `${mushafId}:${page}`;
+      loadQcfPageFont(page, mushafId).then(() => {
+        if (cancelled) return;
+        setReadyKeys((prev) =>
+          prev.has(key) ? prev : new Set(prev).add(key)
+        );
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [pages, mushafId]);
+
+  return pages.every(
+    (page) =>
+      readyKeys.has(`${mushafId}:${page}`) || isQcfPageFontReady(page, mushafId)
+  );
+}
+
 function MushafLines({
   verses,
   fontSizeRem,
@@ -184,15 +229,8 @@ function MushafLines({
 
   // Fetch the one (or two, at a page boundary) QCF page font(s) actually
   // used by the words on screen — never the whole 604-font set at once.
-  useEffect(() => {
-    const pages = new Set<number>();
-    for (const words of lines.values()) {
-      for (const word of words) pages.add(word.glyphPage);
-    }
-    pages.forEach((page) => {
-      loadQcfPageFont(page, mushafId);
-    });
-  }, [lines, mushafId]);
+  const neededPages = useNeededGlyphPages(lines);
+  const fontsReady = useQcfFontsReady(neededPages, mushafId);
 
   // One shared horizontal scrollbar for the whole page block, not one per
   // line — otherwise every line scrolls independently at larger font sizes
@@ -202,29 +240,40 @@ function MushafLines({
       {Array.from(lines.entries())
         .sort(([a], [b]) => a - b)
         .map(([lineNumber, words]) => (
-          <div
-            key={lineNumber}
-            dir="rtl"
-            style={{ fontSize: `${fontSizeRem}rem` }}
-            className={`flex flex-nowrap items-baseline gap-x-1 leading-[2.2] ${
-              isCenteredPage
-                ? "w-full justify-center"
-                : `w-max min-w-full ${words.length > 2 ? "justify-between" : "justify-start"}`
-            }`}
-          >
-            {words.map((word, i) => (
-              <span
-                key={i}
-                id={
-                  word.isFirstWordOfVerse ? `verse-${word.verseKey}` : undefined
-                }
-                data-tajweed={mushafId === 19 ? "" : undefined}
-                className={word.isFirstWordOfVerse ? "scroll-mt-32" : undefined}
-                style={{ fontFamily: qcfFontFamily(word.glyphPage, mushafId) }}
-              >
-                {word.glyph}
-              </span>
-            ))}
+          <div key={lineNumber} className="relative">
+            {!fontsReady && <Skeleton className="absolute inset-0" />}
+            <div
+              dir="rtl"
+              style={{
+                fontSize: `${fontSizeRem}rem`,
+                visibility: fontsReady ? "visible" : "hidden",
+              }}
+              className={`flex flex-nowrap items-baseline gap-x-1 leading-[2.2] ${
+                isCenteredPage
+                  ? "w-full justify-center"
+                  : `w-max min-w-full ${words.length > 2 ? "justify-between" : "justify-start"}`
+              }`}
+            >
+              {words.map((word, i) => (
+                <span
+                  key={i}
+                  id={
+                    word.isFirstWordOfVerse
+                      ? `verse-${word.verseKey}`
+                      : undefined
+                  }
+                  data-tajweed={mushafId === 19 ? "" : undefined}
+                  className={
+                    word.isFirstWordOfVerse ? "scroll-mt-32" : undefined
+                  }
+                  style={{
+                    fontFamily: qcfFontFamily(word.glyphPage, mushafId),
+                  }}
+                >
+                  {word.glyph}
+                </span>
+              ))}
+            </div>
           </div>
         ))}
     </div>
@@ -280,6 +329,21 @@ export function QuranReader({
   const previousChapter = chaptersById.get(selectedChapterId - 1);
   const nextChapter = chaptersById.get(selectedChapterId + 1);
 
+  // Defends against a stale/superseded fetch (see loadNextPage's token
+  // guard below) ever being shown, and gives every derived value below a
+  // single, trustworthy, page-number-ordered source of truth instead of
+  // each re-deriving from raw fetch-resolution order.
+  const currentChapterPages = useMemo(
+    () =>
+      pages
+        .filter(
+          (p) =>
+            p.verses.length > 0 && p.verses[0].chapterId === selectedChapterId
+        )
+        .sort((a, b) => a.pageNumber - b.pageNumber),
+    [pages, selectedChapterId]
+  );
+
   const verseLabels = useMemo(
     () =>
       Object.fromEntries(
@@ -298,8 +362,9 @@ export function QuranReader({
   // the mushaf-refetch effect below).
   useEffect(() => {
     let cancelled = false;
+    const token = loadTokenRef.current;
     fetchPage(initialPage, initialChapterId, mushafId).then((page) => {
-      if (!cancelled) setPages([page]);
+      if (!cancelled && token === loadTokenRef.current) setPages([page]);
     });
     return () => {
       cancelled = true;
@@ -316,7 +381,7 @@ export function QuranReader({
       return;
     }
     const token = ++loadTokenRef.current;
-    const pageNumbers = pages.map((p) => p.pageNumber);
+    const pageNumbers = currentChapterPages.map((p) => p.pageNumber);
     if (pageNumbers.length === 0) return;
     Promise.all(
       pageNumbers.map((n) => fetchPage(n, selectedChapterId, mushafId)),
@@ -345,11 +410,20 @@ export function QuranReader({
     }
   }, [pages]);
 
-  const lastLoadedPage = pages.at(-1)?.pageNumber ?? initialPage;
+  // currentChapterPages is empty on every chapter switch until the new
+  // chapter's first page lands, so the fallback below can't reuse the
+  // frozen initialPage prop (that would miscompute against the very first
+  // chapter ever loaded, not the one just selected) — it falls back to the
+  // new chapter's first page instead, which is always where goToVerse is
+  // headed for a chapter switch.
+  const lastLoadedPage =
+    currentChapterPages.at(-1)?.pageNumber ??
+    (pages.length === 0 ? initialPage : selectedChapter.firstPage);
   const chapterFullyLoaded = lastLoadedPage >= selectedChapter.lastPage;
 
   async function loadNextPage() {
     if (loadingNext || chapterFullyLoaded) return;
+    const token = loadTokenRef.current;
     setLoadingNext(true);
     try {
       const page = await fetchPage(
@@ -357,6 +431,7 @@ export function QuranReader({
         selectedChapterId,
         mushafId,
       );
+      if (token !== loadTokenRef.current) return;
       setPages((prev) => [...prev, page]);
     } finally {
       setLoadingNext(false);
@@ -380,7 +455,13 @@ export function QuranReader({
     observer.observe(sentinel);
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasMultiplePages, lastLoadedPage, mushafId]);
+  }, [
+    hasMultiplePages,
+    lastLoadedPage,
+    selectedChapterId,
+    chapterFullyLoaded,
+    mushafId,
+  ]);
 
   function updateUrl(chapterId: number, verseNumber: number) {
     const url = new URL(window.location.href);
@@ -508,7 +589,7 @@ export function QuranReader({
       {audioPlayer.elements}
 
       <div className="mx-auto mt-8 max-w-3xl space-y-6">
-        {pages.length === 0 && (
+        {currentChapterPages.length === 0 && (
           <div className="space-y-4">
             <Skeleton className="h-6 w-2/3" />
             <Skeleton className="h-6 w-full" />
@@ -516,7 +597,7 @@ export function QuranReader({
           </div>
         )}
 
-        {pages.map((page) => {
+        {currentChapterPages.map((page) => {
           const chapter = chaptersById.get(
             page.verses[0]?.chapterId ?? selectedChapterId,
           );
