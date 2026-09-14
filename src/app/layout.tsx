@@ -1,26 +1,57 @@
 import type { Metadata, Viewport } from "next";
 import {
-  Inter,
-  Newsreader,
+  Manrope,
   Geist_Mono,
   Noto_Naskh_Arabic,
   Scheherazade_New,
   Amiri,
 } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 
-const inter = Inter({
+const manrope = Manrope({
   variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const newsreader = Newsreader({
+const bluuNext = localFont({
   variable: "--font-heading",
-  subsets: ["latin"],
+  src: [
+    {
+      path: "../../public/fonts/bluu-next/bluunext-titling.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/bluu-next/bluunext-titling.woff",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/bluu-next/bluunext-bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/bluu-next/bluunext-bold.woff",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/bluu-next/bluunext-bolditalic.woff2",
+      weight: "700",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/bluu-next/bluunext-bolditalic.woff",
+      weight: "700",
+      style: "italic",
+    },
+  ],
 });
 
 const geistMono = Geist_Mono({
@@ -77,7 +108,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${inter.variable} ${newsreader.variable} ${geistMono.variable} ${notoNaskhArabic.variable} ${scheherazadeNew.variable} ${amiri.variable} h-full antialiased`}
+      className={`${manrope.variable} ${bluuNext.variable} ${geistMono.variable} ${notoNaskhArabic.variable} ${scheherazadeNew.variable} ${amiri.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
