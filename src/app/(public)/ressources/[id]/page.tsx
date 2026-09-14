@@ -108,6 +108,7 @@ export default async function RessourceDetailPage({ params }: Props) {
 
   const courseNav = (
     <ResourceCourseNav
+      key="course-nav"
       coursTitle={r.thematique.cours.title}
       coursSlug={r.thematique.cours.slug}
       thematiques={thematiques}
@@ -118,6 +119,7 @@ export default async function RessourceDetailPage({ params }: Props) {
   );
   const footerAction = (
     <NextChapterButton
+      key="footer-action"
       ressourceId={r.id}
       href={nextAction.href}
       label={nextAction.label}
