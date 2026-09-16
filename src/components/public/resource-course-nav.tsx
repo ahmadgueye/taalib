@@ -102,8 +102,8 @@ export function ResourceCourseNav({
                     const isCurrent = ressource.id === currentRessourceId;
 
                     const itemClassName = cn(
-                      "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted",
-                      isCurrent && "bg-muted font-medium text-foreground"
+                      "flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+                      isCurrent && "bg-accent font-medium text-accent-foreground"
                     );
 
                     return (

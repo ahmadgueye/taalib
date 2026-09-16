@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { QuranReader } from "@/components/public/quran-reader";
+import { getCurrentProfile } from "@/lib/auth/get-session";
+import { getMemorizationStatus } from "@/lib/db/queries/quran-memorization";
 import { getChapters, getVersePage } from "@/lib/quran/queries";
 
 export const metadata: Metadata = {
@@ -14,7 +16,11 @@ type Props = {
 
 export default async function CoranPage({ searchParams }: Props) {
   const params = await searchParams;
-  const chapters = await getChapters();
+  const [chapters, profile] = await Promise.all([
+    getChapters(),
+    getCurrentProfile(),
+  ]);
+  const memorizationStatus = await getMemorizationStatus(profile?.id ?? null);
 
   const requestedChapterId = Number(params.sourate);
   const chapter =
@@ -41,6 +47,8 @@ export default async function CoranPage({ searchParams }: Props) {
         initialPage={initialPage}
         initialChapterId={chapter.id}
         initialVerseNumber={verseNumber}
+        initialMemorizationStatus={memorizationStatus}
+        isAuthenticated={profile !== null}
       />
     </div>
   );

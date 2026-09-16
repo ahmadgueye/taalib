@@ -8,7 +8,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { createPortal } from "react-dom";
-import { Loader2, Pause, Play, XIcon } from "lucide-react";
+import { Loader2, Pause, Play, Repeat, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import type { QuranChapter, QuranReciter } from "@/lib/quran/types";
@@ -101,7 +108,21 @@ export function useQuranAudioPlayer({
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const loadedAudioKeyRef = useRef<string | null>(null);
-  const isInitialChapterRender = useRef(true);
+  const lastChapterIdRef = useRef(selectedChapterId);
+  const [loopDialogOpen, setLoopDialogOpen] = useState(false);
+  // The queue of per-verse audio URLs currently looping and where we are in
+  // it — a ref because advancing it happens inside the <audio> "ended"
+  // handler and shouldn't itself trigger a re-render.
+  const loopQueueRef = useRef<{ urls: string[]; index: number } | null>(null);
+  const verseAudioCacheRef = useRef<
+    Map<string, { verseKey: string; url: string }[]>
+  >(new Map());
+  // Only for display ("En boucle : versets X-Y") — the actual playback
+  // logic reads loopQueueRef, not this.
+  const [loopRange, setLoopRange] = useState<{
+    startVerseNumber: number;
+    endVerseNumber: number;
+  } | null>(null);
   // The floating player uses `fixed` positioning, which needs to escape
   // whatever ancestor it's mounted under: if that ancestor has a
   // backdrop-filter (e.g. the reader's sticky toolbar uses backdrop-blur),
@@ -126,6 +147,8 @@ export function useQuranAudioPlayer({
   async function playChapterAudio(chapterId: number, recitationId: number) {
     const audio = audioRef.current;
     if (!audio) return;
+    loopQueueRef.current = null;
+    setLoopRange(null);
     setAudioLoading(true);
     try {
       const res = await fetch(
@@ -141,11 +164,68 @@ export function useQuranAudioPlayer({
     }
   }
 
+  async function getVerseAudioList(chapterId: number, recitationId: number) {
+    const key = `${chapterId}:${recitationId}`;
+    const cached = verseAudioCacheRef.current.get(key);
+    if (cached) return cached;
+    const res = await fetch(
+      `/api/quran/verse-audio/${chapterId}?recitation=${recitationId}`,
+    );
+    if (!res.ok) throw new Error("Failed to load verse audio");
+    const { verses } = (await res.json()) as {
+      verses: { verseKey: string; url: string }[];
+    };
+    verseAudioCacheRef.current.set(key, verses);
+    return verses;
+  }
+
+  // Loops a verse range by chaining pre-trimmed per-verse audio files (see
+  // getVerseAudioUrls in queries.ts — the chapter-wide audio file has no
+  // exposed per-verse timestamps to seek within, so this plays short
+  // individual files back-to-back instead of seeking one continuous file).
+  async function playLoop(
+    chapterId: number,
+    startVerseNumber: number,
+    endVerseNumber: number,
+  ) {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setAudioLoading(true);
+    try {
+      const verses = await getVerseAudioList(chapterId, reciterId);
+      const urls = verses
+        .slice(startVerseNumber - 1, endVerseNumber)
+        .map((v) => v.url);
+      if (urls.length === 0) return;
+
+      loadedAudioKeyRef.current = null;
+      loopQueueRef.current = { urls, index: 0 };
+      setLoopRange({ startVerseNumber, endVerseNumber });
+      audio.src = urls[0];
+      // If the user pauses/quits the loop before this settles, pause()
+      // rejects the pending play() with a benign AbortError — nothing to
+      // surface (same race as the one handled in the "ended" handler).
+      await audio.play().catch(() => {});
+    } finally {
+      setAudioLoading(false);
+    }
+  }
+
+  function stopLoop() {
+    loopQueueRef.current = null;
+    setLoopRange(null);
+    audioRef.current?.pause();
+  }
+
   async function togglePlayback() {
     const audio = audioRef.current;
     if (!audio || audioLoading) return;
     if (isPlaying) {
       audio.pause();
+      return;
+    }
+    if (loopQueueRef.current) {
+      await audio.play();
       return;
     }
     const key = `${selectedChapterId}:${reciterId}`;
@@ -181,17 +261,21 @@ export function useQuranAudioPlayer({
 
   function closePlayer() {
     audioRef.current?.pause();
+    loopQueueRef.current = null;
+    setLoopRange(null);
     setPlayerVisible(false);
   }
 
   // If the user manually navigates to another surah while audio is playing
   // (dropdown selection or the prev/next-surah buttons), continue playback
-  // into that surah rather than leaving stale audio running.
+  // into that surah rather than leaving stale audio running. Compares
+  // against the last-seen chapter id (not a "have I run once" boolean) so
+  // this stays correct under StrictMode's dev-only mount→cleanup→mount
+  // replay — a boolean flipped inside the effect body would no longer
+  // block the second (real) invocation.
   useEffect(() => {
-    if (isInitialChapterRender.current) {
-      isInitialChapterRender.current = false;
-      return;
-    }
+    if (lastChapterIdRef.current === selectedChapterId) return;
+    lastChapterIdRef.current = selectedChapterId;
     const loadedChapterId = loadedAudioKeyRef.current
       ? Number(loadedAudioKeyRef.current.split(":")[0])
       : null;
@@ -250,15 +334,35 @@ export function useQuranAudioPlayer({
                     ? `${selectedChapter.id}. ${selectedChapter.nameSimple}`
                     : ""}
                 </p>
-                <button
-                  type="button"
-                  className="truncate text-xs text-muted-foreground hover:underline"
-                  onClick={() => setDialogOpen(true)}
-                >
-                  {reciters.find((r) => r.id === reciterId)?.name ??
-                    "Changer de récitateur"}
-                </button>
+                {loopRange ? (
+                  <button
+                    type="button"
+                    className="truncate text-xs text-muted-foreground hover:underline"
+                    onClick={stopLoop}
+                  >
+                    En boucle : versets {loopRange.startVerseNumber}–
+                    {loopRange.endVerseNumber} (quitter)
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="truncate text-xs text-muted-foreground hover:underline"
+                    onClick={() => setDialogOpen(true)}
+                  >
+                    {reciters.find((r) => r.id === reciterId)?.name ??
+                      "Changer de récitateur"}
+                  </button>
+                )}
               </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Répéter une plage de versets"
+                aria-pressed={loopRange !== null}
+                onClick={() => setLoopDialogOpen(true)}
+              >
+                <Repeat className={loopRange ? "text-primary" : undefined} />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -303,6 +407,22 @@ export function useQuranAudioPlayer({
           document.body,
         )}
 
+      {selectedChapter && (
+        <LoopRangeDialog
+          // Remounts with fresh start/end state whenever the dialog opens
+          // (or the surah changes while open) instead of resetting via an
+          // effect — see https://react.dev/learn/you-might-not-need-an-effect.
+          key={loopDialogOpen ? `open-${selectedChapterId}` : "closed"}
+          open={loopDialogOpen}
+          onOpenChange={setLoopDialogOpen}
+          versesCount={selectedChapter.versesCount}
+          onConfirm={(start, end) => {
+            setLoopDialogOpen(false);
+            playLoop(selectedChapterId, start, end);
+          }}
+        />
+      )}
+
       <audio
         ref={audioRef}
         className="hidden"
@@ -310,12 +430,94 @@ export function useQuranAudioPlayer({
         onPause={() => setIsPlaying(false)}
         onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-        onEnded={() => setIsPlaying(false)}
+        onEnded={() => {
+          const queue = loopQueueRef.current;
+          const audio = audioRef.current;
+          if (queue && audio) {
+            const nextIndex = (queue.index + 1) % queue.urls.length;
+            loopQueueRef.current = { ...queue, index: nextIndex };
+            audio.src = queue.urls[nextIndex];
+            // Fire-and-forget: on very short verses (e.g. "الم"), the next
+            // `ended` can supersede this play() before its promise settles,
+            // which rejects with a benign AbortError — nothing to surface.
+            audio.play().catch(() => {});
+            return;
+          }
+          setIsPlaying(false);
+        }}
       />
     </>
   );
 
   return { isPlaying, audioLoading, handlePlayButtonClick, elements };
+}
+
+function LoopRangeDialog({
+  open,
+  onOpenChange,
+  versesCount,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  versesCount: number;
+  onConfirm: (startVerseNumber: number, endVerseNumber: number) => void;
+}) {
+  const [start, setStart] = useState(1);
+  const [end, setEnd] = useState(Math.min(3, versesCount));
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Répéter une plage de versets</DialogTitle>
+          <DialogDescription>
+            La sourate en cours sera lue en boucle entre ces deux versets.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Du verset</span>
+          <Select
+            value={String(start)}
+            onValueChange={(value) => value && setStart(Number(value))}
+          >
+            <SelectTrigger size="sm" className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: versesCount }, (_, i) => (
+                <SelectItem key={i + 1} value={String(i + 1)}>
+                  {i + 1}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">au verset</span>
+          <Select
+            value={String(end)}
+            onValueChange={(value) => value && setEnd(Number(value))}
+          >
+            <SelectTrigger size="sm" className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: versesCount }, (_, i) => (
+                <SelectItem key={i + 1} value={String(i + 1)}>
+                  {i + 1}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button
+          disabled={end < start}
+          onClick={() => onConfirm(start, end)}
+        >
+          Lancer la boucle
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function QuranPlayButton({

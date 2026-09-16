@@ -6,15 +6,25 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  useTransition,
 } from "react";
 import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import { toast } from "sonner";
 
+import { MemorizationProgressBar } from "@/components/public/memorization-progress-bar";
 import {
   QuranPlayButton,
   useQuranAudioPlayer,
 } from "@/components/public/quran-audio-player";
 import { SurahCommand } from "@/components/public/surah-command";
 import { TajweedLegend } from "@/components/public/tajweed-legend";
+import { setVerseMemorizationStatus } from "@/lib/actions/memorization";
+import type { MemorizationStatus } from "@/lib/db/schema";
+import {
+  MEMORIZATION_STYLES,
+  memorizationStatusLabel,
+  nextMemorizationStatus,
+} from "@/lib/quran/memorization";
 import {
   isQcfPageFontReady,
   loadQcfPageFont,
@@ -32,6 +42,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import type { QuranChapter, QuranPage, QuranVerse } from "@/lib/quran/types";
 
 type ViewMode = "arabic" | "arabic-fr";
@@ -210,12 +221,16 @@ function MushafLines({
   mushafId,
   pageNumber,
   singlePageChapter,
+  statusMap,
+  onVerseTap,
 }: {
   verses: QuranVerse[];
   fontSizeRem: number;
   mushafId: MushafId;
   pageNumber: number;
   singlePageChapter: boolean;
+  statusMap: Record<string, MemorizationStatus>;
+  onVerseTap: (verseKey: string) => void;
 }) {
   const lines = useMemo(() => groupIntoLines(verses), [verses]);
 
@@ -254,25 +269,36 @@ function MushafLines({
                   : `w-max min-w-full ${words.length > 2 ? "justify-between" : "justify-start"}`
               }`}
             >
-              {words.map((word, i) => (
-                <span
-                  key={i}
-                  id={
-                    word.isFirstWordOfVerse
-                      ? `verse-${word.verseKey}`
-                      : undefined
-                  }
-                  data-tajweed={mushafId === 19 ? "" : undefined}
-                  className={
-                    word.isFirstWordOfVerse ? "scroll-mt-32" : undefined
-                  }
-                  style={{
-                    fontFamily: qcfFontFamily(word.glyphPage, mushafId),
-                  }}
-                >
-                  {word.glyph}
-                </span>
-              ))}
+              {words.map((word, i) => {
+                const status = statusMap[word.verseKey];
+                return (
+                  <span
+                    key={i}
+                    id={
+                      word.isFirstWordOfVerse
+                        ? `verse-${word.verseKey}`
+                        : undefined
+                    }
+                    data-tajweed={mushafId === 19 ? "" : undefined}
+                    className={cn(
+                      "cursor-pointer",
+                      word.isFirstWordOfVerse && "scroll-mt-32",
+                      status && MEMORIZATION_STYLES[status].tint
+                    )}
+                    style={{
+                      fontFamily: qcfFontFamily(word.glyphPage, mushafId),
+                    }}
+                    onClick={() => {
+                      // Skip the tap if this click is the tail end of a
+                      // text selection/drag, not an actual tap.
+                      if (window.getSelection()?.toString()) return;
+                      onVerseTap(word.verseKey);
+                    }}
+                  >
+                    {word.glyph}
+                  </span>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -285,16 +311,66 @@ export function QuranReader({
   initialPage,
   initialChapterId,
   initialVerseNumber,
+  initialMemorizationStatus,
+  isAuthenticated,
 }: {
   chapters: QuranChapter[];
   initialPage: number;
   initialChapterId: number;
   initialVerseNumber: number;
+  initialMemorizationStatus: Record<string, MemorizationStatus>;
+  isAuthenticated: boolean;
 }) {
   const chaptersById = useMemo(
     () => new Map(chapters.map((c) => [c.id, c])),
     [chapters],
   );
+
+  const [statusMap, setStatusMap] = useState(initialMemorizationStatus);
+  const [, startStatusTransition] = useTransition();
+
+  // Tap-to-cycle a verse's memorization status. Updates the UI immediately
+  // (a tap must feel instant) and rolls back only if the server action
+  // reports an error — no loading state, no revalidation round-trip.
+  function handleVerseTap(verseKey: string) {
+    if (!isAuthenticated) {
+      toast.error("Connecte-toi pour suivre ta mémorisation.");
+      return;
+    }
+    const previous = statusMap[verseKey] ?? null;
+    const next = nextMemorizationStatus(previous);
+
+    setStatusMap((prev) => {
+      const draft = { ...prev };
+      if (next === null) delete draft[verseKey];
+      else draft[verseKey] = next;
+      return draft;
+    });
+    // Fixed id: repeated taps replace this toast in place instead of
+    // stacking a new one each time, which would bury the current status
+    // under a pile of past ones.
+    toast(`Verset marqué : ${memorizationStatusLabel(next)}`, {
+      id: "memorization-status",
+    });
+
+    startStatusTransition(async () => {
+      const [chapterId, verseNumber] = verseKey.split(":").map(Number);
+      const result = await setVerseMemorizationStatus(
+        chapterId,
+        verseNumber,
+        next,
+      );
+      if (result.error) {
+        setStatusMap((prev) => {
+          const draft = { ...prev };
+          if (previous === null) delete draft[verseKey];
+          else draft[verseKey] = previous;
+          return draft;
+        });
+        toast.error(result.error);
+      }
+    });
+  }
 
   const [selectedChapterId, setSelectedChapterId] = useState(initialChapterId);
   const [selectedVerseNumber, setSelectedVerseNumber] =
@@ -322,7 +398,7 @@ export function QuranReader({
   );
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const loadTokenRef = useRef(0);
-  const isInitialMushafRender = useRef(true);
+  const lastMushafIdRef = useRef(mushafId);
 
   const selectedChapter = chaptersById.get(selectedChapterId) ?? chapters[0];
   const hasMultiplePages = selectedChapter.lastPage > selectedChapter.firstPage;
@@ -374,12 +450,16 @@ export function QuranReader({
 
   // The tajweed script uses different glyph codes than the plain one, so
   // toggling it requires re-fetching every page already on screen — not just
-  // the ones loaded from now on.
+  // the ones loaded from now on. Compares against the last-seen mushafId
+  // (rather than a "have I run once yet" boolean) so the skip-on-mount check
+  // stays correct under StrictMode's mount→cleanup→mount dev replay: a
+  // boolean flipped inside the effect body survives that replay and no
+  // longer blocks the second (real) invocation, which would otherwise bump
+  // loadTokenRef before the mount-effect's own fetch above resolves and
+  // silently discard it.
   useEffect(() => {
-    if (isInitialMushafRender.current) {
-      isInitialMushafRender.current = false;
-      return;
-    }
+    if (lastMushafIdRef.current === mushafId) return;
+    lastMushafIdRef.current = mushafId;
     const token = ++loadTokenRef.current;
     const pageNumbers = currentChapterPages.map((p) => p.pageNumber);
     if (pageNumbers.length === 0) return;
@@ -584,6 +664,13 @@ export function QuranReader({
           </Tabs>
         </div>
         <TajweedLegend show={tajweedEnabled} />
+        {isAuthenticated && (
+          <MemorizationProgressBar
+            chapterId={selectedChapterId}
+            statusMap={statusMap}
+            totalVerses={selectedChapter.versesCount}
+          />
+        )}
       </div>
 
       {audioPlayer.elements}
@@ -655,15 +742,25 @@ export function QuranReader({
                   singlePageChapter={
                     chapter ? chapter.firstPage === chapter.lastPage : false
                   }
+                  statusMap={statusMap}
+                  onVerseTap={handleVerseTap}
                 />
               ) : (
                 page.verses.map((verse) => {
                   const { bodyWords, endText } = splitVerseWords(verse);
+                  const status = statusMap[verse.verseKey];
                   return (
                     <div
                       key={verse.verseKey}
                       id={`verse-${verse.verseKey}`}
-                      className="mb-5 scroll-mt-32"
+                      className={cn(
+                        "-mx-2 mb-5 scroll-mt-32 cursor-pointer rounded-md px-2 py-1 transition-colors",
+                        status && MEMORIZATION_STYLES[status].tint
+                      )}
+                      onClick={() => {
+                        if (window.getSelection()?.toString()) return;
+                        handleVerseTap(verse.verseKey);
+                      }}
                     >
                       <p
                         dir="rtl"

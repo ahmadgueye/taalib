@@ -152,3 +152,32 @@ export async function getChapterAudioUrl(
   );
   return data.audio_file.audio_url;
 }
+
+// CDN base for the per-ayah files returned by /quran/recitations/{id} —
+// that endpoint only gives relative paths ("Alafasy/mp3/001001.mp3").
+const VERSE_AUDIO_BASE_URL = "https://verses.quran.com/";
+
+type VerseAudioResponse = {
+  audio_files: { verse_key: string; url: string }[];
+};
+
+// Unlike getChapterAudioUrl (one continuous file per surah, no per-verse
+// timing exposed by this API — confirmed empirically, the /chapter_recitations
+// endpoint never returns verse timestamps even with fields=timestamps), this
+// returns one short pre-trimmed audio file per verse. That's what makes
+// looping an arbitrary verse range possible: play the range's files in
+// sequence and wrap back to the first on the last one's `ended` event.
+export async function getVerseAudioUrls(
+  recitationId: number,
+  chapterId: number
+): Promise<{ verseKey: string; url: string }[]> {
+  const data = await quranFetch<VerseAudioResponse>(
+    "/quran/recitations/" + recitationId,
+    { chapter_number: chapterId },
+    86400
+  );
+  return data.audio_files.map((f) => ({
+    verseKey: f.verse_key,
+    url: `${VERSE_AUDIO_BASE_URL}${f.url}`,
+  }));
+}

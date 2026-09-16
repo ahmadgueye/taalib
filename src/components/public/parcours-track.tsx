@@ -46,7 +46,7 @@ function StepMarker({
           "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-400 dark:text-emerald-950",
         state === "active" && "bg-background border-foreground text-foreground",
         state === "locked" &&
-          "bg-background border-border text-muted-foreground",
+          "bg-background border-border text-locked-foreground",
       )}
     >
       {state === "completed" ? (
@@ -72,18 +72,18 @@ function StepCard({
   if (state === "locked") {
     return (
       <div className="flex-1 border border-dashed bg-muted p-4">
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-locked-foreground">
           {thematique.cours.title}
         </div>
-        <div className="font-medium text-muted-foreground">
+        <div className="font-medium text-locked-foreground">
           {thematique.title}
         </div>
         {thematique.description && (
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-locked-foreground">
             {thematique.description}
           </p>
         )}
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-locked-foreground">
           <Lock className="size-3.5 shrink-0" />
           {previousTitle
             ? `Débloqué en réussissant les quiz de « ${previousTitle} »`

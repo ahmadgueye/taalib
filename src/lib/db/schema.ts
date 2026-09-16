@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   date,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -31,6 +32,13 @@ export const questionTypeEnum = pgEnum("question_type", [
   "qcm",
   "vrai_faux",
 ]);
+export const memorizationStatusEnum = pgEnum("memorization_status", [
+  "en_cours",
+  "a_renforcer",
+  "maitrise",
+]);
+export type MemorizationStatus =
+  (typeof memorizationStatusEnum.enumValues)[number];
 
 // Mirrors auth.users (Supabase-managed). One row per authenticated user.
 export const profiles = pgTable("profiles", {
@@ -278,6 +286,31 @@ export const parcoursEtapes = pgTable(
   (table) => [unique().on(table.parcoursId, table.thematiqueId)]
 );
 
+export const quranMemorization = pgTable(
+  "quran_memorization",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    chapterId: integer("chapter_id").notNull(),
+    verseNumber: integer("verse_number").notNull(),
+    // Dénormalisé ("2:255") pour un lookup direct côté client sans
+    // reconstruire la clé à partir de chapterId+verseNumber.
+    verseKey: text("verse_key").notNull(),
+    status: memorizationStatusEnum("status").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.verseKey] }),
+    index("quran_memorization_user_chapter_idx").on(
+      table.userId,
+      table.chapterId
+    ),
+  ]
+);
+
 export const coursRelations = relations(cours, ({ many }) => ({
   thematiques: many(thematiques),
 }));
@@ -430,6 +463,16 @@ export const parcoursEtapesRelations = relations(
     thematique: one(thematiques, {
       fields: [parcoursEtapes.thematiqueId],
       references: [thematiques.id],
+    }),
+  })
+);
+
+export const quranMemorizationRelations = relations(
+  quranMemorization,
+  ({ one }) => ({
+    user: one(profiles, {
+      fields: [quranMemorization.userId],
+      references: [profiles.id],
     }),
   })
 );
