@@ -31,7 +31,7 @@ export function MemorizationProgressBar({
   const memorizedPercent = Math.round((maitriseCount / totalVerses) * 100);
 
   return (
-    <div className="flex items-center gap-3 px-6 py-2">
+    <div className="flex flex-wrap justify-center items-center gap-3 px-6 py-2">
       <div className="flex min-w-0 items-center gap-2">
         <div className="flex h-1.5 w-60 shrink-0 overflow-hidden rounded-full bg-muted">
           {verses.map(({ verseNumber, status }) => (
@@ -51,7 +51,7 @@ export function MemorizationProgressBar({
       </div>
       <Link
         href="/memorisation"
-        className="ml-auto shrink-0 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        className="ml-auto shrink-0 text-xs block text-muted-foreground underline underline-offset-2 hover:text-foreground"
       >
         Gérer mon parcours
       </Link>
