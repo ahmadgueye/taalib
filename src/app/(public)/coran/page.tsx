@@ -49,6 +49,9 @@ export default async function CoranPage({ searchParams }: Props) {
         initialVerseNumber={verseNumber}
         initialMemorizationStatus={memorizationStatus}
         isAuthenticated={profile !== null}
+        hasExplicitPosition={
+          params.sourate !== undefined || params.verset !== undefined
+        }
       />
     </div>
   );

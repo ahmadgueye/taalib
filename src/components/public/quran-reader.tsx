@@ -102,6 +102,31 @@ const fontSizeStore = createPersistedState<number>(
   },
 );
 
+const LAST_POSITION_STORAGE_KEY = "deenshare:quran-last-position";
+
+type LastPosition = { chapterId: number; verseNumber: number };
+
+function readLastPosition(): LastPosition | null {
+  const raw = window.localStorage.getItem(LAST_POSITION_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<LastPosition>;
+    return typeof parsed.chapterId === "number" &&
+      typeof parsed.verseNumber === "number"
+      ? { chapterId: parsed.chapterId, verseNumber: parsed.verseNumber }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLastPosition(position: LastPosition) {
+  window.localStorage.setItem(
+    LAST_POSITION_STORAGE_KEY,
+    JSON.stringify(position),
+  );
+}
+
 // The API's "end" word already carries the correctly formatted Arabic-Indic
 // digit(s) for that ayah (e.g. "٢٥٥") — the UthmanicHafs font draws it as the
 // traditional verse-end medallion on its own, no extra mark needed.
@@ -313,6 +338,7 @@ export function QuranReader({
   initialVerseNumber,
   initialMemorizationStatus,
   isAuthenticated,
+  hasExplicitPosition,
 }: {
   chapters: QuranChapter[];
   initialPage: number;
@@ -320,6 +346,7 @@ export function QuranReader({
   initialVerseNumber: number;
   initialMemorizationStatus: Record<string, MemorizationStatus>;
   isAuthenticated: boolean;
+  hasExplicitPosition: boolean;
 }) {
   const chaptersById = useMemo(
     () => new Map(chapters.map((c) => [c.id, c])),
@@ -393,6 +420,10 @@ export function QuranReader({
   );
   const [pages, setPages] = useState<QuranPage[]>([]);
   const [loadingNext, setLoadingNext] = useState(false);
+  const [visiblePageNumber, setVisiblePageNumber] = useState<number | null>(
+    null,
+  );
+  const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const pendingVerseKey = useRef<string | null>(
     initialVerseNumber > 1 ? `${initialChapterId}:${initialVerseNumber}` : null,
   );
@@ -437,6 +468,18 @@ export function QuranReader({
   // the persisted value — it isn't meant to react to later toggles (that's
   // the mushaf-refetch effect below).
   useEffect(() => {
+    // No sourate/verset in the URL: silently resume the last position read
+    // on this device instead of always landing back on Al-Fatiha.
+    const saved = hasExplicitPosition ? null : readLastPosition();
+    if (
+      saved &&
+      (saved.chapterId !== initialChapterId ||
+        saved.verseNumber !== initialVerseNumber)
+    ) {
+      loadPagesUpTo(saved.chapterId, saved.verseNumber);
+      return;
+    }
+
     let cancelled = false;
     const token = loadTokenRef.current;
     fetchPage(initialPage, initialChapterId, mushafId).then((page) => {
@@ -447,6 +490,54 @@ export function QuranReader({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Scrollspy for reading progress: infinite scroll prefetches the next
+  // page ~800px before it's actually seen, so "the last page that landed"
+  // (used by an earlier version of this effect) runs ahead of what the
+  // user has really read. Tracking which page currently occupies the top
+  // reading band of the viewport instead ties the saved position to what's
+  // on screen, not what's been fetched in the background.
+  useEffect(() => {
+    const intersecting = new Set<number>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const pageNumber = Number(
+            (entry.target as HTMLElement).dataset.pageNumber,
+          );
+          if (Number.isNaN(pageNumber)) continue;
+          if (entry.isIntersecting) intersecting.add(pageNumber);
+          else intersecting.delete(pageNumber);
+        }
+        // Several loaded pages can overlap the band at once when they're
+        // short; the furthest one along is the one actually being read,
+        // since pages within a chapter are always read in increasing order.
+        if (intersecting.size > 0) {
+          setVisiblePageNumber(Math.max(...intersecting));
+        }
+      },
+      // Only the top 40% of the viewport counts as "currently reading" —
+      // matches the classic scrollspy trick, and stays forgiving for short
+      // pages that don't reach halfway down the screen.
+      { rootMargin: "0px 0px -60% 0px", threshold: 0 },
+    );
+    pageRefs.current.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [currentChapterPages]);
+
+  // Persists whatever the scrollspy above currently considers "on screen".
+  useEffect(() => {
+    if (visiblePageNumber == null) return;
+    const page = currentChapterPages.find(
+      (p) => p.pageNumber === visiblePageNumber,
+    );
+    const firstVerse = page?.verses[0];
+    if (!firstVerse) return;
+    writeLastPosition({
+      chapterId: selectedChapterId,
+      verseNumber: firstVerse.verseNumber,
+    });
+  }, [visiblePageNumber, currentChapterPages, selectedChapterId]);
 
   // The tajweed script uses different glyph codes than the plain one, so
   // toggling it requires re-fetching every page already on screen — not just
@@ -512,7 +603,11 @@ export function QuranReader({
         mushafId,
       );
       if (token !== loadTokenRef.current) return;
-      setPages((prev) => [...prev, page]);
+      setPages((prev) =>
+        prev.some((p) => p.pageNumber === page.pageNumber)
+          ? prev
+          : [...prev, page],
+      );
     } finally {
       setLoadingNext(false);
     }
@@ -542,6 +637,39 @@ export function QuranReader({
     chapterFullyLoaded,
     mushafId,
   ]);
+
+  // Restores every page from the chapter's start up to the saved one, so
+  // resuming mid-chapter doesn't drop the reader onto an isolated page with
+  // no scroll-back context — unlike goToVerse's single-page jump, which is
+  // fine for an explicit search but would make a resumed chapter look cut
+  // off at the top.
+  async function loadPagesUpTo(chapterId: number, verseNumber: number) {
+    const chapter = chaptersById.get(chapterId);
+    if (!chapter) return;
+    const token = ++loadTokenRef.current;
+    const targetPage = await fetchVersePage(chapterId, verseNumber);
+    if (token !== loadTokenRef.current) return;
+
+    updateUrl(chapterId, verseNumber);
+    pendingVerseKey.current = `${chapterId}:${verseNumber}`;
+
+    const pageNumbers = Array.from(
+      { length: targetPage - chapter.firstPage + 1 },
+      (_, i) => chapter.firstPage + i,
+    );
+    const fetchedPages = await Promise.all(
+      pageNumbers.map((p) => fetchPage(p, chapterId, mushafId)),
+    );
+    if (token !== loadTokenRef.current) return;
+    // Set together in one commit: selectedChapterId must never be visible
+    // with a `pages` array from a different chapter, or the infinite-scroll
+    // effect below computes lastLoadedPage/chapterFullyLoaded from that
+    // mismatched pairing and can fetch (and duplicate) a page that's
+    // already part of fetchedPages.
+    setSelectedChapterId(chapterId);
+    setSelectedVerseNumber(verseNumber);
+    setPages(fetchedPages);
+  }
 
   function updateUrl(chapterId: number, verseNumber: number) {
     const url = new URL(window.location.href);
@@ -691,7 +819,14 @@ export function QuranReader({
           const showChapterHeading = page.verses[0]?.verseNumber === 1;
 
           return (
-            <div key={page.pageNumber}>
+            <div
+              key={page.pageNumber}
+              data-page-number={page.pageNumber}
+              ref={(el) => {
+                if (el) pageRefs.current.set(page.pageNumber, el);
+                else pageRefs.current.delete(page.pageNumber);
+              }}
+            >
               {showChapterHeading && chapter && (
                 <div className="mb-8 space-y-6">
                   <Card className="flex-col justify-center items-center gap-4 bg-muted/50 p-2 text-center sm:flex-row sm:gap-6 sm:text-left">
