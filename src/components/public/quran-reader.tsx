@@ -64,7 +64,7 @@ const FONT_SIZE_DEFAULT = 2.25;
 // that 1.5rem could still force a page's widest mushaf lines wider than the
 // viewport — going smaller gives those users the same "always fits" option.
 const FONT_SIZE_MIN = 1;
-const FONT_SIZE_MAX = 4;
+const FONT_SIZE_MAX = 4.5;
 const FONT_SIZE_STEP = 0.25;
 
 // Small localStorage-backed store, factored once since the reader has three
@@ -1094,58 +1094,58 @@ export function QuranReader({
   return (
     <div>
       {!zenMode && (
-      <div className="sticky top-[63px] z-20 -mx-6 border-b bg-background/95 backdrop-blur-sm">
-        <div className="flex flex-wrap items-center gap-2 px-6 py-3">
-          {chapterVerseSelector}
-          <div className="ml-auto flex items-center gap-1">
-            {fontSizeControls}
-            <Button
-              variant={tajweedEnabled ? "default" : "outline"}
-              size="sm"
-              aria-pressed={tajweedEnabled}
-              disabled={viewMode !== "arabic"}
-              title={
-                viewMode !== "arabic"
-                  ? "Le tajwid n'est disponible qu'en mode Lecture"
-                  : undefined
-              }
-              onClick={() => tajweedStore.setStored(!tajweedEnabled)}
-            >
-              Tajwid
-            </Button>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              aria-label="Activer le mode Zen"
-              onClick={() => zenModeStore.setStored(true)}
-            >
-              <Maximize2 />
-            </Button>
+        <div className="sticky top-[63px] z-20 w-screen -ml-[calc(50vw-50%)] -mr-[calc(50vw-50%)] border-b bg-background/95 backdrop-blur-sm">
+          <div className="mx-auto w-full max-w-5xl">
+            <div className="flex flex-wrap items-center gap-2 px-6 py-3">
+              {chapterVerseSelector}
+              <div className="ml-auto flex items-center gap-1">
+                {fontSizeControls}
+                <Button
+                  variant={tajweedEnabled ? "default" : "outline"}
+                  size="sm"
+                  aria-pressed={tajweedEnabled}
+                  disabled={viewMode !== "arabic"}
+                  title={
+                    viewMode !== "arabic"
+                      ? "Le tajwid n'est disponible qu'en mode Lecture"
+                      : undefined
+                  }
+                  onClick={() => tajweedStore.setStored(!tajweedEnabled)}
+                >
+                  Tajwid
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  aria-label="Activer le mode Zen"
+                  onClick={() => zenModeStore.setStored(true)}
+                >
+                  <Maximize2 />
+                </Button>
+              </div>
+              <Tabs
+                value={viewMode}
+                onValueChange={(value) =>
+                  viewModeStore.setStored(value as ViewMode)
+                }
+              >
+                <TabsList>
+                  <TabsTrigger value="arabic">Lecture</TabsTrigger>
+                  <TabsTrigger value="arabic-fr">Ayah par ayah</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            {isAuthenticated && (
+              <MemorizationProgressBar
+                chapterId={selectedChapterId}
+                statusMap={statusMap}
+                totalVerses={selectedChapter.versesCount}
+              />
+            )}
+            <TajweedLegend show={tajweedEnabled} />
           </div>
-          <Tabs
-            value={viewMode}
-            onValueChange={(value) =>
-              viewModeStore.setStored(value as ViewMode)
-            }
-          >
-            <TabsList>
-              <TabsTrigger value="arabic">Lecture</TabsTrigger>
-              <TabsTrigger value="arabic-fr">Ayah par ayah</TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
-        <TajweedLegend show={tajweedEnabled} />
-        {isAuthenticated && (
-          <MemorizationProgressBar
-            chapterId={selectedChapterId}
-            statusMap={statusMap}
-            totalVerses={selectedChapter.versesCount}
-          />
-        )}
-      </div>
       )}
-
-      {audioPlayer.elements}
 
       {/*
         The mushaf view's lines are typeset (via the per-page QCF font) to
@@ -1166,7 +1166,9 @@ export function QuranReader({
         cap) and the width cap (inner div, max-w-7xl mx-auto) are split
         across two nested elements instead.
       */}
-      {!zenMode && readingContent}
+      <div className={audioPlayer.playerVisible ? "pb-24" : undefined}>
+        {!zenMode && readingContent}
+      </div>
 
       <ZenDialog.Root
         open={zenMode}
@@ -1202,7 +1204,12 @@ export function QuranReader({
                 </ZenDialog.Close>
               </div>
             )}
-            <div className="min-h-full px-6 pt-20 pb-12">
+            <div
+              className={cn(
+                "min-h-full px-6 pt-20",
+                audioPlayer.playerVisible ? "pb-24" : "pb-12",
+              )}
+            >
               {zenMode && readingContent}
             </div>
           </ZenDialog.Popup>
@@ -1254,6 +1261,8 @@ export function QuranReader({
           </Menu.Positioner>
         </Menu.Portal>
       </Menu.Root>
+
+      {audioPlayer.elements}
     </div>
   );
 }

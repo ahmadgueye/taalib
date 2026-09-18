@@ -27,7 +27,11 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import type { QuranChapter, QuranReciter, VerseTiming } from "@/lib/quran/types";
+import type {
+  QuranChapter,
+  QuranReciter,
+  VerseTiming,
+} from "@/lib/quran/types";
 
 const DEFAULT_RECITER_ID = 7; // Mishary Rashid al-`Afasy
 
@@ -46,7 +50,10 @@ function findActiveVerseTiming(
   return null;
 }
 
-function findActiveWordPosition(timing: VerseTiming, tMs: number): number | null {
+function findActiveWordPosition(
+  timing: VerseTiming,
+  tMs: number,
+): number | null {
   for (let i = timing.words.length - 1; i >= 0; i--) {
     if (timing.words[i].timestampFrom <= tMs) return timing.words[i].position;
   }
@@ -217,17 +224,18 @@ export function useQuranAudioPlayer({
       // in-flight chapter as the current one, not the outgoing one.
       loadedAudioKeyRef.current = key;
       const [{ audioUrl }] = await Promise.all([
-        fetch(`/api/quran/chapter-audio/${chapterId}?recitation=${recitationId}`).then(
-          (res) => {
-            if (!res.ok) throw new Error("Failed to load audio");
-            return res.json() as Promise<{ audioUrl: string }>;
-          },
-        ),
+        fetch(
+          `/api/quran/chapter-audio/${chapterId}?recitation=${recitationId}`,
+        ).then((res) => {
+          if (!res.ok) throw new Error("Failed to load audio");
+          return res.json() as Promise<{ audioUrl: string }>;
+        }),
         getVerseTimingsList(chapterId, recitationId)
           .then((timings) => {
             // Guards against a stale response landing after the user has
             // already moved on to another chapter/reciter.
-            if (loadedAudioKeyRef.current === key) activeTimingsRef.current = timings;
+            if (loadedAudioKeyRef.current === key)
+              activeTimingsRef.current = timings;
           })
           .catch(() => {}), // Highlighting is a bonus — playback must not fail if it does.
       ]);
@@ -411,9 +419,42 @@ export function useQuranAudioPlayer({
       {playerVisible &&
         mounted &&
         createPortal(
-          <div className="fixed right-4 bottom-20 z-45 w-72 rounded-xl border bg-popover p-3 shadow-lg ring-1 ring-foreground/10 sm:right-6 sm:bottom-6">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
+          <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/85 backdrop-blur-sm">
+            <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 sm:px-6">
+              <Button
+                variant="outline"
+                size="icon-sm"
+                aria-label={isPlaying ? "Mettre en pause" : "Lire"}
+                disabled={audioLoading}
+                onClick={togglePlayback}
+              >
+                {audioLoading ? (
+                  <Loader2 className="animate-spin" />
+                ) : isPlaying ? (
+                  <Pause />
+                ) : (
+                  <Play />
+                )}
+              </Button>
+
+              <div className="order-3 flex w-full items-center gap-2 sm:order-none sm:w-auto sm:flex-1">
+                <span className="w-9 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                  {formatTime(currentTime)}
+                </span>
+                <Slider
+                  value={Math.min(currentTime, duration || 1)}
+                  min={0}
+                  max={duration || 1}
+                  step={1}
+                  onValueChange={handleSeek}
+                  className="flex-1"
+                />
+                <span className="w-9 shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {formatTime(duration)}
+                </span>
+              </div>
+
+              <div className="min-w-0 sm:max-w-56 sm:flex-1">
                 <p className="truncate text-sm font-medium">
                   {selectedChapter
                     ? `${selectedChapter.id}. ${selectedChapter.nameSimple}`
@@ -439,54 +480,26 @@ export function useQuranAudioPlayer({
                   </button>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Répéter une plage de versets"
-                aria-pressed={loopRange !== null}
-                onClick={() => setLoopDialogOpen(true)}
-              >
-                <Repeat className={loopRange ? "text-primary" : undefined} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Fermer le lecteur"
-                onClick={closePlayer}
-              >
-                <XIcon />
-              </Button>
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon-sm"
-                aria-label={isPlaying ? "Mettre en pause" : "Lire"}
-                disabled={audioLoading}
-                onClick={togglePlayback}
-              >
-                {audioLoading ? (
-                  <Loader2 className="animate-spin" />
-                ) : isPlaying ? (
-                  <Pause />
-                ) : (
-                  <Play />
-                )}
-              </Button>
-              <span className="w-9 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
-                {formatTime(currentTime)}
-              </span>
-              <Slider
-                value={Math.min(currentTime, duration || 1)}
-                min={0}
-                max={duration || 1}
-                step={1}
-                onValueChange={handleSeek}
-                className="flex-1"
-              />
-              <span className="w-9 shrink-0 text-xs text-muted-foreground tabular-nums">
-                {formatTime(duration)}
-              </span>
+
+              <div className="ml-auto flex items-center gap-1 sm:ml-0">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Répéter une plage de versets"
+                  aria-pressed={loopRange !== null}
+                  onClick={() => setLoopDialogOpen(true)}
+                >
+                  <Repeat className={loopRange ? "text-primary" : undefined} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Fermer le lecteur"
+                  onClick={closePlayer}
+                >
+                  <XIcon />
+                </Button>
+              </div>
             </div>
           </div>,
           document.body,
@@ -523,7 +536,9 @@ export function useQuranAudioPlayer({
           if (!timings) return;
           const verseTiming = findActiveVerseTiming(timings, t * 1000);
           setActiveVerseKey((prev) =>
-            verseTiming?.verseKey === prev ? prev : (verseTiming?.verseKey ?? null),
+            verseTiming?.verseKey === prev
+              ? prev
+              : (verseTiming?.verseKey ?? null),
           );
           const wordPosition = verseTiming
             ? findActiveWordPosition(verseTiming, t * 1000)
@@ -556,6 +571,7 @@ export function useQuranAudioPlayer({
   return {
     isPlaying,
     audioLoading,
+    playerVisible,
     handlePlayButtonClick,
     activeVerseKey,
     activeWordPosition,
@@ -620,10 +636,7 @@ function LoopRangeDialog({
             </SelectContent>
           </Select>
         </div>
-        <Button
-          disabled={end < start}
-          onClick={() => onConfirm(start, end)}
-        >
+        <Button disabled={end < start} onClick={() => onConfirm(start, end)}>
           Lancer la boucle
         </Button>
       </DialogContent>
