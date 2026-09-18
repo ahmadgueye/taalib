@@ -8,8 +8,17 @@ import {
   useSyncExternalStore,
   useTransition,
 } from "react";
+import { Dialog as ZenDialog } from "@base-ui/react/dialog";
 import { Menu } from "@base-ui/react/menu";
-import { Check, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+  Minus,
+  Plus,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { MemorizationProgressBar } from "@/components/public/memorization-progress-bar";
@@ -94,6 +103,12 @@ const viewModeStore = createPersistedState<ViewMode>(
 
 const tajweedStore = createPersistedState<boolean>(
   "deenshare:quran-tajweed-enabled",
+  false,
+  (raw) => (raw === "true" ? true : raw === "false" ? false : undefined),
+);
+
+const zenModeStore = createPersistedState<boolean>(
+  "deenshare:quran-zen-mode",
   false,
   (raw) => (raw === "true" ? true : raw === "false" ? false : undefined),
 );
@@ -418,6 +433,14 @@ export function QuranReader({
     x: number;
     y: number;
   } | null>(null);
+  // Distraction-free reading: hides every control and just shows the text
+  // full-screen. Persisted like the other reader settings, so reloading
+  // mid-session doesn't drop back into the full chrome.
+  const zenMode = useSyncExternalStore(
+    zenModeStore.subscribe,
+    zenModeStore.getSnapshot,
+    zenModeStore.getServerSnapshot,
+  );
 
   // Sets a verse's memorization status directly. Updates the UI immediately
   // (must feel instant) and rolls back only if the server action reports an
@@ -803,50 +826,279 @@ export function QuranReader({
     selectedChapterId,
   });
 
+  // Shared between the normal layout and the Zen overlay below — rendered
+  // in exactly one of the two at a time (never both), since MushafLines
+  // assigns each verse's first word a DOM id that must stay unique.
+  const readingContent = (
+    <div
+      className={cn(
+        viewMode === "arabic" &&
+          "w-screen -ml-[calc(50vw-50%)] -mr-[calc(50vw-50%)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto mt-8 space-y-6",
+          viewMode === "arabic" ? "max-w-7xl px-6" : "max-w-3xl",
+        )}
+      >
+        {currentChapterPages.length === 0 && (
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-2/3" />
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-5/6" />
+          </div>
+        )}
+
+        {currentChapterPages.map((page) => {
+          const chapter = chaptersById.get(
+            page.verses[0]?.chapterId ?? selectedChapterId,
+          );
+          const showChapterHeading = page.verses[0]?.verseNumber === 1;
+
+          return (
+            <div
+              key={page.pageNumber}
+              data-page-number={page.pageNumber}
+              ref={(el) => {
+                if (el) pageRefs.current.set(page.pageNumber, el);
+                else pageRefs.current.delete(page.pageNumber);
+              }}
+            >
+              {showChapterHeading && chapter && (
+                <div className="mx-auto mb-8 max-w-3xl space-y-6">
+                  <Card className="flex-col justify-center items-center gap-4 bg-muted/50 p-2 text-center sm:flex-row sm:gap-6 sm:text-left">
+                    <div
+                      aria-hidden="true"
+                      translate="no"
+                      className="flex px-2 text-center shrink-0 items-center justify-center  font-surah-name text-6xl text-foreground"
+                    >
+                      {String(chapter.id).padStart(3, "0")}
+                    </div>
+                    <div className="hidden h-10 w-px bg-border sm:block" />
+
+                    <div className="space-y-1">
+                      <h2 className="font-heading text-2xl font-bold">
+                        {chapter.id}. Sourate {chapter.nameSimple}
+                      </h2>
+                      <div className="flex gap-4 items-center">
+                        <p className="text-muted-foreground">
+                          {chapter.nameTranslated}
+                        </p>
+                        <QuranPlayButton
+                          isPlaying={audioPlayer.isPlaying}
+                          audioLoading={audioPlayer.audioLoading}
+                          onClick={audioPlayer.handlePlayButtonClick}
+                          className="mx-auto sm:mx-0"
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                  {chapter.hasBismillah && (
+                    <p
+                      dir="rtl"
+                      lang="ar"
+                      className="text-center font-calligraphy text-2xl sm:text-3xl"
+                    >
+                      ﷽
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {viewMode === "arabic" ? (
+                <MushafLines
+                  verses={page.verses}
+                  fontSizeRem={fontSizeRem}
+                  mushafId={mushafId}
+                  pageNumber={page.pageNumber}
+                  singlePageChapter={
+                    chapter ? chapter.firstPage === chapter.lastPage : false
+                  }
+                  statusMap={statusMap}
+                  onVerseTap={handleVerseTap}
+                  onVerseContextMenu={handleVerseContextMenu}
+                  activeVerseKey={audioPlayer.activeVerseKey}
+                  activeWordPosition={audioPlayer.activeWordPosition}
+                />
+              ) : (
+                page.verses.map((verse) => {
+                  const { bodyWords, endText } = splitVerseWords(verse);
+                  const status = statusMap[verse.verseKey];
+                  const isActiveVerse =
+                    verse.verseKey === audioPlayer.activeVerseKey;
+                  return (
+                    <div
+                      key={verse.verseKey}
+                      id={`verse-${verse.verseKey}`}
+                      className={cn(
+                        "-mx-2 mb-5 scroll-mt-32 cursor-pointer rounded-md px-2 py-1 transition-colors",
+                        status && MEMORIZATION_STYLES[status].tint,
+                        isActiveVerse && "ring-1 ring-primary/50",
+                      )}
+                      onClick={() => {
+                        if (window.getSelection()?.toString()) return;
+                        handleVerseTap(verse.verseKey);
+                      }}
+                      onContextMenu={(e) =>
+                        handleVerseContextMenu(e, verse.verseKey)
+                      }
+                    >
+                      <p
+                        dir="rtl"
+                        lang="ar"
+                        style={{ fontSize: `${fontSizeRem}rem` }}
+                        className="font-quran text-right leading-loose"
+                      >
+                        {bodyWords.map((w, i) => (
+                          <span
+                            key={i}
+                            className={cn(
+                              "rounded-sm transition-colors",
+                              isActiveVerse &&
+                                i + 1 === audioPlayer.activeWordPosition &&
+                                "bg-primary/30",
+                            )}
+                          >
+                            {w.text}{" "}
+                          </span>
+                        ))}
+                        <span className="font-quran align-middle">
+                          {endText}
+                        </span>
+                      </p>
+                      {verse.translation && (
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {verse.verseNumber}. {verse.translation}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+
+              <div className="mt-6 border-t pt-4 text-center text-xs tracking-wide text-muted-foreground uppercase">
+                Page {page.pageNumber}
+              </div>
+            </div>
+          );
+        })}
+
+        {hasMultiplePages && (
+          <>
+            <div ref={sentinelRef} />
+            {loadingNext && (
+              <div className="space-y-4 pb-8">
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-6 w-5/6" />
+              </div>
+            )}
+          </>
+        )}
+
+        {chapterFullyLoaded && !loadingNext && (
+          <div className="pb-12">
+            <div className="mt-4 flex items-stretch justify-between gap-3 ">
+              {nextChapter ? (
+                <Button
+                  variant="outline"
+                  className="h-auto flex-1 flex-col items-start gap-0.5 py-2 text-left"
+                  onClick={() => handleChapterSelect(nextChapter.id)}
+                >
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <ChevronLeft className="size-3" />
+                    Sourate suivante
+                  </span>
+                  <span className="truncate font-medium">
+                    {nextChapter.id}. {nextChapter.nameSimple}
+                  </span>
+                </Button>
+              ) : (
+                <div className="flex-1" />
+              )}
+              {previousChapter ? (
+                <Button
+                  variant="outline"
+                  className="h-auto flex-1 flex-col items-end gap-0.5 py-2 text-right"
+                  onClick={() => handleChapterSelect(previousChapter.id)}
+                >
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    Sourate précédente
+                    <ChevronRight className="size-3" />
+                  </span>
+                  <span className="truncate font-medium">
+                    {previousChapter.id}. {previousChapter.nameSimple}
+                  </span>
+                </Button>
+              ) : (
+                <div className="flex-1" />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Shared between the normal toolbar and the Zen overlay's minimal top
+  // bar — the only two controls kept available in Zen mode.
+  const chapterVerseSelector = (
+    <>
+      <SurahCommand
+        chapters={chapters}
+        selectedChapter={selectedChapter}
+        onSelect={handleChapterSelect}
+      />
+      <Select
+        value={String(selectedVerseNumber)}
+        onValueChange={handleVerseSelect}
+        items={verseLabels}
+      >
+        <SelectTrigger size="sm" className="w-24">
+          <SelectValue placeholder="Verset" />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: selectedChapter.versesCount }, (_, i) => (
+            <SelectItem key={i + 1} value={String(i + 1)}>
+              Verset {i + 1}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </>
+  );
+
+  const fontSizeControls = (
+    <>
+      <Button
+        variant="outline"
+        size="icon-sm"
+        aria-label="Diminuer la taille du texte"
+        disabled={fontSizeRem <= FONT_SIZE_MIN}
+        onClick={() => changeFontSize(-FONT_SIZE_STEP)}
+      >
+        <Minus />
+      </Button>
+      <Button
+        variant="outline"
+        size="icon-sm"
+        aria-label="Augmenter la taille du texte"
+        disabled={fontSizeRem >= FONT_SIZE_MAX}
+        onClick={() => changeFontSize(FONT_SIZE_STEP)}
+      >
+        <Plus />
+      </Button>
+    </>
+  );
+
   return (
     <div>
+      {!zenMode && (
       <div className="sticky top-[63px] z-20 -mx-6 border-b bg-background/95 backdrop-blur-sm">
         <div className="flex flex-wrap items-center gap-2 px-6 py-3">
-          <SurahCommand
-            chapters={chapters}
-            selectedChapter={selectedChapter}
-            onSelect={handleChapterSelect}
-          />
-          <Select
-            value={String(selectedVerseNumber)}
-            onValueChange={handleVerseSelect}
-            items={verseLabels}
-          >
-            <SelectTrigger size="sm" className="w-24">
-              <SelectValue placeholder="Verset" />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: selectedChapter.versesCount }, (_, i) => (
-                <SelectItem key={i + 1} value={String(i + 1)}>
-                  Verset {i + 1}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {chapterVerseSelector}
           <div className="ml-auto flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon-sm"
-              aria-label="Diminuer la taille du texte"
-              disabled={fontSizeRem <= FONT_SIZE_MIN}
-              onClick={() => changeFontSize(-FONT_SIZE_STEP)}
-            >
-              <Minus />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              aria-label="Augmenter la taille du texte"
-              disabled={fontSizeRem >= FONT_SIZE_MAX}
-              onClick={() => changeFontSize(FONT_SIZE_STEP)}
-            >
-              <Plus />
-            </Button>
+            {fontSizeControls}
             <Button
               variant={tajweedEnabled ? "default" : "outline"}
               size="sm"
@@ -860,6 +1112,14 @@ export function QuranReader({
               onClick={() => tajweedStore.setStored(!tajweedEnabled)}
             >
               Tajwid
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label="Activer le mode Zen"
+              onClick={() => zenModeStore.setStored(true)}
+            >
+              <Maximize2 />
             </Button>
           </div>
           <Tabs
@@ -883,6 +1143,7 @@ export function QuranReader({
           />
         )}
       </div>
+      )}
 
       {audioPlayer.elements}
 
@@ -905,217 +1166,48 @@ export function QuranReader({
         cap) and the width cap (inner div, max-w-7xl mx-auto) are split
         across two nested elements instead.
       */}
-      <div
-        className={cn(
-          viewMode === "arabic" &&
-            "w-screen -ml-[calc(50vw-50%)] -mr-[calc(50vw-50%)]",
-        )}
+      {!zenMode && readingContent}
+
+      <ZenDialog.Root
+        open={zenMode}
+        onOpenChange={(open) => zenModeStore.setStored(open)}
       >
-        <div
-          className={cn(
-            "mx-auto mt-8 space-y-6",
-            viewMode === "arabic" ? "max-w-7xl px-6" : "max-w-3xl",
-          )}
-        >
-          {currentChapterPages.length === 0 && (
-            <div className="space-y-4">
-              <Skeleton className="h-6 w-2/3" />
-              <Skeleton className="h-6 w-full" />
-              <Skeleton className="h-6 w-5/6" />
-            </div>
-          )}
-
-          {currentChapterPages.map((page) => {
-            const chapter = chaptersById.get(
-              page.verses[0]?.chapterId ?? selectedChapterId,
-            );
-            const showChapterHeading = page.verses[0]?.verseNumber === 1;
-
-            return (
-              <div
-                key={page.pageNumber}
-                data-page-number={page.pageNumber}
-                ref={(el) => {
-                  if (el) pageRefs.current.set(page.pageNumber, el);
-                  else pageRefs.current.delete(page.pageNumber);
-                }}
-              >
-                {showChapterHeading && chapter && (
-                  <div className="mx-auto mb-8 max-w-3xl space-y-6">
-                    <Card className="flex-col justify-center items-center gap-4 bg-muted/50 p-2 text-center sm:flex-row sm:gap-6 sm:text-left">
-                      <div
-                        aria-hidden="true"
-                        translate="no"
-                        className="flex px-2 text-center shrink-0 items-center justify-center  font-surah-name text-6xl text-foreground"
-                      >
-                        {String(chapter.id).padStart(3, "0")}
-                      </div>
-                      <div className="hidden h-10 w-px bg-border sm:block" />
-
-                      <div className="space-y-1">
-                        <h2 className="font-heading text-2xl font-bold">
-                          {chapter.id}. Sourate {chapter.nameSimple}
-                        </h2>
-                        <div className="flex gap-4 items-center">
-                          <p className="text-muted-foreground">
-                            {chapter.nameTranslated}
-                          </p>
-                          <QuranPlayButton
-                            isPlaying={audioPlayer.isPlaying}
-                            audioLoading={audioPlayer.audioLoading}
-                            onClick={audioPlayer.handlePlayButtonClick}
-                            className="mx-auto sm:mx-0"
-                          />
-                        </div>
-                      </div>
-                    </Card>
-                    {chapter.hasBismillah && (
-                      <p
-                        dir="rtl"
-                        lang="ar"
-                        className="text-center font-calligraphy text-2xl sm:text-3xl"
-                      >
-                        ﷽
-                      </p>
-                    )}
+        <ZenDialog.Portal>
+          <ZenDialog.Popup
+            className={cn(
+              "fixed inset-0 z-50 overflow-y-auto bg-background outline-none",
+              "duration-200 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+            )}
+          >
+            {zenMode && (
+              <div className="fixed inset-x-0 top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b bg-background/95 px-4 py-2 shadow-sm backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  {chapterVerseSelector}
+                  <div className="flex items-center gap-1">
+                    {fontSizeControls}
                   </div>
-                )}
-
-                {viewMode === "arabic" ? (
-                  <MushafLines
-                    verses={page.verses}
-                    fontSizeRem={fontSizeRem}
-                    mushafId={mushafId}
-                    pageNumber={page.pageNumber}
-                    singlePageChapter={
-                      chapter ? chapter.firstPage === chapter.lastPage : false
-                    }
-                    statusMap={statusMap}
-                    onVerseTap={handleVerseTap}
-                    onVerseContextMenu={handleVerseContextMenu}
-                    activeVerseKey={audioPlayer.activeVerseKey}
-                    activeWordPosition={audioPlayer.activeWordPosition}
-                  />
-                ) : (
-                  page.verses.map((verse) => {
-                    const { bodyWords, endText } = splitVerseWords(verse);
-                    const status = statusMap[verse.verseKey];
-                    const isActiveVerse =
-                      verse.verseKey === audioPlayer.activeVerseKey;
-                    return (
-                      <div
-                        key={verse.verseKey}
-                        id={`verse-${verse.verseKey}`}
-                        className={cn(
-                          "-mx-2 mb-5 scroll-mt-32 cursor-pointer rounded-md px-2 py-1 transition-colors",
-                          status && MEMORIZATION_STYLES[status].tint,
-                          isActiveVerse && "ring-1 ring-primary/50",
-                        )}
-                        onClick={() => {
-                          if (window.getSelection()?.toString()) return;
-                          handleVerseTap(verse.verseKey);
-                        }}
-                        onContextMenu={(e) =>
-                          handleVerseContextMenu(e, verse.verseKey)
-                        }
-                      >
-                        <p
-                          dir="rtl"
-                          lang="ar"
-                          style={{ fontSize: `${fontSizeRem}rem` }}
-                          className="font-quran text-right leading-loose"
-                        >
-                          {bodyWords.map((w, i) => (
-                            <span
-                              key={i}
-                              className={cn(
-                                "rounded-sm transition-colors",
-                                isActiveVerse &&
-                                  i + 1 === audioPlayer.activeWordPosition &&
-                                  "bg-primary/30",
-                              )}
-                            >
-                              {w.text}{" "}
-                            </span>
-                          ))}
-                          <span className="font-quran align-middle">
-                            {endText}
-                          </span>
-                        </p>
-                        {verse.translation && (
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            {verse.verseNumber}. {verse.translation}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-
-                <div className="mt-6 border-t pt-4 text-center text-xs tracking-wide text-muted-foreground uppercase">
-                  Page {page.pageNumber}
                 </div>
+                <ZenDialog.Close
+                  aria-label="Quitter le mode Zen"
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 text-muted-foreground opacity-60 transition-opacity hover:opacity-100"
+                    />
+                  }
+                >
+                  <Minimize2 />
+                  <span className="hidden sm:inline">Quitter le mode Zen</span>
+                </ZenDialog.Close>
               </div>
-            );
-          })}
-
-          {hasMultiplePages && (
-            <>
-              <div ref={sentinelRef} />
-              {loadingNext && (
-                <div className="space-y-4 pb-8">
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-5/6" />
-                </div>
-              )}
-            </>
-          )}
-
-          {chapterFullyLoaded && !loadingNext && (
-            <div className="pb-12">
-              {/* <p className="text-center text-sm text-muted-foreground">
-              Fin de la sourate.
-            </p> */}
-              <div className="mt-4 flex items-stretch justify-between gap-3 ">
-                {nextChapter ? (
-                  <Button
-                    variant="outline"
-                    className="h-auto flex-1 flex-col items-start gap-0.5 py-2 text-left"
-                    onClick={() => handleChapterSelect(nextChapter.id)}
-                  >
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <ChevronLeft className="size-3" />
-                      Sourate suivante
-                    </span>
-                    <span className="truncate font-medium">
-                      {nextChapter.id}. {nextChapter.nameSimple}
-                    </span>
-                  </Button>
-                ) : (
-                  <div className="flex-1" />
-                )}
-                {previousChapter ? (
-                  <Button
-                    variant="outline"
-                    className="h-auto flex-1 flex-col items-end gap-0.5 py-2 text-right"
-                    onClick={() => handleChapterSelect(previousChapter.id)}
-                  >
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      Sourate précédente
-                      <ChevronRight className="size-3" />
-                    </span>
-                    <span className="truncate font-medium">
-                      {previousChapter.id}. {previousChapter.nameSimple}
-                    </span>
-                  </Button>
-                ) : (
-                  <div className="flex-1" />
-                )}
-              </div>
+            )}
+            <div className="min-h-full px-6 pt-20 pb-12">
+              {zenMode && readingContent}
             </div>
-          )}
-        </div>
-      </div>
+          </ZenDialog.Popup>
+        </ZenDialog.Portal>
+      </ZenDialog.Root>
 
       <Menu.Root
         open={statusMenu !== null}
