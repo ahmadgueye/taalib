@@ -38,3 +38,16 @@ export type QuranReciter = {
   name: string;
   style: string | null;
 };
+
+// Millisecond offsets into the single continuous chapter audio file — lets
+// the reader highlight the verse/word currently being recited without
+// switching playback to per-verse file chaining (which would introduce
+// audible gaps between verses).
+export type VerseTiming = {
+  verseKey: string;
+  timestampFrom: number;
+  timestampTo: number;
+  // 1-indexed position within the verse's body words (matches
+  // QuranVerse.words filtered to exclude the end-of-ayah marker).
+  words: { position: number; timestampFrom: number; timestampTo: number }[];
+};

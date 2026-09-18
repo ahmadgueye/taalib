@@ -197,6 +197,10 @@ type LineWord = {
   isEnd: boolean;
   glyph: string;
   glyphPage: number;
+  // 1-indexed position among the verse's body words (null for the
+  // end-of-ayah marker, which the audio timings API never assigns a
+  // position to) — lets a word be matched against activeWordPosition.
+  bodyPosition: number | null;
 };
 
 // Groups words by the mushaf's actual line_number so each line renders with
@@ -204,6 +208,7 @@ type LineWord = {
 function groupIntoLines(verses: QuranVerse[]): Map<number, LineWord[]> {
   const lines = new Map<number, LineWord[]>();
   for (const verse of verses) {
+    let bodyPosition = 0;
     verse.words.forEach((word, index) => {
       const line = lines.get(word.lineNumber) ?? [];
       line.push({
@@ -212,6 +217,7 @@ function groupIntoLines(verses: QuranVerse[]): Map<number, LineWord[]> {
         isEnd: word.isEnd,
         glyph: word.glyph,
         glyphPage: word.glyphPage,
+        bodyPosition: word.isEnd ? null : ++bodyPosition,
       });
       lines.set(word.lineNumber, line);
     });
@@ -271,6 +277,8 @@ function MushafLines({
   statusMap,
   onVerseTap,
   onVerseContextMenu,
+  activeVerseKey,
+  activeWordPosition,
 }: {
   verses: QuranVerse[];
   fontSizeRem: number;
@@ -280,6 +288,8 @@ function MushafLines({
   statusMap: Record<string, MemorizationStatus>;
   onVerseTap: (verseKey: string) => void;
   onVerseContextMenu: (event: React.MouseEvent, verseKey: string) => void;
+  activeVerseKey: string | null;
+  activeWordPosition: number | null;
 }) {
   const lines = useMemo(() => groupIntoLines(verses), [verses]);
 
@@ -320,6 +330,10 @@ function MushafLines({
             >
               {words.map((word, i) => {
                 const status = statusMap[word.verseKey];
+                const isActiveWord =
+                  word.verseKey === activeVerseKey &&
+                  word.bodyPosition !== null &&
+                  word.bodyPosition === activeWordPosition;
                 return (
                   <span
                     key={i}
@@ -330,9 +344,10 @@ function MushafLines({
                     }
                     data-tajweed={mushafId === 19 ? "" : undefined}
                     className={cn(
-                      "cursor-pointer",
+                      "cursor-pointer rounded-sm transition-colors",
                       word.isFirstWordOfVerse && "scroll-mt-32",
                       status && MEMORIZATION_STYLES[status].tint,
+                      isActiveWord && "bg-primary/30",
                     )}
                     style={{
                       fontFamily: qcfFontFamily(word.glyphPage, mushafId),
@@ -933,11 +948,15 @@ export function QuranReader({
                   statusMap={statusMap}
                   onVerseTap={handleVerseTap}
                   onVerseContextMenu={handleVerseContextMenu}
+                  activeVerseKey={audioPlayer.activeVerseKey}
+                  activeWordPosition={audioPlayer.activeWordPosition}
                 />
               ) : (
                 page.verses.map((verse) => {
                   const { bodyWords, endText } = splitVerseWords(verse);
                   const status = statusMap[verse.verseKey];
+                  const isActiveVerse =
+                    verse.verseKey === audioPlayer.activeVerseKey;
                   return (
                     <div
                       key={verse.verseKey}
@@ -945,6 +964,7 @@ export function QuranReader({
                       className={cn(
                         "-mx-2 mb-5 scroll-mt-32 cursor-pointer rounded-md px-2 py-1 transition-colors",
                         status && MEMORIZATION_STYLES[status].tint,
+                        isActiveVerse && "ring-1 ring-primary/50",
                       )}
                       onClick={() => {
                         if (window.getSelection()?.toString()) return;
@@ -960,7 +980,19 @@ export function QuranReader({
                         style={{ fontSize: `${fontSizeRem}rem` }}
                         className="font-quran text-right leading-loose"
                       >
-                        {bodyWords.map((w) => w.text).join(" ")}{" "}
+                        {bodyWords.map((w, i) => (
+                          <span
+                            key={i}
+                            className={cn(
+                              "rounded-sm transition-colors",
+                              isActiveVerse &&
+                                i + 1 === audioPlayer.activeWordPosition &&
+                                "bg-primary/30",
+                            )}
+                          >
+                            {w.text}{" "}
+                          </span>
+                        ))}
                         <span className="font-quran align-middle">
                           {endText}
                         </span>

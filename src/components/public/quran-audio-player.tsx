@@ -27,9 +27,31 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import type { QuranChapter, QuranReciter } from "@/lib/quran/types";
+import type { QuranChapter, QuranReciter, VerseTiming } from "@/lib/quran/types";
 
 const DEFAULT_RECITER_ID = 7; // Mishary Rashid al-`Afasy
+
+// Both lists are sorted by timestamp, and short enough (a few hundred verses
+// / words at most) that a linear scan from the end is simpler than a binary
+// search and plenty fast for a per-timeupdate call. "Last entry whose start
+// is at or before `tMs`" stays correct across small trailing gaps (e.g. the
+// silence after the last word of a verse) instead of returning nothing.
+function findActiveVerseTiming(
+  timings: VerseTiming[],
+  tMs: number,
+): VerseTiming | null {
+  for (let i = timings.length - 1; i >= 0; i--) {
+    if (timings[i].timestampFrom <= tMs) return timings[i];
+  }
+  return null;
+}
+
+function findActiveWordPosition(timing: VerseTiming, tMs: number): number | null {
+  for (let i = timing.words.length - 1; i >= 0; i--) {
+    if (timing.words[i].timestampFrom <= tMs) return timing.words[i].position;
+  }
+  return null;
+}
 
 // Small localStorage-backed store — same shape as quran-reader.tsx's, kept
 // local here since the reciter preference is only relevant to this player.
@@ -113,10 +135,28 @@ export function useQuranAudioPlayer({
   // The queue of per-verse audio URLs currently looping and where we are in
   // it — a ref because advancing it happens inside the <audio> "ended"
   // handler and shouldn't itself trigger a re-render.
-  const loopQueueRef = useRef<{ urls: string[]; index: number } | null>(null);
+  const loopQueueRef = useRef<{
+    urls: string[];
+    verseKeys: string[];
+    index: number;
+  } | null>(null);
   const verseAudioCacheRef = useRef<
     Map<string, { verseKey: string; url: string }[]>
   >(new Map());
+  const timingsCacheRef = useRef<Map<string, VerseTiming[]>>(new Map());
+  // Timings for whatever chapter/reciter is currently loaded for continuous
+  // playback — a ref (not state) since it's read on every "timeupdate" tick
+  // and shouldn't itself cause a re-render. Cleared whenever a different
+  // chapter/reciter starts loading so a stale verse never flashes while the
+  // new timings are still in flight.
+  const activeTimingsRef = useRef<VerseTiming[] | null>(null);
+  // What's currently being recited, for the reader to highlight. Word
+  // position is only tracked during continuous chapter playback (word-level
+  // timings aren't fetched for the loop's separate per-verse files).
+  const [activeVerseKey, setActiveVerseKey] = useState<string | null>(null);
+  const [activeWordPosition, setActiveWordPosition] = useState<number | null>(
+    null,
+  );
   // Only for display ("En boucle : versets X-Y") — the actual playback
   // logic reads loopQueueRef, not this.
   const [loopRange, setLoopRange] = useState<{
@@ -144,20 +184,54 @@ export function useQuranAudioPlayer({
       });
   }, []);
 
+  async function getVerseTimingsList(chapterId: number, recitationId: number) {
+    const key = `${chapterId}:${recitationId}`;
+    const cached = timingsCacheRef.current.get(key);
+    if (cached) return cached;
+    const res = await fetch(
+      `/api/quran/verse-timings/${chapterId}?recitation=${recitationId}`,
+    );
+    if (!res.ok) throw new Error("Failed to load verse timings");
+    const { timings } = (await res.json()) as { timings: VerseTiming[] };
+    timingsCacheRef.current.set(key, timings);
+    return timings;
+  }
+
   async function playChapterAudio(chapterId: number, recitationId: number) {
     const audio = audioRef.current;
     if (!audio) return;
     loopQueueRef.current = null;
     setLoopRange(null);
+    // Cleared up front (not just replaced once the new timings resolve) so
+    // the outgoing chapter's highlight doesn't linger over the new one
+    // while its timings are still loading.
+    activeTimingsRef.current = null;
+    setActiveVerseKey(null);
+    setActiveWordPosition(null);
     setAudioLoading(true);
     try {
-      const res = await fetch(
-        `/api/quran/chapter-audio/${chapterId}?recitation=${recitationId}`,
-      );
-      if (!res.ok) throw new Error("Failed to load audio");
-      const { audioUrl } = (await res.json()) as { audioUrl: string };
+      const key = `${chapterId}:${recitationId}`;
+      // Set eagerly (not after the fetches resolve) so the stale-response
+      // guard inside getVerseTimingsList's caller below and the "is this
+      // chapter already loaded" check in togglePlayback both see the
+      // in-flight chapter as the current one, not the outgoing one.
+      loadedAudioKeyRef.current = key;
+      const [{ audioUrl }] = await Promise.all([
+        fetch(`/api/quran/chapter-audio/${chapterId}?recitation=${recitationId}`).then(
+          (res) => {
+            if (!res.ok) throw new Error("Failed to load audio");
+            return res.json() as Promise<{ audioUrl: string }>;
+          },
+        ),
+        getVerseTimingsList(chapterId, recitationId)
+          .then((timings) => {
+            // Guards against a stale response landing after the user has
+            // already moved on to another chapter/reciter.
+            if (loadedAudioKeyRef.current === key) activeTimingsRef.current = timings;
+          })
+          .catch(() => {}), // Highlighting is a bonus — playback must not fail if it does.
+      ]);
       audio.src = audioUrl;
-      loadedAudioKeyRef.current = `${chapterId}:${recitationId}`;
       await audio.play();
     } finally {
       setAudioLoading(false);
@@ -193,15 +267,23 @@ export function useQuranAudioPlayer({
     setAudioLoading(true);
     try {
       const verses = await getVerseAudioList(chapterId, reciterId);
-      const urls = verses
-        .slice(startVerseNumber - 1, endVerseNumber)
-        .map((v) => v.url);
-      if (urls.length === 0) return;
+      const ranged = verses.slice(startVerseNumber - 1, endVerseNumber);
+      if (ranged.length === 0) return;
 
       loadedAudioKeyRef.current = null;
-      loopQueueRef.current = { urls, index: 0 };
+      activeTimingsRef.current = null;
+      loopQueueRef.current = {
+        urls: ranged.map((v) => v.url),
+        verseKeys: ranged.map((v) => v.verseKey),
+        index: 0,
+      };
       setLoopRange({ startVerseNumber, endVerseNumber });
-      audio.src = urls[0];
+      // Word-level position isn't tracked in loop mode — each verse here is
+      // its own short audio file, not a slice of the continuous one the
+      // fetched word timings are offset against.
+      setActiveVerseKey(ranged[0].verseKey);
+      setActiveWordPosition(null);
+      audio.src = ranged[0].url;
       // If the user pauses/quits the loop before this settles, pause()
       // rejects the pending play() with a benign AbortError — nothing to
       // surface (same race as the one handled in the "ended" handler).
@@ -214,6 +296,7 @@ export function useQuranAudioPlayer({
   function stopLoop() {
     loopQueueRef.current = null;
     setLoopRange(null);
+    setActiveVerseKey(null);
     audioRef.current?.pause();
   }
 
@@ -263,6 +346,8 @@ export function useQuranAudioPlayer({
     audioRef.current?.pause();
     loopQueueRef.current = null;
     setLoopRange(null);
+    setActiveVerseKey(null);
+    setActiveWordPosition(null);
     setPlayerVisible(false);
   }
 
@@ -428,7 +513,25 @@ export function useQuranAudioPlayer({
         className="hidden"
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        onTimeUpdate={(e) => {
+          const t = e.currentTarget.currentTime;
+          setCurrentTime(t);
+          // Loop mode tracks its own activeVerseKey (set on start/advance
+          // below) — this only drives continuous-playback highlighting.
+          if (loopQueueRef.current) return;
+          const timings = activeTimingsRef.current;
+          if (!timings) return;
+          const verseTiming = findActiveVerseTiming(timings, t * 1000);
+          setActiveVerseKey((prev) =>
+            verseTiming?.verseKey === prev ? prev : (verseTiming?.verseKey ?? null),
+          );
+          const wordPosition = verseTiming
+            ? findActiveWordPosition(verseTiming, t * 1000)
+            : null;
+          setActiveWordPosition((prev) =>
+            wordPosition === prev ? prev : wordPosition,
+          );
+        }}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
         onEnded={() => {
           const queue = loopQueueRef.current;
@@ -437,6 +540,7 @@ export function useQuranAudioPlayer({
             const nextIndex = (queue.index + 1) % queue.urls.length;
             loopQueueRef.current = { ...queue, index: nextIndex };
             audio.src = queue.urls[nextIndex];
+            setActiveVerseKey(queue.verseKeys[nextIndex]);
             // Fire-and-forget: on very short verses (e.g. "الم"), the next
             // `ended` can supersede this play() before its promise settles,
             // which rejects with a benign AbortError — nothing to surface.
@@ -449,7 +553,14 @@ export function useQuranAudioPlayer({
     </>
   );
 
-  return { isPlaying, audioLoading, handlePlayButtonClick, elements };
+  return {
+    isPlaying,
+    audioLoading,
+    handlePlayButtonClick,
+    activeVerseKey,
+    activeWordPosition,
+    elements,
+  };
 }
 
 function LoopRangeDialog({

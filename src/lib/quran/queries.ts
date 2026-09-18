@@ -4,6 +4,7 @@ import type {
   QuranPage,
   QuranReciter,
   QuranVerse,
+  VerseTiming,
 } from "@/lib/quran/types";
 
 export const MUSHAF_TOTAL_PAGES = 604;
@@ -179,5 +180,55 @@ export async function getVerseAudioUrls(
   return data.audio_files.map((f) => ({
     verseKey: f.verse_key,
     url: `${VERSE_AUDIO_BASE_URL}${f.url}`,
+  }));
+}
+
+// api.qurancdn.com is the public QDC API that powers quran.com's own site —
+// unlike the official Content API above (quranFetch/client.ts), it needs no
+// OAuth and exposes millisecond-accurate verse and word timings for the same
+// continuous chapter audio file already used by getChapterAudioUrl, so the
+// reader can highlight along during normal playback without switching to
+// per-verse file chaining (which would introduce audible gaps between
+// verses).
+const QDC_AUDIO_BASE_URL = "https://api.qurancdn.com/api/qdc/audio";
+
+type QdcAudioFilesResponse = {
+  audio_files: {
+    verse_timings: {
+      verse_key: string;
+      timestamp_from: number;
+      timestamp_to: number;
+      // Word-position segments as [position, from, to] triplets; the API
+      // also emits stray shorter arrays (e.g. `[1]`) interspersed among
+      // them that carry no timing and must be filtered out.
+      segments: number[][];
+    }[];
+  }[];
+};
+
+export async function getVerseTimings(
+  recitationId: number,
+  chapterId: number
+): Promise<VerseTiming[]> {
+  const url = new URL(`${QDC_AUDIO_BASE_URL}/reciters/${recitationId}/audio_files`);
+  url.searchParams.set("chapter", String(chapterId));
+  url.searchParams.set("segments", "true");
+
+  const res = await fetch(url, { next: { revalidate: 86400 } });
+  if (!res.ok) throw new Error("Failed to load verse timings");
+  const data = (await res.json()) as QdcAudioFilesResponse;
+  const verseTimings = data.audio_files[0]?.verse_timings ?? [];
+
+  return verseTimings.map((v) => ({
+    verseKey: v.verse_key,
+    timestampFrom: v.timestamp_from,
+    timestampTo: v.timestamp_to,
+    words: v.segments
+      .filter((s): s is [number, number, number] => s.length === 3)
+      .map(([position, from, to]) => ({
+        position,
+        timestampFrom: from,
+        timestampTo: to,
+      })),
   }));
 }
