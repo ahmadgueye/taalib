@@ -1,7 +1,10 @@
 import Link from "next/link";
 
 import type { MemorizationStatus } from "@/lib/db/schema";
-import { MEMORIZATION_STYLES, memorizationStatusLabel } from "@/lib/quran/memorization";
+import {
+  MEMORIZATION_STYLES,
+  memorizationStatusLabel,
+} from "@/lib/quran/memorization";
 import { cn } from "@/lib/utils";
 
 // One cell per verse, in verse order — the cell at index N reflects verse
@@ -29,21 +32,26 @@ export function MemorizationProgressBar({
 
   return (
     <div className="flex items-center gap-3 px-6 py-2">
-      <div className="flex h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-        {verses.map(({ verseNumber, status }) => (
-          <div
-            key={verseNumber}
-            className={cn("h-full flex-1", status && MEMORIZATION_STYLES[status].solid)}
-            title={`Verset ${verseNumber} — ${memorizationStatusLabel(status)}`}
-          />
-        ))}
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="flex h-1.5 w-60 shrink-0 overflow-hidden rounded-full bg-muted">
+          {verses.map(({ verseNumber, status }) => (
+            <div
+              key={verseNumber}
+              className={cn(
+                "h-full flex-1",
+                status && MEMORIZATION_STYLES[status].solid,
+              )}
+              title={`Verset ${verseNumber} — ${memorizationStatusLabel(status)}`}
+            />
+          ))}
+        </div>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {memorizedPercent}% maîtrisé ({maitriseCount}/{totalVerses})
+        </span>
       </div>
-      <span className="shrink-0 text-xs text-muted-foreground">
-        {memorizedPercent}% maîtrisé ({maitriseCount}/{totalVerses})
-      </span>
       <Link
         href="/memorisation"
-        className="shrink-0 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        className="ml-auto shrink-0 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
       >
         Gérer mon parcours
       </Link>

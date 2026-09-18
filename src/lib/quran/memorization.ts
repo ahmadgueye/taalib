@@ -23,8 +23,9 @@ export const MEMORIZATION_STYLES: Record<
 };
 
 // Tap-to-cycle order in the reader: not started -> learning -> needs
-// reinforcement -> mastered -> back to not started.
-const MEMORIZATION_CYCLE: (MemorizationStatus | null)[] = [
+// reinforcement -> mastered -> back to not started. Also drives the
+// right-click status menu's option order.
+export const MEMORIZATION_CYCLE: (MemorizationStatus | null)[] = [
   null,
   "en_cours",
   "a_renforcer",

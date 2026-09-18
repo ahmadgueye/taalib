@@ -8,7 +8,8 @@ import {
   useSyncExternalStore,
   useTransition,
 } from "react";
-import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import { Menu } from "@base-ui/react/menu";
+import { Check, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { MemorizationProgressBar } from "@/components/public/memorization-progress-bar";
@@ -21,6 +22,7 @@ import { TajweedLegend } from "@/components/public/tajweed-legend";
 import { setVerseMemorizationStatus } from "@/lib/actions/memorization";
 import type { MemorizationStatus } from "@/lib/db/schema";
 import {
+  MEMORIZATION_CYCLE,
   MEMORIZATION_STYLES,
   memorizationStatusLabel,
   nextMemorizationStatus,
@@ -168,6 +170,27 @@ async function fetchVersePage(
   return data.pageNumber;
 }
 
+// A zero-size virtual anchor at the click point, so the right-click status
+// menu opens exactly where the pointer landed instead of against a real DOM
+// element (there's no single element that represents "this verse" to anchor
+// to across both the per-word mushaf view and the per-verse text view).
+function pointAnchor(x: number, y: number) {
+  return {
+    getBoundingClientRect: () =>
+      ({
+        x,
+        y,
+        top: y,
+        left: x,
+        right: x,
+        bottom: y,
+        width: 0,
+        height: 0,
+        toJSON() {},
+      }) satisfies DOMRect,
+  };
+}
+
 type LineWord = {
   verseKey: string;
   isFirstWordOfVerse: boolean;
@@ -215,7 +238,7 @@ function useNeededGlyphPages(lines: Map<number, LineWord[]>): number[] {
 // visit" case synchronously, avoiding a one-tick flash on revisits.
 function useQcfFontsReady(pages: number[], mushafId: MushafId): boolean {
   const [readyKeys, setReadyKeys] = useState<ReadonlySet<string>>(
-    () => new Set()
+    () => new Set(),
   );
 
   useEffect(() => {
@@ -224,9 +247,7 @@ function useQcfFontsReady(pages: number[], mushafId: MushafId): boolean {
       const key = `${mushafId}:${page}`;
       loadQcfPageFont(page, mushafId).then(() => {
         if (cancelled) return;
-        setReadyKeys((prev) =>
-          prev.has(key) ? prev : new Set(prev).add(key)
-        );
+        setReadyKeys((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
       });
     });
     return () => {
@@ -236,7 +257,8 @@ function useQcfFontsReady(pages: number[], mushafId: MushafId): boolean {
 
   return pages.every(
     (page) =>
-      readyKeys.has(`${mushafId}:${page}`) || isQcfPageFontReady(page, mushafId)
+      readyKeys.has(`${mushafId}:${page}`) ||
+      isQcfPageFontReady(page, mushafId),
   );
 }
 
@@ -248,6 +270,7 @@ function MushafLines({
   singlePageChapter,
   statusMap,
   onVerseTap,
+  onVerseContextMenu,
 }: {
   verses: QuranVerse[];
   fontSizeRem: number;
@@ -256,6 +279,7 @@ function MushafLines({
   singlePageChapter: boolean;
   statusMap: Record<string, MemorizationStatus>;
   onVerseTap: (verseKey: string) => void;
+  onVerseContextMenu: (event: React.MouseEvent, verseKey: string) => void;
 }) {
   const lines = useMemo(() => groupIntoLines(verses), [verses]);
 
@@ -308,7 +332,7 @@ function MushafLines({
                     className={cn(
                       "cursor-pointer",
                       word.isFirstWordOfVerse && "scroll-mt-32",
-                      status && MEMORIZATION_STYLES[status].tint
+                      status && MEMORIZATION_STYLES[status].tint,
                     )}
                     style={{
                       fontFamily: qcfFontFamily(word.glyphPage, mushafId),
@@ -319,6 +343,7 @@ function MushafLines({
                       if (window.getSelection()?.toString()) return;
                       onVerseTap(word.verseKey);
                     }}
+                    onContextMenu={(e) => onVerseContextMenu(e, word.verseKey)}
                   >
                     {word.glyph}
                   </span>
@@ -355,17 +380,22 @@ export function QuranReader({
 
   const [statusMap, setStatusMap] = useState(initialMemorizationStatus);
   const [, startStatusTransition] = useTransition();
+  // The right-click status menu: which verse it's for and where it opened,
+  // null when closed. A single shared instance rather than one per verse,
+  // since only one can be open at a time and most verses never open one.
+  const [statusMenu, setStatusMenu] = useState<{
+    verseKey: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
-  // Tap-to-cycle a verse's memorization status. Updates the UI immediately
-  // (a tap must feel instant) and rolls back only if the server action
-  // reports an error — no loading state, no revalidation round-trip.
-  function handleVerseTap(verseKey: string) {
-    if (!isAuthenticated) {
-      toast.error("Connecte-toi pour suivre ta mémorisation.");
-      return;
-    }
+  // Sets a verse's memorization status directly. Updates the UI immediately
+  // (must feel instant) and rolls back only if the server action reports an
+  // error — no loading state, no revalidation round-trip. Shared by
+  // tap-to-cycle and the right-click status menu.
+  function applyVerseStatus(verseKey: string, next: MemorizationStatus | null) {
     const previous = statusMap[verseKey] ?? null;
-    const next = nextMemorizationStatus(previous);
+    if (next === previous) return;
 
     setStatusMap((prev) => {
       const draft = { ...prev };
@@ -397,6 +427,29 @@ export function QuranReader({
         toast.error(result.error);
       }
     });
+  }
+
+  function handleVerseTap(verseKey: string) {
+    if (!isAuthenticated) {
+      toast.error("Connecte-toi pour suivre ta mémorisation.");
+      return;
+    }
+    applyVerseStatus(
+      verseKey,
+      nextMemorizationStatus(statusMap[verseKey] ?? null),
+    );
+  }
+
+  // Right-click (or long-press-equivalent context menu) opens a picker with
+  // every status directly selectable, so fixing a misclick or jumping
+  // straight to "Maîtrisé" doesn't require cycling through the others first.
+  function handleVerseContextMenu(event: React.MouseEvent, verseKey: string) {
+    event.preventDefault();
+    if (!isAuthenticated) {
+      toast.error("Connecte-toi pour suivre ta mémorisation.");
+      return;
+    }
+    setStatusMenu({ verseKey, x: event.clientX, y: event.clientY });
   }
 
   const [selectedChapterId, setSelectedChapterId] = useState(initialChapterId);
@@ -445,10 +498,10 @@ export function QuranReader({
       pages
         .filter(
           (p) =>
-            p.verses.length > 0 && p.verses[0].chapterId === selectedChapterId
+            p.verses.length > 0 && p.verses[0].chapterId === selectedChapterId,
         )
         .sort((a, b) => a.pageNumber - b.pageNumber),
-    [pages, selectedChapterId]
+    [pages, selectedChapterId],
   );
 
   const verseLabels = useMemo(
@@ -879,6 +932,7 @@ export function QuranReader({
                   }
                   statusMap={statusMap}
                   onVerseTap={handleVerseTap}
+                  onVerseContextMenu={handleVerseContextMenu}
                 />
               ) : (
                 page.verses.map((verse) => {
@@ -890,12 +944,15 @@ export function QuranReader({
                       id={`verse-${verse.verseKey}`}
                       className={cn(
                         "-mx-2 mb-5 scroll-mt-32 cursor-pointer rounded-md px-2 py-1 transition-colors",
-                        status && MEMORIZATION_STYLES[status].tint
+                        status && MEMORIZATION_STYLES[status].tint,
                       )}
                       onClick={() => {
                         if (window.getSelection()?.toString()) return;
                         handleVerseTap(verse.verseKey);
                       }}
+                      onContextMenu={(e) =>
+                        handleVerseContextMenu(e, verse.verseKey)
+                      }
                     >
                       <p
                         dir="rtl"
@@ -981,6 +1038,52 @@ export function QuranReader({
           </div>
         )}
       </div>
+
+      <Menu.Root
+        open={statusMenu !== null}
+        onOpenChange={(open) => {
+          if (!open) setStatusMenu(null);
+        }}
+      >
+        <Menu.Portal>
+          <Menu.Positioner
+            className="outline-none"
+            anchor={
+              statusMenu ? pointAnchor(statusMenu.x, statusMenu.y) : undefined
+            }
+            sideOffset={2}
+          >
+            <Menu.Popup className="z-50 min-w-44 origin-(--transform-origin) overflow-hidden rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+              {MEMORIZATION_CYCLE.map((status) => {
+                const isActive =
+                  statusMenu != null &&
+                  (statusMap[statusMenu.verseKey] ?? null) === status;
+                return (
+                  <Menu.Item
+                    key={status ?? "none"}
+                    className="flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground"
+                    onClick={() => {
+                      if (statusMenu)
+                        applyVerseStatus(statusMenu.verseKey, status);
+                    }}
+                  >
+                    <span
+                      className={cn(
+                        "size-2.5 shrink-0 rounded-full",
+                        status
+                          ? MEMORIZATION_STYLES[status].solid
+                          : "bg-muted-foreground/40",
+                      )}
+                    />
+                    {memorizationStatusLabel(status)}
+                    {isActive && <Check className="ml-auto size-3.5" />}
+                  </Menu.Item>
+                );
+              })}
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
     </div>
   );
 }
