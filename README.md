@@ -1,8 +1,9 @@
 # طالب (Taalib) — DeenShare
 
-Plateforme d'apprentissage islamique : un site public (cours, hadiths, ressources,
-séances, lecteur du Coran) et un tableau de bord d'administration pour créer et
-organiser ce contenu.
+Plateforme d'apprentissage islamique : un site public (cours, parcours guidés,
+quiz, hadiths, ressources, séances, lecteur du Coran avec suivi de
+mémorisation) et un tableau de bord d'administration pour créer et organiser
+ce contenu.
 
 Stack : **Next.js 16** (App Router) · **Supabase** (Auth + Postgres) · **Drizzle
 ORM** · **Tailwind CSS v4** · déployé sur **Vercel**.

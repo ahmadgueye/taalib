@@ -52,17 +52,20 @@ vers `/login` les visiteurs non connectés sur `/dashboard` et `/compte`. Voir
 deux layouts et deux publics différents :
 
 - **`(public)/`** — le site vitrine, accessible sans compte : accueil,
-  `/cours`, `/hadiths`, `/ressources`, `/seances`, `/thematiques`, `/coran`,
-  `/recherche`, `/compte` (nécessite un compte, mais reste dans ce groupe car
-  visuellement c'est le layout public).
+  `/cours`, `/hadiths`, `/ressources`, `/seances`, `/thematiques`, `/parcours`,
+  `/quiz`, `/coran`, `/memorisation`, `/recherche`, `/compte` (nécessite un
+  compte, mais reste dans ce groupe car visuellement c'est le layout public).
 - **`(dashboard)/dashboard/`** — l'admin, protégé par `proxy.ts` +
   une double vérification de rôle dans
   `src/app/(dashboard)/dashboard/layout.tsx`. Une entité "Foo" y a
   systématiquement le même quatuor de pages :
   `dashboard/foo/page.tsx` (liste), `dashboard/foo/new/page.tsx` (création),
   `dashboard/foo/[id]/edit/page.tsx` (édition), plus un composant `foo-form.tsx`
-  et `foo-table.tsx` partagés entre create/edit et list. Voir
-  [`how-to.md`](./how-to.md) pour dupliquer ce pattern sur une nouvelle entité.
+  et `foo-table.tsx` partagés entre create/edit et list. `quiz` est la seule
+  exception : `createQuiz` redirige vers une cinquième page,
+  `dashboard/quiz/[id]/questions/page.tsx`, dédiée à la gestion des questions
+  et choix imbriqués. Voir [`how-to.md`](./how-to.md) pour dupliquer ce
+  pattern sur une nouvelle entité.
 
 Chaque groupe a son propre `layout.tsx` — pas de layout racine partagé au-delà
 de `src/app/layout.tsx` (police, thème, `<html>`).
@@ -111,20 +114,31 @@ Règles implicites à connaître :
   `@dnd-kit`, `markdown-editor-field.tsx`).
 - **`components/public/`** — le site vitrine : `quran-reader.tsx` (le plus
   gros composant du repo, voir [`domain.md`](./domain.md#lecteur-du-coran)),
-  recherche (`search-command.tsx`), suivi de progression
-  (`mark-complete-button.tsx`, `progress-ring.tsx`).
+  `quran-audio-player.tsx` (lecture + surbrillance mot-à-mot),
+  `memorization-progress-bar.tsx` / `memorization-summary.tsx` (suivi de
+  mémorisation, voir [`domain.md`](./domain.md#lecteur-du-coran)),
+  `quiz-attempt.tsx` / `quiz-item.tsx` (passage de quiz),
+  `parcours-track.tsx` (déroulé d'un parcours gated, voir
+  [`domain.md`](./domain.md#parcours)), recherche (`search-command.tsx`),
+  suivi de progression (`mark-complete-button.tsx`, `progress-ring.tsx`).
 - **`components/layout/`** — header/footer/nav partagés entre pages publiques,
   thème (dark/light via `next-themes`).
 
 ## Rendu Coran / Tajweed
 
-Le lecteur du Coran (`components/public/quran-reader.tsx`) fait ~670 lignes
-car il gère : pagination façon mushaf, police QCF spécifique
-(`lib/quran/qcf-font.ts`), coloration tajweed, navigation surah-à-surah, et un
-lecteur audio (`quran-audio-player.tsx`) branché sur
-`api/quran/chapter-audio/[chapter]`. Les données viennent de l'API Quran
-Foundation via `lib/quran/client.ts` (OAuth2 client-credentials, jamais
-appelée depuis le client — voir les commentaires du fichier).
+Le lecteur du Coran (`components/public/quran-reader.tsx`) fait plus de 1200
+lignes car il gère : pagination façon mushaf, police QCF spécifique
+(`lib/quran/qcf-font.ts`), coloration tajweed, navigation surah-à-surah,
+reprise de la dernière position lue (`localStorage`), mode Zen plein écran
+(`@base-ui/react/dialog`), suivi de mémorisation verset par verset (menu
+contextuel + `lib/actions/memorization.ts`), et un lecteur audio
+(`quran-audio-player.tsx`) branché sur `api/quran/chapter-audio/[chapter]` et
+`api/quran/verse-audio/[chapter]` (timing mot-à-mot pour la surbrillance
+pendant la lecture), affiché en barre plein écran fixée en bas de l'écran. Les
+données viennent de l'API Quran Foundation via `lib/quran/client.ts` (OAuth2
+client-credentials, jamais appelée depuis le client — voir les commentaires
+du fichier). Détail fonctionnel dans
+[`domain.md`](./domain.md#lecteur-du-coran).
 
 ## Metadata / SEO
 

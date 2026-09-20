@@ -53,6 +53,10 @@ Fichiers à créer/modifier, dans l'ordre :
      `getFooById(id)`, `notFound()` si absent, rend `<FooForm foo={f} />`.
    - Ajouter l'entrée dans `navItems` de
      `src/components/dashboard/dashboard-sidebar.tsx`.
+   - Si l'entité a des sous-éléments imbriqués (ex : les questions d'un quiz),
+     ajouter une page dédiée `dashboard/foo/[id]/sous-element/page.tsx` plutôt
+     que de tout gérer dans le formulaire d'édition — voir
+     `dashboard/quiz/[id]/questions/page.tsx` comme référence.
 
 7. **Page(s) publique(s)**, si l'entité doit être visible côté site vitrine —
    suivre le pattern de `src/app/(public)/cours/page.tsx` et
