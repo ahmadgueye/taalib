@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { EntityCard } from "@/components/public/entity-card";
 import { ParcoursTrack } from "@/components/public/parcours-track";
+import { WelcomeToast } from "@/components/public/welcome-toast";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { coursStatusConfig } from "@/lib/cours-status";
 import { getAllCours } from "@/lib/db/queries/cours";
@@ -11,7 +12,13 @@ import {
   getThematiquesHorsParcours,
 } from "@/lib/db/queries/parcours";
 
-export default async function Home() {
+type Props = {
+  searchParams: Promise<{ welcome?: string }>;
+};
+
+export default async function Home({ searchParams }: Props) {
+  const { welcome } = await searchParams;
+  const showWelcome = welcome === "1";
   const profile = await getCurrentProfile();
   const parcours = await getFirstParcours();
 
@@ -19,6 +26,7 @@ export default async function Home() {
     const coursList = await getAllCours();
     return (
       <div className="flex flex-col gap-16 animate-in fade-in duration-300">
+        <WelcomeToast show={showWelcome} />
         <section className="max-w-2xl">
           <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
             Des ressources authentiques pour apprendre l&apos;Islam, toujours
@@ -73,6 +81,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col gap-16 animate-in fade-in duration-300">
+      <WelcomeToast show={showWelcome} />
       <section>
         <div className="flex items-start justify-between gap-4">
           <div className="max-w-2xl">
