@@ -1,23 +1,27 @@
 import type { MemorizationStatus } from "@/lib/db/schema";
+import { CHAPTER_WORD_COUNTS } from "@/lib/quran/chapter-word-counts";
 import type { QuranChapter } from "@/lib/quran/types";
 
 export const MEMORIZATION_STYLES: Record<
   MemorizationStatus,
-  { tint: string; solid: string; label: string }
+  { tint: string; solid: string; stroke: string; label: string }
 > = {
   maitrise: {
     tint: "bg-emerald-500/10",
     solid: "bg-emerald-500",
+    stroke: "stroke-emerald-500",
     label: "Maîtrisé",
   },
   en_cours: {
     tint: "bg-amber-500/10",
     solid: "bg-amber-500",
+    stroke: "stroke-amber-500",
     label: "En cours",
   },
   a_renforcer: {
     tint: "bg-rose-500/10",
     solid: "bg-rose-500",
+    stroke: "stroke-rose-500",
     label: "À renforcer",
   },
 };
@@ -105,4 +109,111 @@ export function chapterMemorizationStatus(
   if (summary.aRenforcer > 0) return "a_renforcer";
   if (summary.tracked > 0) return "en_cours";
   return null;
+}
+
+// Mirrors what setChapterMemorizedCount does server-side: verses 1..count
+// become "maîtrisé", anything past count is cleared — applied locally right
+// away so the UI updates without waiting on a server round-trip.
+export function applyChapterCount(
+  prev: Record<string, MemorizationStatus>,
+  chapter: QuranChapter,
+  count: number
+): Record<string, MemorizationStatus> {
+  const next = { ...prev };
+  for (let verseNumber = 1; verseNumber <= chapter.versesCount; verseNumber++) {
+    const key = `${chapter.id}:${verseNumber}`;
+    if (verseNumber <= count) next[key] = "maitrise";
+    else delete next[key];
+  }
+  return next;
+}
+
+export type WordProgressBreakdown = {
+  maitrise: number;
+  enCours: number;
+  aRenforcer: number;
+  nonCommence: number;
+  total: number;
+};
+
+// Only per-verse status is tracked, not per-verse word counts, so each
+// sourate's words are treated as evenly spread across its verses — a rough
+// approximation, but one that corrects the much bigger skew between short
+// and long sourates (raw verse counts would weigh them equally).
+export function computeWordProgressBreakdown(
+  summaries: ChapterMemorizationSummary[]
+): WordProgressBreakdown {
+  const totals = {
+    maitrise: 0,
+    enCours: 0,
+    aRenforcer: 0,
+    nonCommence: 0,
+    total: 0,
+  };
+
+  for (const summary of summaries) {
+    const chapterWords = CHAPTER_WORD_COUNTS[summary.chapter.id] ?? 0;
+    const perVerse = chapterWords / summary.chapter.versesCount;
+    const maitriseWords = summary.maitrise * perVerse;
+    const enCoursWords = summary.enCours * perVerse;
+    const aRenforcerWords = summary.aRenforcer * perVerse;
+
+    totals.maitrise += maitriseWords;
+    totals.enCours += enCoursWords;
+    totals.aRenforcer += aRenforcerWords;
+    totals.nonCommence +=
+      chapterWords - maitriseWords - enCoursWords - aRenforcerWords;
+    totals.total += chapterWords;
+  }
+
+  return totals;
+}
+
+export type ChapterListEntry = ChapterMemorizationSummary & {
+  progress: number;
+};
+
+// Sourates with at least one verse tracked but not yet fully mastered,
+// closest-to-done first — a short-term target to finish.
+export function findApproachingMastery(
+  summaries: ChapterMemorizationSummary[],
+  limit: number
+): ChapterListEntry[] {
+  return summaries
+    .filter((s) => s.tracked > 0 && s.maitrise < s.chapter.versesCount)
+    .map((s) => ({ ...s, progress: s.maitrise / s.chapter.versesCount }))
+    .sort((a, b) => b.progress - a.progress)
+    .slice(0, limit);
+}
+
+// Sourates with at least one verse flagged "à renforcer", most-affected
+// first — a revision reminder list.
+export function findNeedingReinforcement(
+  summaries: ChapterMemorizationSummary[],
+  limit: number
+): ChapterListEntry[] {
+  return summaries
+    .filter((s) => s.aRenforcer > 0)
+    .map((s) => ({ ...s, progress: s.aRenforcer / s.chapter.versesCount }))
+    .sort((a, b) => b.progress - a.progress)
+    .slice(0, limit);
+}
+
+export type RecentActivityEntry = { chapter: QuranChapter; updatedAt: string };
+
+// Sourates most recently touched, based on the latest per-verse updatedAt —
+// not a real session history (none is tracked), just a "pick up where you
+// left off" signal.
+export function findRecentActivity(
+  chapters: QuranChapter[],
+  recentActivity: Record<number, string>,
+  limit: number
+): RecentActivityEntry[] {
+  return chapters
+    .filter((c) => recentActivity[c.id] !== undefined)
+    .map((c) => ({ chapter: c, updatedAt: recentActivity[c.id] }))
+    .sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
+    .slice(0, limit);
 }

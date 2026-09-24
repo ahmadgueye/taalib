@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { MemorizationSummary } from "@/components/public/memorization-summary";
+import { MemorizationWorkspace } from "@/components/public/memorization-workspace";
 import { getCurrentProfile } from "@/lib/auth/get-session";
-import { getMemorizationStatus } from "@/lib/db/queries/quran-memorization";
+import {
+  getMemorizationStatus,
+  getRecentChapterActivity,
+} from "@/lib/db/queries/quran-memorization";
 import { getChapters } from "@/lib/quran/queries";
 
 export const metadata: Metadata = {
@@ -15,9 +18,10 @@ export default async function MemorisationPage() {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login?next=/memorisation");
 
-  const [chapters, statusMap] = await Promise.all([
+  const [chapters, statusMap, recentActivity] = await Promise.all([
     getChapters(),
     getMemorizationStatus(profile.id),
+    getRecentChapterActivity(profile.id),
   ]);
 
   return (
@@ -31,7 +35,11 @@ export default async function MemorisationPage() {
       </p>
 
       <div className="mt-6">
-        <MemorizationSummary chapters={chapters} statusMap={statusMap} />
+        <MemorizationWorkspace
+          chapters={chapters}
+          statusMap={statusMap}
+          recentActivity={recentActivity}
+        />
       </div>
     </div>
   );

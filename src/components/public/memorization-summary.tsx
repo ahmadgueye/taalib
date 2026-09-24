@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { setChapterMemorizedCount } from "@/lib/actions/memorization";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -41,23 +40,6 @@ const STATUS_RANK: Record<"none" | MemorizationStatus, number> = {
   a_renforcer: 2,
   maitrise: 3,
 };
-
-// Mirrors what setChapterMemorizedCount does server-side: verses 1..count
-// become "maîtrisé", anything past count is cleared — applied locally right
-// away so the row updates without waiting on a server round-trip.
-function applyChapterCount(
-  prev: Record<string, MemorizationStatus>,
-  chapter: QuranChapter,
-  count: number,
-): Record<string, MemorizationStatus> {
-  const next = { ...prev };
-  for (let verseNumber = 1; verseNumber <= chapter.versesCount; verseNumber++) {
-    const key = `${chapter.id}:${verseNumber}`;
-    if (verseNumber <= count) next[key] = "maitrise";
-    else delete next[key];
-  }
-  return next;
-}
 
 // Accent/case-insensitive match against a sourate's names or its number, so
 // "ikhlass" or "112" both find An-Nas... er, Al-Ikhlas.
@@ -222,11 +204,12 @@ function MemorizedCountInput({
 export function MemorizationSummary({
   chapters,
   statusMap,
+  onCommitCount,
 }: {
   chapters: QuranChapter[];
   statusMap: Record<string, MemorizationStatus>;
+  onCommitCount: (chapter: QuranChapter, count: number) => Promise<void>;
 }) {
-  const [localStatusMap, setLocalStatusMap] = useState(statusMap);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortState>({
     key: "chapter",
@@ -234,8 +217,8 @@ export function MemorizationSummary({
   });
 
   const summaries = useMemo(
-    () => computeChapterMemorizationSummaries(chapters, localStatusMap),
-    [chapters, localStatusMap],
+    () => computeChapterMemorizationSummaries(chapters, statusMap),
+    [chapters, statusMap],
   );
 
   const rows = useMemo(() => {
@@ -278,20 +261,6 @@ export function MemorizationSummary({
       prev.key === key
         ? { key, direction: prev.direction === "asc" ? "desc" : "asc" }
         : { key, direction: "asc" },
-    );
-  }
-
-  async function handleCommitCount(chapter: QuranChapter, count: number) {
-    const result = await setChapterMemorizedCount(chapter.id, count);
-    if (result.error) {
-      toast.error(result.error);
-      return;
-    }
-    setLocalStatusMap((prev) => applyChapterCount(prev, chapter, count));
-    toast.success(
-      count === chapter.versesCount
-        ? `${chapter.nameSimple} maîtrisée à 100% !`
-        : "Progression enregistrée.",
     );
   }
 
@@ -381,7 +350,7 @@ export function MemorizationSummary({
                       chapter={summary.chapter}
                       memorizedCount={summary.maitrise}
                       onCommit={(count) =>
-                        handleCommitCount(summary.chapter, count)
+                        onCommitCount(summary.chapter, count)
                       }
                     />
                   </TableCell>
