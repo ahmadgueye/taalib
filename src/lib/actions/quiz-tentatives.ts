@@ -1,11 +1,16 @@
 "use server";
 
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { db } from "@/lib/db";
-import { quizQuestions, quizReponses, quizTentatives } from "@/lib/db/schema";
+import {
+  quiz,
+  quizQuestions,
+  quizReponses,
+  quizTentatives,
+} from "@/lib/db/schema";
 
 const submitSchema = z.object({
   quizId: z.string().uuid(),
@@ -47,6 +52,16 @@ export async function submitQuizAttempt(
   const parsed = submitSchema.safeParse({ quizId, answers });
   if (!parsed.success) {
     return { error: "Réponses invalides." };
+  }
+
+  // Un quiz en brouillon n'est jamais visible côté public : on refuse aussi
+  // sa soumission, sinon la correction en révélerait les bonnes réponses.
+  const publishedQuiz = await db.query.quiz.findFirst({
+    columns: { id: true },
+    where: and(eq(quiz.id, parsed.data.quizId), eq(quiz.status, "published")),
+  });
+  if (!publishedQuiz) {
+    return { error: "Quiz introuvable." };
   }
 
   const questions = await db.query.quizQuestions.findMany({
