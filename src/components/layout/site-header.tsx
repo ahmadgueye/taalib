@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Search, UserRound } from "lucide-react";
 
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
-import { DonateDialog } from "@/components/layout/donate-dialog";
 import { SiteNavLinks } from "@/components/layout/site-nav-links";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -37,7 +36,6 @@ export function SiteHeader({
           <SiteNavLinks />
         </div>
         <div className="flex items-center justify-end gap-2">
-          {/* <DonateDialog /> */}
           <ThemeToggle />
           <Button
             variant="ghost"

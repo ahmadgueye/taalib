@@ -82,7 +82,6 @@ export default async function ThematiqueDetailPage({ params }: Props) {
         hadiths={t.hadiths}
         quiz={t.quiz}
         coursTitle={t.cours.title}
-        thematiqueTitle={t.title}
         completedIds={completedIds}
         quizScores={quizScores}
       />

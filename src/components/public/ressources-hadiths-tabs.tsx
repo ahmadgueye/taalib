@@ -35,7 +35,6 @@ export function RessourcesHadithsTabs({
   hadiths,
   quiz,
   coursTitle,
-  thematiqueTitle,
   completedIds,
   quizScores,
 }: {
@@ -43,7 +42,6 @@ export function RessourcesHadithsTabs({
   hadiths: HadithListItem[];
   quiz?: QuizListItem[];
   coursTitle: string;
-  thematiqueTitle: string;
   completedIds?: Set<string>;
   quizScores?: Map<string, QuizScore>;
 }) {
@@ -91,11 +89,9 @@ export function RessourcesHadithsTabs({
               <HadithCard
                 key={h.id}
                 slug={h.slug}
-                title={h.title}
                 arabicText={h.arabicText}
                 translationFr={h.translationFr}
                 coursTitle={coursTitle}
-                thematiqueTitle={thematiqueTitle}
               />
             ))}
           </div>

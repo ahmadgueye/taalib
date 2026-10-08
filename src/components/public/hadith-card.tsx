@@ -2,22 +2,18 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardHeader } from "@/components/ui/card";
 
 export function HadithCard({
   slug,
-  title,
   arabicText,
   translationFr,
   coursTitle,
-  thematiqueTitle,
 }: {
   slug: string;
-  title: string;
   arabicText: string;
   translationFr: string;
   coursTitle: string;
-  thematiqueTitle: string;
 }) {
   return (
     <Link href={`/hadiths/${slug}`}>
@@ -26,7 +22,6 @@ export function HadithCard({
           <Badge variant="outline" className="w-fit">
             {coursTitle}
           </Badge>
-          {/* <CardTitle className="mt-1 font-heading">{title}</CardTitle> */}
           <p
             dir="rtl"
             lang="ar"
