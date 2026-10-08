@@ -20,7 +20,7 @@ sequenceDiagram
     SB->>App: redirige vers /auth/callback?code=...
     App->>SB: exchangeCodeForSession(code)
     Note over SB: trigger Postgres handle_new_user()<br/>crée une ligne profiles si 1re connexion<br/>(role par défaut: viewer)
-    App->>U: redirige vers /compte (si pas encore de nom) ou /dashboard (ou ?next=...)
+    App->>U: redirige vers /compte (si pas encore de nom) ou vers ?next=... (défaut /dashboard)
 ```
 
 - Le bouton Google est `components/public/google-login-button.tsx` ; le
@@ -31,7 +31,11 @@ sequenceDiagram
   aussi bien pour un code OAuth que pour un code de lien magique).
 - Le callback redirige vers `/compte?next=...` (onboarding, saisie du nom) si
   le profil n'a pas encore de `fullName`, sinon directement vers `next` (ou
-  `/dashboard` par défaut).
+  `/dashboard` par défaut). Après la saisie du nom, `updateFullNameAction`
+  renvoie vers `next`. Un `viewer` qui arrive sur `/dashboard` (valeur par
+  défaut quand aucune page n'était demandée, par exemple après un clic sur
+  « Connexion » dans l'en-tête) est renvoyé vers `/?welcome=1`, ce qui
+  affiche un toast « Bienvenue sur Taalib ! » (`welcome-toast.tsx`).
 - La création du profil n'est **pas** faite par le code applicatif : c'est un
   trigger SQL (`handle_new_user`, dans
   `drizzle/migrations/0001_rls_and_profile_trigger.sql`) déclenché à
@@ -40,9 +44,10 @@ sequenceDiagram
 - **Le tout premier compte créé n'est pas admin automatiquement** — il faut le
   promouvoir manuellement (`role = 'admin'`) via l'éditeur de table Supabase ou
   `db:studio`. Tous les comptes suivants naissent `viewer` (défaut de colonne,
-  voir `drizzle/migrations/0003_default_viewer_role.sql`) et attendent qu'un
-  admin leur donne accès en écriture (`contributor` ou `admin`) depuis
-  `/dashboard/utilisateurs`.
+  voir `drizzle/migrations/0003_default_viewer_role.sql`) : ils utilisent le
+  site public (progression, quiz, mémorisation) sans rien savoir du
+  dashboard. Un admin peut leur donner l'accès en écriture (`contributor` ou
+  `admin`) depuis `/dashboard/utilisateurs`.
 
 ## `src/proxy.ts` — la porte d'entrée
 
@@ -71,8 +76,9 @@ Il y a volontairement trois niveaux, du plus UX au plus sécurité :
 2. **`lib/auth/get-session.ts`** (`requireContributor()` / `requireAdmin()`)
    — appelé en tout début de chaque Server Action d'écriture
    (`lib/actions/*.ts`) et dans `dashboard/layout.tsx` pour choisir quoi
-   afficher (sidebar complète pour `admin`, écran "en attente d'autorisation"
-   pour `viewer`). Lève une erreur si le rôle ne convient pas.
+   afficher (sidebar complète pour `admin`, redirection vers `/?welcome=1`
+   pour `viewer`). Lève une erreur si le rôle ne convient pas. Couvert par des
+   tests (`get-session.test.ts`, `authorization.test.ts`).
 3. **Row Level Security Postgres** (`is_contributor()`, `is_admin()` dans
    `drizzle/migrations/0001_rls_and_profile_trigger.sql`) — **la vraie
    barrière**. Même si un bug contournait les deux couches précédentes,
@@ -92,10 +98,11 @@ pour éviter un aller-retour serveur inutile.
 | `admin` | ✅ | ✅ | ✅ (`/dashboard/utilisateurs`) |
 
 Un nouveau compte atterrit en `viewer` (défaut de colonne sur `profiles.role`,
-voir `drizzle/migrations/0003_default_viewer_role.sql`) et voit un écran "en
-attente d'autorisation" dans `/dashboard` (`dashboard/layout.tsx`) tant qu'un
-admin ne l'a pas promu `contributor` ou `admin` depuis
-`/dashboard/utilisateurs` (`lib/actions/users.ts`).
+voir `drizzle/migrations/0003_default_viewer_role.sql`). Les concepts de rôle
+et de dashboard ne sont **jamais exposés** à un `viewer` : `/dashboard` le
+renvoie vers l'accueil (`dashboard/layout.tsx`). Un admin peut le promouvoir
+`contributor` ou `admin` depuis `/dashboard/utilisateurs`
+(`lib/actions/users.ts`, qui refuse de retirer le dernier admin).
 
 ## Ajouter un rôle ou changer une permission
 
@@ -108,8 +115,27 @@ Si un jour il faut un rôle intermédiaire ou une permission plus fine :
 3. Mettre à jour `requireContributor()` / `requireAdmin()` dans
    `lib/auth/get-session.ts` pour rester cohérent avec la fonction SQL.
 4. Mettre à jour l'UI qui branche sur le rôle : `dashboard/layout.tsx`
-   (écran "en attente"), `dashboard-sidebar.tsx` (`isAdmin`),
+   (redirection des `viewer`), `dashboard-sidebar.tsx` (`isAdmin`),
    `dashboard/utilisateurs/page.tsx` + `user-role-select.tsx`.
 
 Oublier une de ces quatre étapes est la source d'incohérence la plus probable
-(ex : RLS autorise mais l'UI cache le bouton, ou l'inverse).
+(ex : RLS autorise mais l'UI cache le bouton, ou l'inverse). Penser aussi à
+`get-session.test.ts` et `authorization.test.ts`.
+
+## En local
+
+La stack Supabase locale (voir [`development.md`](./development.md)) a ses
+particularités :
+
+- **Pas de Google OAuth** : il n'est pas configuré en local. Se connecter par
+  lien magique.
+- **Les e-mails ne partent pas** : Supabase local les intercepte et les range
+  dans Mailpit, http://127.0.0.1:54324. Le lien de connexion s'y trouve.
+- **URL de redirection** : `supabase/config.toml` définit `site_url` et
+  `additional_redirect_urls` (`http://localhost:3000/**` et
+  `http://127.0.0.1:3000/**`). Une URL de callback absente de cette liste fait
+  retomber Supabase sur la racine du site (`/?code=...`). Ouvrir l'app sur
+  `localhost:3000`, pas sur l'IP du réseau.
+- **Premier admin** : le compte local naît `viewer`. Le promouvoir via Studio
+  (http://127.0.0.1:54323, schéma `public`, table `profiles`) ou
+  `docker exec supabase_db_taalib psql -U postgres -c "update public.profiles set role='admin' where email='toi@exemple.com'"`.

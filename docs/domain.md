@@ -33,7 +33,9 @@ flowchart TD
 - **Quiz** — rattaché à une thématique comme les ressources, statut
   `draft`/`published`. Sert à valider la compréhension (voir
   [Quiz](#quiz) plus bas) et à débloquer la suite d'un
-  [Parcours](#parcours) le cas échéant.
+  [Parcours](#parcours) le cas échéant. Un quiz en brouillon n'est visible ni
+  sur le site ni soumissible (`submitQuizAttempt` le refuse), sinon la
+  correction en révélerait les réponses.
 - **Séances** — un événement daté (cours en présentiel/live) qui référence
   a posteriori les thématiques et ressources qui y ont été abordées, via les
   tables de jointure `seance_thematiques` / `seance_ressources`. Une séance
@@ -67,7 +69,10 @@ contrairement au pattern CRUD standard des autres entités — voir
   (`lib/actions/quiz-tentatives.ts`).
 - **Correction côté serveur uniquement** — l'action recharge les
   `is_correct` réels depuis la base à partir des questions du quiz, jamais
-  depuis le payload soumis par le client, avant de calculer le score. Chaque
+  depuis le payload soumis par le client, avant de calculer le score. Une
+  question à choix multiples n'est juste que si l'ensemble coché est
+  **exactement** l'ensemble des bonnes réponses. Il n'existe pas encore de
+  page d'historique des tentatives (elles sont enregistrées en base). Chaque
   passage crée une ligne `quiz_tentatives` (score, total) et des
   `quiz_reponses` (choix cochés par question) — l'historique complet est
   gardé, pas seulement le meilleur score.
@@ -117,8 +122,12 @@ pas — même logique que les séances, voir plus haut). Public :
 seule fonction `searchCatalogue()`, avec filtres optionnels par type
 d'entité et par type de ressource (`lib/search-types.ts` définit
 `ALL_ENTITY_TYPES` / `ALL_RESSOURCE_TYPES`, la source de vérité pour les
-valeurs possibles). UI : `search-command.tsx` (palette de commande, cmdk) +
-`/recherche` (page dédiée).
+valeurs possibles). UI : `search-command.tsx` (palette de commande, cmdk, ⌘K) +
+`/recherche` (page dédiée). La palette désactive le filtrage intégré de cmdk
+(`shouldFilter={false}`) : le serveur filtre déjà, et un second filtrage
+masquerait des résultats trouvés via la description. Limites connues : la
+recherche est sensible aux accents (« priere » ne trouve pas « prière ») et ne
+normalise pas l'arabe.
 
 ## Lecteur du Coran
 
@@ -130,6 +139,7 @@ sur l'API externe Quran Foundation).
   client-credentials auprès de `oauth2.quran.foundation`, puis interroge
   `apis.quran.foundation/content/api/v4`. Les routes internes
   `api/quran/pages/[page]`, `api/quran/chapter-audio/[chapter]`,
+  `api/quran/verse-audio/[chapter]`, `api/quran/verse-timings/[chapter]`,
   `api/quran/recitations`, `api/quran/verse-location` exposent ces données au
   client sans jamais lui donner les credentials (`QURAN_CLIENT_ID`/`SECRET`
   restent server-only).
@@ -174,7 +184,10 @@ concerne que le Coran et n'a aucun lien avec `cours`/`thematiques`.
   sur `/memorisation`, la page de synthèse) : les versets `1..N` passent
   `maitrise`, tout ce qui dépasse `N` est effacé — baisser le nombre "rembobine"
   donc réellement la progression au lieu de laisser des versets orphelins.
-- **Vue d'ensemble** — `/memorisation` (`memorization-summary.tsx`) liste les
+- **Vue d'ensemble** — `/memorisation` (`memorization-workspace.tsx`) affiche
+  d'abord un mini tableau de bord (`memorization-dashboard.tsx` : répartition
+  par statut, sourates à renforcer, proches de la maîtrise, activité
+  récente), puis `memorization-summary.tsx` qui liste les
   114 sourates avec leur statut agrégé, triable par sourate/statut/nombre de
   versets mémorisés/pourcentage, et permet la saisie rapide par comptage
   décrite ci-dessus. `memorization-progress-bar.tsx` affiche une frise

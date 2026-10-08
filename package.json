@@ -14,6 +14,7 @@
     "db:migrate": "node --env-file=.env.local node_modules/drizzle-kit/bin.cjs migrate",
     "db:studio": "node --env-file=.env.local node_modules/drizzle-kit/bin.cjs studio",
     "db:seed": "node --env-file=.env.local --import=tsx src/lib/db/seed.ts",
+    "db:studio:local": "node --env-file=.env.development.local node_modules/drizzle-kit/bin.cjs studio",
     "db:migrate:local": "node --env-file=.env.development.local node_modules/drizzle-kit/bin.cjs migrate",
     "db:seed:local": "node --env-file=.env.development.local --import=tsx src/lib/db/seed.ts",
     "db:local:start": "supabase start",

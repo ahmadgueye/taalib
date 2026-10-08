@@ -6,7 +6,8 @@ mémorisation) et un tableau de bord d'administration pour créer et organiser
 ce contenu.
 
 Stack : **Next.js 16** (App Router) · **Supabase** (Auth + Postgres) · **Drizzle
-ORM** · **Tailwind CSS v4** · déployé sur **Vercel**.
+ORM** · **Tailwind CSS v4** · **Vitest** · déployé sur **Vercel** (CI GitHub
+Actions : lint, typecheck, test, build).
 
 ## Documentation
 
@@ -18,7 +19,9 @@ Toute la doc de fond vit dans [`docs/`](./docs) :
 | [`docs/database.md`](./docs/database.md) | Schéma Drizzle, relations, migrations |
 | [`docs/domain.md`](./docs/domain.md) | Modèle métier : cours → thématiques → ressources/hadiths, séances, progression, Coran |
 | [`docs/auth.md`](./docs/auth.md) | Authentification Supabase, rôles, RLS |
-| [`docs/how-to.md`](./docs/how-to.md) | Recettes : ajouter une entité CRUD, une migration, un champ de formulaire |
+| [`docs/development.md`](./docs/development.md) | Environnement local (Supabase Docker), commandes, tests, flux Git |
+| [`docs/how-to.md`](./docs/how-to.md) | Recettes : ajouter une entité CRUD, une migration, un champ de formulaire, un test |
+| [`docs/validation-checklist.md`](./docs/validation-checklist.md) | Checklist de validation manuelle avant mise en production |
 | [`docs/deployment.md`](./docs/deployment.md) | Vercel, variables d'environnement, cron |
 
 Lis `AGENTS.md` avant de toucher au code : ce dépôt tourne sur une version de
@@ -29,7 +32,7 @@ vendue dans `node_modules/next/dist/docs/`.
 ## Démarrer en local
 
 Le développement tourne sur une **base Supabase locale** (Docker), isolée de
-la production.
+la production. Détail, commandes et tests : [`docs/development.md`](./docs/development.md).
 
 1. **Prérequis** : Node, Docker Desktop lancé.
 
@@ -70,11 +73,14 @@ la production.
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production |
 | `npm run start` | Sert le build de production |
-| `npm run lint` | ESLint |
+| `npm run lint` | ESLint (0 warning toléré) |
+| `npm run typecheck` | Génération des types de routes + `tsc --noEmit` |
+| `npm test` | Tests Vitest |
+| `npm run db:studio:local` | Drizzle Studio sur la base locale |
 | `npm run db:generate` | Génère une migration Drizzle à partir de `src/lib/db/schema.ts` |
 | `npm run db:migrate:local` | Applique les migrations à la base locale |
 | `npm run db:migrate` | Applique les migrations à la base de `.env.local` (**production**) |
-| `npm run db:studio` | Ouvre Drizzle Studio (explorateur de la base) |
+| `npm run db:studio` | Drizzle Studio sur la base de `.env.local` (**production**) |
 | `npm run db:seed:local` | Insère un jeu de données de démo en local |
 | `npm run db:seed` | Refuse de tourner hors base locale (sauf `ALLOW_REMOTE_DB=1`) |
 | `npm run db:local:start` / `db:local:stop` / `db:local:reset` | Gère la stack Supabase locale |

@@ -3,10 +3,11 @@
 Postgres géré par **Supabase**, schéma défini en code avec **Drizzle ORM**
 (`src/lib/db/schema.ts`), migrations SQL générées dans `drizzle/migrations/`.
 
-⚠️ **`.env.local` pointe vers le projet Supabase de production.** Il n'existe
-pas de base locale ou de staging séparée pour ce projet — voir
-[`deployment.md`](./deployment.md). Réfléchir à deux fois avant `db:seed` ou
-toute migration destructrice.
+⚠️ **`.env.local` pointe vers le projet Supabase de production.** Le
+développement se fait sur une base Supabase **locale** (Docker, voir
+[`development.md`](./development.md)) via `.env.development.local`. Les
+scripts sans suffixe `:local` (`db:migrate`, `db:studio`) ciblent la
+production : voir [`deployment.md`](./deployment.md).
 
 ## Schéma (ERD)
 
@@ -223,15 +224,19 @@ ajoutes un rôle ou changes la logique d'un côté, réplique de l'autre.
    (`0001`, `0003`, `0004`, `0006`...) ont été écrites/complétées à la main.
    Si ta modification touche une table déjà sous RLS, il faut ajouter les
    policies manquantes toi-même dans le fichier généré.
-4. Appliquer :
+4. Appliquer **d'abord en local** :
    ```bash
-   npm run db:migrate
+   npm run db:migrate:local
    ```
+   puis en production seulement après test et backup (voir
+   [`deployment.md`](./deployment.md#migrer-la-production)) avec
+   `npm run db:migrate`.
 5. Committer le fichier de migration généré (et son entrée dans
    `drizzle/migrations/meta/`) avec le changement de schéma — les deux vont
    toujours ensemble dans le même commit.
 
-Pour explorer la base sans SQL brut : `npm run db:studio` (Drizzle Studio).
+Pour explorer la base sans SQL brut : `npm run db:studio:local` (Drizzle
+Studio sur la base locale).
 
 ## Requêtes vs actions
 

@@ -43,7 +43,9 @@ renommé `proxy.ts` (voir `AGENTS.md` — c'est le genre de changement qui n'est
 pas dans les données d'entraînement d'un LLM standard). C'est le seul point
 d'entrée qui tourne sur **chaque** requête, avant même les Server Components :
 il rafraîchit la session Supabase (`src/lib/supabase/proxy.ts`) et redirige
-vers `/login` les visiteurs non connectés sur `/dashboard` et `/compte`. Voir
+vers `/login` les visiteurs non connectés sur `/dashboard` et `/compte`. Les
+pages qui exigent un compte (`/memorisation`, `/quiz/[id]`...) font leur propre
+`redirect("/login?next=...")` dans le Server Component. Voir
 [`auth.md`](./auth.md).
 
 ## Route groups
@@ -57,7 +59,8 @@ deux layouts et deux publics différents :
   compte, mais reste dans ce groupe car visuellement c'est le layout public).
 - **`(dashboard)/dashboard/`** — l'admin, protégé par `proxy.ts` +
   une double vérification de rôle dans
-  `src/app/(dashboard)/dashboard/layout.tsx`. Une entité "Foo" y a
+  `src/app/(dashboard)/dashboard/layout.tsx` (un `viewer` qui y accède est
+  renvoyé vers `/?welcome=1`, jamais informé de l'existence du dashboard). Une entité "Foo" y a
   systématiquement le même quatuor de pages :
   `dashboard/foo/page.tsx` (liste), `dashboard/foo/new/page.tsx` (création),
   `dashboard/foo/[id]/edit/page.tsx` (édition), plus un composant `foo-form.tsx`
@@ -115,8 +118,11 @@ Règles implicites à connaître :
 - **`components/public/`** — le site vitrine : `quran-reader.tsx` (le plus
   gros composant du repo, voir [`domain.md`](./domain.md#lecteur-du-coran)),
   `quran-audio-player.tsx` (lecture + surbrillance mot-à-mot),
-  `memorization-progress-bar.tsx` / `memorization-summary.tsx` (suivi de
-  mémorisation, voir [`domain.md`](./domain.md#lecteur-du-coran)),
+  `memorization-workspace.tsx` (page `/memorisation`, assemble
+  `memorization-dashboard.tsx` = mini tableau de bord,
+  `memorization-summary.tsx` = liste des 114 sourates et
+  `memorization-progress-bar.tsx` = frise verset par verset, voir
+  [`domain.md`](./domain.md#lecteur-du-coran)),
   `quiz-attempt.tsx` / `quiz-item.tsx` (passage de quiz),
   `parcours-track.tsx` (déroulé d'un parcours gated, voir
   [`domain.md`](./domain.md#parcours)), recherche (`search-command.tsx`),
@@ -140,9 +146,35 @@ client-credentials, jamais appelée depuis le client — voir les commentaires
 du fichier). Détail fonctionnel dans
 [`domain.md`](./domain.md#lecteur-du-coran).
 
+Piège connu : le champ `pages` des chapitres de l'API sous-estime parfois la
+dernière page d'une sourate (Ash-Sharh, 94, est annoncée sur la page 596 alors
+que les versets 3 à 8 sont sur la 597). Le lecteur ne s'y fie donc pas : une
+sourate est « complètement chargée » quand son **dernier verset** est affiché
+(`chapterFullyLoaded`), et c'est la même règle qui décide du centrage des
+sourates tenant sur une seule page.
+
 ## Metadata / SEO
 
 `lib/metadata.ts` centralise la génération des `<meta>` (titre, description,
 Open Graph). Chaque route de détail public (`cours/[slug]`, `hadiths/[slug]`,
 `seances/[slug]`, `thematiques/[slug]`) a un `opengraph-image.tsx` généré
-dynamiquement (API `ImageResponse` de Next).
+dynamiquement (API `ImageResponse` de Next) : c'est l'aperçu qui s'affiche
+quand on colle un lien dans WhatsApp, par exemple.
+
+- `src/app/sitemap.ts` — liste les pages principales et les slugs de cours,
+  thématiques, hadiths, séances et parcours (lit la base, régénéré toutes les
+  heures via `revalidate`).
+- `src/app/robots.ts` — autorise l'indexation sauf `/dashboard`, `/compte`,
+  `/login`, `/auth` et `/api`, et référence le sitemap.
+- Les deux et les Open Graph utilisent `NEXT_PUBLIC_SITE_URL` : si elle n'est
+  pas définie sur Vercel, les liens pointent vers `localhost`.
+
+## Tests
+
+Vitest (`npm test`), exécuté aussi par la CI. Les tests vivent à côté du code
+(`*.test.ts`) et **ne touchent jamais la base** : `@/lib/db`, Supabase et
+`next/cache` sont simulés avec `vi.mock`. Ils couvrent la correction des quiz,
+les gardes de rôle (dont un test qui vérifie que **chaque** Server Action du
+dashboard refuse un utilisateur non autorisé avant de toucher la base), la
+progression, la mémorisation et la logique des parcours. Voir
+[`development.md`](./development.md#tests).
