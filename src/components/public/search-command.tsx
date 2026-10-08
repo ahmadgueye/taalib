@@ -41,10 +41,17 @@ export function SearchCommand() {
 
   useEffect(() => {
     if (query.trim().length < 2) return;
+    // `cancelled` drops a slow response that arrives after a newer query.
+    let cancelled = false;
     const timeout = setTimeout(() => {
-      searchCatalogueAction(query).then(setResults);
+      searchCatalogueAction(query).then((r) => {
+        if (!cancelled) setResults(r);
+      });
     }, 200);
-    return () => clearTimeout(timeout);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [query]);
 
   const visibleResults = query.trim().length < 2 ? [] : results;
@@ -69,6 +76,7 @@ export function SearchCommand() {
       onOpenChange={setOpen}
       title="Rechercher"
       description="Rechercher dans le catalogue"
+      shouldFilter={false}
     >
       <CommandInput
         placeholder="Rechercher un cours, une thématique, une ressource…"

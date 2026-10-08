@@ -39,12 +39,16 @@ function CommandDialog({
   children,
   className,
   showCloseButton = false,
+  shouldFilter,
   ...props
 }: Omit<React.ComponentProps<typeof Dialog>, "children"> & {
   title?: string
   description?: string
   className?: string
   showCloseButton?: boolean
+  // Pass false when results are already filtered server-side, otherwise
+  // cmdk hides them a second time based on the visible item text.
+  shouldFilter?: boolean
   children: React.ReactNode
 }) {
   return (
@@ -60,7 +64,12 @@ function CommandDialog({
         )}
         showCloseButton={showCloseButton}
       >
-        <Command className="**:[[cmdk-group-heading]]:px-2">{children}</Command>
+        <Command
+          shouldFilter={shouldFilter}
+          className="**:[[cmdk-group-heading]]:px-2"
+        >
+          {children}
+        </Command>
       </DialogContent>
     </Dialog>
   )

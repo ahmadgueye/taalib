@@ -24,7 +24,7 @@ flowchart TD
   `markdown-content.tsx` / `text-resource-reader.tsx`). Statut
   `draft`/`published` (`lib/ressource-status.ts`) — un brouillon n'apparaît
   jamais côté public, y compris dans les requêtes de progression
-  (`toggleRessourceCompletion` refuse une ressource non `published`, voir
+  (`markRessourceCompleted` refuse une ressource non `published`, voir
   `lib/actions/progress.ts`).
 - **Hadiths** — rattachés à une thématique, pas à une ressource. Toujours en
   arabe + traduction française obligatoire (`translationFr`), traduction
@@ -44,8 +44,9 @@ flowchart TD
 
 `ressource_progress` (table pivot `user_id` + `ressource_id`) enregistre
 qu'un utilisateur connecté a marqué une ressource comme terminée
-(`mark-complete-button.tsx` → `toggleRessourceCompletion` en
-`lib/actions/progress.ts`). C'est un simple booléen "complété ou non", pas un
+(clic sur le bouton « suivant » en bas de la ressource,
+`next-chapter-button.tsx` → `markRessourceCompleted` en
+`lib/actions/progress.ts`). Il n'y a pas de décochage. C'est un simple booléen "complété ou non", pas un
 pourcentage — l'agrégation (ex: barre de progression d'un cours) se calcule à
 la volée en comparant le nombre de ressources publiées d'un cours au nombre
 complétées par l'utilisateur (`components/public/progress-ring.tsx`,

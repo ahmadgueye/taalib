@@ -120,7 +120,7 @@ Règles implicites à connaître :
   `quiz-attempt.tsx` / `quiz-item.tsx` (passage de quiz),
   `parcours-track.tsx` (déroulé d'un parcours gated, voir
   [`domain.md`](./domain.md#parcours)), recherche (`search-command.tsx`),
-  suivi de progression (`mark-complete-button.tsx`, `progress-ring.tsx`).
+  suivi de progression (`next-chapter-button.tsx`, `progress-ring.tsx`).
 - **`components/layout/`** — header/footer/nav partagés entre pages publiques,
   thème (dark/light via `next-themes`).
 
