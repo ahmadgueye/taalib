@@ -108,6 +108,10 @@ dérouler à la main avant une mise en production importante.
   séparées, voir [`deployment.md`](./deployment.md#environnements)).
 - On fusionne dans `main` par pull request, la CI (lint, typecheck, test,
   build) doit être verte.
+- **La doc suit le code** : tout changement de comportement, de schéma, de
+  script, de variable d'environnement, de rôle ou de workflow met à jour la
+  doc concernée (`docs/`, `README.md`, checklist) dans le même commit ou
+  juste après.
 - Un changement de schéma suit
   [`deployment.md`](./deployment.md#migrer-la-production) : test en local,
   backup, migration, puis déploiement.
