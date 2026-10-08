@@ -28,30 +28,40 @@ vendue dans `node_modules/next/dist/docs/`.
 
 ## Démarrer en local
 
-1. **Dépendances**
+Le développement tourne sur une **base Supabase locale** (Docker), isolée de
+la production.
+
+1. **Prérequis** : Node, Docker Desktop lancé.
+
+2. **Dépendances**
    ```bash
    npm install
    ```
 
-2. **Variables d'environnement** — copier `.env.example` vers `.env.local` et
-   remplir chaque valeur (voir les commentaires dans le fichier, et
-   [`docs/deployment.md`](./docs/deployment.md) pour le détail de chaque
-   variable).
+3. **Lancer Supabase en local** (Postgres, Auth, Storage, Studio)
    ```bash
-   cp .env.example .env.local
+   npm run db:local:start
+   ```
+   La commande affiche les URL et clés locales. Studio : http://127.0.0.1:54323,
+   boîte mail de test (magic links) : http://127.0.0.1:54324.
+
+4. **Variables d'environnement** — créer `.env.development.local` (voir
+   `.env.example`, section "Local") avec les valeurs affichées à l'étape
+   précédente. Next.js le charge en priorité sur `.env.local` en dev, donc
+   `npm run dev` pointe vers le local.
+
+5. **Base de données**
+   ```bash
+   npm run db:migrate:local
+   npm run db:seed:local   # jeu de données de démo
    ```
 
-3. **Base de données** — appliquer les migrations puis, en option, seed :
-   ```bash
-   npm run db:migrate
-   npm run db:seed   # optionnel : jeu de données de démo
-   ```
-
-4. **Lancer le serveur de dev**
+6. **Serveur de dev**
    ```bash
    npm run dev
    ```
-   Ouvrir [http://localhost:3000](http://localhost:3000).
+   Ouvrir [http://localhost:3000](http://localhost:3000). Arrêter la stack
+   locale avec `npm run db:local:stop`.
 
 ## Scripts
 
@@ -62,13 +72,16 @@ vendue dans `node_modules/next/dist/docs/`.
 | `npm run start` | Sert le build de production |
 | `npm run lint` | ESLint |
 | `npm run db:generate` | Génère une migration Drizzle à partir de `src/lib/db/schema.ts` |
-| `npm run db:migrate` | Applique les migrations à la base pointée par `DATABASE_URL` |
+| `npm run db:migrate:local` | Applique les migrations à la base locale |
+| `npm run db:migrate` | Applique les migrations à la base de `.env.local` (**production**) |
 | `npm run db:studio` | Ouvre Drizzle Studio (explorateur de la base) |
-| `npm run db:seed` | Insère un jeu de données de démo |
+| `npm run db:seed:local` | Insère un jeu de données de démo en local |
+| `npm run db:seed` | Refuse de tourner hors base locale (sauf `ALLOW_REMOTE_DB=1`) |
+| `npm run db:local:start` / `db:local:stop` / `db:local:reset` | Gère la stack Supabase locale |
 
 ## Avertissement important
 
-`.env.local` de ce projet pointe vers un **projet Supabase en production**
-utilisé par de vrais utilisateurs — il n'y a pas de base locale/dev séparée.
-Ne pas lancer `db:seed` ou des migrations destructrices sans avoir vérifié
-quelle base est ciblée.
+`.env.local` de ce projet pointe vers le projet Supabase de **production**,
+utilisé par de vrais utilisateurs. `npm run db:migrate` (sans `:local`) cible
+cette base : ne l'utiliser que pour déployer une migration déjà testée en
+local, après un backup.

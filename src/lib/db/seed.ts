@@ -11,6 +11,18 @@ import {
 } from "./schema";
 import { slugify } from "@/lib/utils";
 
+// Garde-fou : ce script écrit des données de démo. Il refuse de tourner contre
+// une base distante (la prod) sauf confirmation explicite.
+const dbUrl = process.env.DATABASE_URL ?? "";
+const isLocalDb = /@(127\.0\.0\.1|localhost|\[::1\]):/.test(dbUrl);
+if (!isLocalDb && process.env.ALLOW_REMOTE_DB !== "1") {
+  console.error(
+    "Refus de seeder une base non locale. Utilise `npm run db:seed:local`, " +
+      "ou ALLOW_REMOTE_DB=1 si tu sais ce que tu fais."
+  );
+  process.exit(1);
+}
+
 async function main() {
   console.log("Seeding...");
 
