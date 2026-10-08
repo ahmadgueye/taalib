@@ -1,0 +1,90 @@
+# Checklist de validation manuelle
+
+À dérouler sur l'app locale (`npm run db:local:start` puis `npm run dev`,
+http://localhost:3000) avec le contenu copié de la prod. Pour chaque ligne,
+noter : OK / Bug / Bizarre (+ une phrase). Tester d'abord sur **desktop**, puis
+une passe rapide en fenêtre étroite (≈ 400 px) pour anticiper le mobile.
+
+Boîte mail de test (liens magiques) : http://127.0.0.1:54324
+Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
+
+## 0. Préparation
+- [ ] Docker lancé, `npm run db:local:start` OK
+- [ ] http://localhost:3000 s'affiche avec le vrai contenu (7 cours, etc.)
+
+## 1. Visiteur non connecté
+- [ ] Accueil : parcours mis en avant, thématiques hors parcours, rien de cassé
+- [ ] `/cours` : liste, cours « bientôt disponible » visibles mais sans contenu
+- [ ] Page d'un cours → page d'une thématique → ouverture d'une ressource de
+      chaque type (vidéo, PDF, lien, texte)
+- [ ] `/hadiths` : arabe lisible (police, RTL), traduction FR, wolof si présent
+- [ ] Page d'un hadith
+- [ ] `/seances` et une séance : thématiques/ressources rattachées cliquables
+- [ ] `/parcours` et un parcours : étapes verrouillées pour un visiteur
+- [ ] Recherche (⌘K et `/recherche`) : mot français, mot avec accent, mot
+      arabe, filtre par type, aucun résultat
+- [ ] `/coran` : liste des sourates, ouverture d'une sourate, lecture,
+      audio (bandeau en bas), mode Zen, changement de récitateur
+- [ ] Marquer une ressource « terminée » sans être connecté → message clair
+- [ ] `/compte`, `/memorisation`, `/dashboard` redirigent vers `/login`
+- [ ] Thème clair/sombre, navigation, pied de page, page 404 (`/nimporte-quoi`)
+
+## 2. Connexion
+- [ ] `/login` : saisir un e-mail → message « Un lien de connexion… »
+- [ ] Lien reçu dans Mailpit → arrivée sur `/compte` (nouveau compte) pour
+      renseigner le nom
+- [ ] Après le nom : retour vers la page demandée
+- [ ] Déconnexion puis reconnexion avec le même e-mail
+- [ ] Un compte tout neuf est `viewer` : le message d'accueil « en attente »
+      s'affiche et `/dashboard` n'est pas accessible
+
+## 3. Apprenant connecté (rôle viewer)
+- [ ] Marquer une ressource comme terminée, puis la décocher
+- [ ] Progression d'un cours / d'une thématique (anneau, compteur) mise à jour
+- [ ] `/compte` : progression globale cohérente
+- [ ] Quiz : répondre faux → score et corrections (bonnes réponses révélées
+      seulement après envoi)
+- [ ] Quiz : répondre juste ≥ seuil → badge de réussite
+- [ ] Quiz : question à choix multiples (partiellement juste = faux)
+- [ ] Rejouer un quiz : le meilleur score est conservé
+- [ ] Parcours : réussir le quiz de l'étape 1 débloque l'étape 2 ; étape sans
+      quiz se débloque automatiquement
+- [ ] Mémorisation : toucher un verset → statut (en cours / à renforcer /
+      maîtrisé) et retour à « aucun »
+- [ ] `/memorisation` : tableau de bord et progression par sourate ; définir
+      « N versets mémorisés » sur une sourate, puis réduire le nombre
+- [ ] Rafraîchir la page : tout est conservé
+
+## 4. Contributeur / administrateur
+Passer le compte en `contributor` puis `admin` dans Studio
+(`public.profiles` → `role`).
+- [ ] `/dashboard` : accessible, statistiques cohérentes
+- [ ] Cours : créer, modifier, supprimer ; statut `coming_soon` ↔ `published`
+- [ ] Thématiques : créer, glisser-déposer pour réordonner, supprimer
+- [ ] Ressources : créer chaque type (vidéo, PDF upload, lien, texte
+      markdown), brouillon invisible côté public, réordonner
+- [ ] Hadiths : créer avec arabe + FR obligatoire, wolof optionnel
+- [ ] Quiz : créer, ajouter questions QCM et vrai/faux, plusieurs bonnes
+      réponses, brouillon invisible côté public
+- [ ] Séances : créer avec thématiques et ressources rattachées
+- [ ] Parcours : créer, ajouter/retirer/réordonner des étapes
+- [ ] Utilisateurs (admin) : changer un rôle ; impossible de retirer le
+      dernier admin
+- [ ] Un contributeur ne voit pas / ne peut pas ouvrir `/dashboard/utilisateurs`
+- [ ] Un viewer qui tape l'URL `/dashboard/...` est refusé
+
+## 5. Qualité transversale
+- [ ] Aucune erreur rouge dans la console du navigateur sur les pages visitées
+- [ ] Temps de chargement acceptable (rien > 2–3 s en local)
+- [ ] Texte arabe correct partout (hadiths, Coran, recherche, titres)
+- [ ] Partage : le titre et l'image s'affichent bien (aperçu WhatsApp/lien)
+- [ ] Textes en français sans faute, messages d'erreur compréhensibles
+- [ ] Navigation clavier de base (Tab, Entrée, Échap dans les dialogues)
+- [ ] Passe étroite ≈ 400 px : menu, tab bar, lecteur Coran, quiz utilisables
+
+## 6. Ce qu'il manque / ce qui frustre (libre)
+Noter ici tout ce qu'on cherche sans le trouver, tout ce qui demande trop de
+clics, et ce que vos élèves demanderaient en premier.
+-
+-
+-
