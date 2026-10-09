@@ -68,6 +68,13 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
       maîtrisé) et retour à « aucun »
 - [ ] `/memorisation` : tableau de bord et progression par sourate ; définir
       « N versets mémorisés » sur une sourate, puis réduire le nombre
+- [ ] Marquer un verset « maîtrisé » → bandeau « à réviser » sur
+      `/memorisation` et cloche du header (badge + aperçu) s'allument
+- [ ] `/memorisation/revision` : le verset apparaît, « Relire ce verset »
+      ramène au bon endroit dans `/coran` ; dans les deux sections (« à
+      renforcer » et « échéance de révision »), « Je me souviens » passe/
+      repasse le verset en maîtrisé et le retire de la liste, « J'ai
+      oublié » le (re)passe en « à renforcer »
 - [ ] Rafraîchir la page : tout est conservé
 
 ## 4. Contributeur / administrateur

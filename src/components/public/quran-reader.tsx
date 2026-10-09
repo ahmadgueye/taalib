@@ -31,6 +31,7 @@ import { TajweedLegend } from "@/components/public/tajweed-legend";
 import { setVerseMemorizationStatus } from "@/lib/actions/memorization";
 import type { MemorizationStatus } from "@/lib/db/schema";
 import {
+  DUE_REVIEWS_CHANGED_EVENT,
   MEMORIZATION_CYCLE,
   MEMORIZATION_STYLES,
   memorizationStatusLabel,
@@ -480,6 +481,8 @@ export function QuranReader({
           return draft;
         });
         toast.error(result.error);
+      } else {
+        window.dispatchEvent(new Event(DUE_REVIEWS_CHANGED_EVENT));
       }
     });
   }

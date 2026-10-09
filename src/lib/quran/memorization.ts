@@ -2,6 +2,13 @@ import type { MemorizationStatus } from "@/lib/db/schema";
 import { CHAPTER_WORD_COUNTS } from "@/lib/quran/chapter-word-counts";
 import type { QuranChapter } from "@/lib/quran/types";
 
+// Fired client-side whenever a mutation may have changed what's due for
+// review (tap-to-cycle in the reader, confirming a review), so the header
+// bell — which lives in the shared layout and doesn't re-render on
+// client-side navigation — can refetch its count live instead of waiting
+// for the next time it's opened.
+export const DUE_REVIEWS_CHANGED_EVENT = "quran-due-reviews-changed";
+
 export const MEMORIZATION_STYLES: Record<
   MemorizationStatus,
   { tint: string; solid: string; stroke: string; label: string }
@@ -197,6 +204,23 @@ export function findNeedingReinforcement(
     .map((s) => ({ ...s, progress: s.aRenforcer / s.chapter.versesCount }))
     .sort((a, b) => b.progress - a.progress)
     .slice(0, limit);
+}
+
+// Révision espacée des versets "maîtrisés" (boîtes de Leitner) : chaque
+// succès avance d'une boîte et repousse l'échéance ; un échec repasse le
+// verset en "à renforcer" (géré par l'appelant, hors de cette fonction), qui
+// est toujours dû immédiatement plutôt que planifié.
+export const REVIEW_INTERVALS_DAYS = [1, 3, 7, 14, 30];
+export const MAX_REVIEW_BOX = REVIEW_INTERVALS_DAYS.length;
+
+export function scheduleNextReview(
+  previousBox: number | null,
+  from: Date = new Date()
+): { box: number; nextReviewAt: Date } {
+  const box = Math.min((previousBox ?? 0) + 1, MAX_REVIEW_BOX);
+  const nextReviewAt = new Date(from);
+  nextReviewAt.setDate(nextReviewAt.getDate() + REVIEW_INTERVALS_DAYS[box - 1]);
+  return { box, nextReviewAt };
 }
 
 export type RecentActivityEntry = { chapter: QuranChapter; updatedAt: string };

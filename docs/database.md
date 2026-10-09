@@ -154,6 +154,8 @@ erDiagram
         int verse_number
         text verse_key UK "denormalisé, ex: 2:255"
         memorization_status status "en_cours | a_renforcer | maitrise"
+        int review_box "boîte Leitner, 1..5 ; null si pas maitrise"
+        timestamptz next_review_at "échéance de révision ; null si pas maitrise"
     }
 ```
 
@@ -178,7 +180,11 @@ Points notables :
   `verse_key` (`"chapitre:verset"`) est dénormalisé pour permettre un lookup
   direct côté client sans reconstruire la clé à partir de `chapter_id` +
   `verse_number`. Un index `(user_id, chapter_id)` accélère le chargement
-  d'une sourate entière dans le lecteur.
+  d'une sourate entière dans le lecteur. `review_box`/`next_review_at`
+  pilotent la révision espacée (voir [`domain.md`](./domain.md#révision-espacée)) ;
+  une migration de backfill (`0022_backfill_quran_memorization_review.sql`)
+  initialise ces colonnes pour les versets `maitrise` déjà en base avant
+  l'ajout de cette fonctionnalité.
 - `quiz_tentatives` conserve chaque tentative (pas seulement la meilleure) :
   `score`/`total_questions` sont dénormalisés au moment de la soumission,
   `quiz_reponses` détaille les choix cochés par question pour permettre

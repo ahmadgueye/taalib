@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Search, UserRound } from "lucide-react";
 
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { SiteNavLinks } from "@/components/layout/site-nav-links";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -14,12 +15,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { getCurrentProfile } from "@/lib/auth/get-session";
+import { getDueReviewsSummary } from "@/lib/db/queries/quran-memorization";
 
-export function SiteHeader({
+export async function SiteHeader({
   profile,
 }: {
   profile: Awaited<ReturnType<typeof getCurrentProfile>>;
 }) {
+  const dueSummary = profile
+    ? await getDueReviewsSummary(profile.id)
+    : { aRenforcerCount: 0, maitriseDueCount: 0, total: 0 };
+
   return (
     <header className="sticky top-0 z-30 border-b bg-background">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
@@ -46,6 +52,7 @@ export function SiteHeader({
           >
             <Search className="size-4" />
           </Button>
+          {profile && <NotificationBell initialSummary={dueSummary} />}
           {profile ? (
             <DropdownMenu>
               <DropdownMenuTrigger
