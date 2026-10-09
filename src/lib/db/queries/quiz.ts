@@ -9,6 +9,7 @@ export async function getAllQuiz() {
     with: {
       thematique: { with: { cours: true } },
       questions: true,
+      tentatives: { columns: { id: true } },
     },
   });
 }
@@ -16,6 +17,15 @@ export async function getAllQuiz() {
 export async function getQuizById(id: string) {
   const result = await db.query.quiz.findFirst({
     where: eq(quiz.id, id),
+  });
+
+  return result ?? null;
+}
+
+export async function getQuizWithThematique(id: string) {
+  const result = await db.query.quiz.findFirst({
+    where: eq(quiz.id, id),
+    with: { thematique: true },
   });
 
   return result ?? null;

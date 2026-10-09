@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { HelpCircle, Pencil } from "lucide-react";
+import { BarChart3, HelpCircle, Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ type QuizRow = {
   createdAt: Date;
   thematique: { title: string; cours: { title: string } };
   questions: unknown[];
+  tentatives: unknown[];
 };
 
 type SortKey = "title" | "thematique" | "createdAt";
@@ -95,6 +96,7 @@ export function QuizTable({ data }: { data: QuizRow[] }) {
                 onSort={handleSort}
               />
               <TableHead>Questions</TableHead>
+              <TableHead>Tentatives</TableHead>
               <TableHead>Statut</TableHead>
               <SortableTableHead
                 label="Créé le"
@@ -124,6 +126,9 @@ export function QuizTable({ data }: { data: QuizRow[] }) {
                 <TableCell className="text-muted-foreground">
                   {quiz.questions.length}
                 </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {quiz.tentatives.length}
+                </TableCell>
                 <TableCell>
                   <Badge variant={ressourceStatusConfig[quiz.status].badgeVariant}>
                     {ressourceStatusConfig[quiz.status].label}
@@ -143,6 +148,17 @@ export function QuizTable({ data }: { data: QuizRow[] }) {
                     title="Questions"
                   >
                     <HelpCircle className="size-4" />
+                  </Button>
+                  <Button
+                    render={
+                      <Link href={`/dashboard/quiz/${quiz.id}/soumissions`} />
+                    }
+                    nativeButton={false}
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Soumissions"
+                  >
+                    <BarChart3 className="size-4" />
                   </Button>
                   <Button
                     render={<Link href={`/dashboard/quiz/${quiz.id}/edit`} />}

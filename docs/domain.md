@@ -71,17 +71,35 @@ contrairement au pattern CRUD standard des autres entités — voir
   `is_correct` réels depuis la base à partir des questions du quiz, jamais
   depuis le payload soumis par le client, avant de calculer le score. Une
   question à choix multiples n'est juste que si l'ensemble coché est
-  **exactement** l'ensemble des bonnes réponses. Il n'existe pas encore de
-  page d'historique des tentatives (elles sont enregistrées en base). Chaque
-  passage crée une ligne `quiz_tentatives` (score, total) et des
-  `quiz_reponses` (choix cochés par question) — l'historique complet est
-  gardé, pas seulement le meilleur score.
+  **exactement** l'ensemble des bonnes réponses. Chaque passage crée une
+  ligne `quiz_tentatives` (score, total) et des `quiz_reponses` (choix
+  cochés par question) — l'historique complet est gardé, pas seulement le
+  meilleur score.
 - **Score et seuil** — `quiz.passingScore` (0-100, défaut 80) est un seuil en
   pourcentage. `getQuizScores()` (`lib/db/queries/quiz-tentatives.ts`) calcule
   le meilleur score obtenu par un utilisateur sur un quiz ; c'est ce meilleur
   score qui est comparé au seuil, aussi bien pour l'affichage
   (`quiz-item.tsx`, badge vert si un score existe) que pour le déblocage d'un
   [Parcours](#parcours).
+- **Historique (élève)** — `/compte` liste chaque quiz tenté (meilleur score,
+  nombre de tentatives) et renvoie vers `/quiz/[id]/historique`, qui liste
+  chronologiquement les tentatives (`getTentativesForQuiz`). Chaque tentative
+  ouvre `/quiz/[id]/historique/[tentativeId]` : le détail complet (score,
+  correction question par question) via `getTentativeDetail`, le tout scopé
+  à l'utilisateur connecté. La correction est rendue par le composant partagé
+  `QuizCorrections`, réutilisé aussi juste après la soumission dans
+  `quiz-attempt.tsx`.
+- **Soumissions (contributeur/admin)** — `/dashboard/quiz/[id]/soumissions`
+  affiche, pour un quiz donné : tentatives totales, étudiants distincts,
+  score moyen, taux de réussite, et un taux de réussite par question
+  (`getQuizQuestionStats`) recalculé depuis les `is_correct` actuels —
+  contrairement au `score` stocké sur la tentative (figé au moment du
+  passage), ce taux par question reflète toujours le contenu actuel du quiz,
+  donc peut diverger si les choix ont été modifiés après coup.
+  `getQuizSubmissionStats` regroupe aussi les tentatives par étudiant (une
+  ligne par élève avec son meilleur score et la date de sa dernière
+  tentative, via `QuizSubmissionsTable`) ; cliquer une ligne ouvre un modal
+  listant toutes ses tentatives.
 
 ## Parcours
 

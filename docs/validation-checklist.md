@@ -56,8 +56,12 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
       seulement après envoi)
 - [ ] Quiz : répondre juste ≥ seuil → badge de réussite
 - [ ] Quiz : question à choix multiples (partiellement juste = faux)
-- [ ] Rejouer un quiz : le meilleur score est conservé (il n'existe pas encore
-      de page d'historique des tentatives)
+- [ ] Rejouer un quiz : le meilleur score est conservé
+- [ ] `/compte` : section Quiz listant les quiz tentés (meilleur score,
+      nombre de tentatives) ; cliquer ouvre `/quiz/[id]/historique`
+- [ ] `/quiz/[id]/historique` : liste chronologique des tentatives (date,
+      score) ; cliquer une tentative ouvre son détail avec la correction
+      complète
 - [ ] Parcours : réussir le quiz de l'étape 1 débloque l'étape 2 ; une étape
       sans quiz se débloque automatiquement
 - [ ] Mémorisation : toucher un verset → statut (en cours / à renforcer /
@@ -81,6 +85,10 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Parcours : créer, ajouter/retirer/réordonner des étapes
 - [ ] Utilisateurs (admin) : changer un rôle ; impossible de retirer le
       dernier admin
+- [ ] Quiz → icône « Soumissions » : stats (tentatives, étudiants, score
+      moyen, taux de réussite), réussite par question, une ligne par étudiant
+      (meilleur score, dernière tentative) ; cliquer une ligne ouvre un modal
+      avec toutes ses tentatives
 - [ ] Un contributeur ne voit pas / ne peut pas ouvrir `/dashboard/utilisateurs`
 - [ ] Un viewer qui tape l'URL `/dashboard/...` est renvoyé vers l'accueil
 

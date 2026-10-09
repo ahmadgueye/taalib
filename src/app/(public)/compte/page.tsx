@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { EntityCard } from "@/components/public/entity-card";
 import { FullNameForm } from "@/components/public/full-name-form";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -15,6 +16,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { getSuiviCours } from "@/lib/db/queries/progress";
+import { getQuizAttemptsSummary } from "@/lib/db/queries/quiz-tentatives";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Mon compte — Taalib",
@@ -31,6 +34,7 @@ export default async function ComptePage({ searchParams }: Props) {
   if (!profile) redirect("/login?next=/compte");
 
   const suivi = await getSuiviCours(profile.id);
+  const quizAttempts = await getQuizAttemptsSummary(profile.id);
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -80,6 +84,48 @@ export default async function ComptePage({ searchParams }: Props) {
               progress={progress}
             />
           ))}
+        </div>
+      )}
+
+      <Separator className="my-8" />
+
+      <h2 className="font-heading text-xl font-semibold">Quiz</h2>
+      {quizAttempts.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Tu n&apos;as pas encore passé de quiz.
+        </p>
+      ) : (
+        <div className="mt-4 grid gap-3">
+          {quizAttempts.map(
+            ({ quiz, bestScore, bestTotal, attemptsCount }) => {
+              const passed =
+                (bestScore / bestTotal) * 100 >= quiz.passingScore;
+              return (
+                <Link
+                  key={quiz.id}
+                  href={`/quiz/${quiz.id}/historique`}
+                  className="flex items-center justify-between gap-2 border p-4 transition-colors hover:bg-muted"
+                >
+                  <div>
+                    <span className="font-medium">{quiz.title}</span>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {quiz.thematique.title} · {attemptsCount} tentative
+                      {attemptsCount > 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <Badge
+                    className={cn(
+                      passed
+                        ? "bg-emerald-600 text-white dark:bg-emerald-500"
+                        : "bg-destructive text-white"
+                    )}
+                  >
+                    {bestScore}/{bestTotal}
+                  </Badge>
+                </Link>
+              );
+            }
+          )}
         </div>
       )}
     </div>

@@ -11,6 +11,7 @@ import {
   quizReponses,
   quizTentatives,
 } from "@/lib/db/schema";
+import type { QuizCorrection } from "@/lib/db/queries/quiz-tentatives";
 
 const submitSchema = z.object({
   quizId: z.string().uuid(),
@@ -28,13 +29,7 @@ export type SubmitQuizResult =
       tentativeId: string;
       score: number;
       total: number;
-      corrections: {
-        questionId: string;
-        prompt: string;
-        explanation: string | null;
-        selectedChoixIds: string[];
-        choix: { id: string; label: string; isCorrect: boolean }[];
-      }[];
+      corrections: QuizCorrection[];
     };
 
 // La correction ne fait jamais confiance au client : on recharge les

@@ -9,14 +9,26 @@ export function QuizItem({
   title,
   description,
   questionCount,
+  passingScore,
   score,
 }: {
   id: string;
   title: string;
   description: string | null;
   questionCount: number;
-  score?: { lastScore: number; lastTotal: number; attemptsCount: number };
+  passingScore: number;
+  score?: {
+    lastScore: number;
+    lastTotal: number;
+    bestScore: number;
+    bestTotal: number;
+    attemptsCount: number;
+  };
 }) {
+  const passed = score
+    ? (score.bestScore / score.bestTotal) * 100 >= passingScore
+    : false;
+
   return (
     <Link
       href={`/quiz/${id}`}
@@ -31,7 +43,9 @@ export function QuizItem({
           variant={score ? "default" : "outline"}
           className={cn(
             score &&
-              "bg-emerald-600 text-white dark:bg-emerald-500"
+              (passed
+                ? "bg-emerald-600 text-white dark:bg-emerald-500"
+                : "bg-destructive text-white")
           )}
         >
           {score ? `${score.lastScore}/${score.lastTotal}` : "Non commencé"}

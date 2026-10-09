@@ -27,6 +27,7 @@ type QuizListItem = {
   id: string;
   title: string;
   description: string | null;
+  passingScore: number;
   questions: unknown[];
 };
 
@@ -113,6 +114,7 @@ export function RessourcesHadithsTabs({
                   title={q.title}
                   description={q.description}
                   questionCount={q.questions.length}
+                  passingScore={q.passingScore}
                   score={quizScores?.get(q.id)}
                 />
               ))}
