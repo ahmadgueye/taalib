@@ -250,7 +250,7 @@ export function QuizAttempt({
         </p>
       )}
 
-      <Button type="submit" disabled={isPending} className="w-fit">
+      <Button type="submit" loading={isPending} className="w-fit">
         {isPending ? "Correction…" : "Valider"}
       </Button>
     </form>

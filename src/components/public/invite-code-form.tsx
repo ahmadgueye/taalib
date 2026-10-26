@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { normalizeInviteCode } from "@/lib/class-invite";
 export function InviteCodeForm() {
   const router = useRouter();
   const [code, setCode] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   return (
     <form
@@ -17,7 +18,9 @@ export function InviteCodeForm() {
       onSubmit={(e) => {
         e.preventDefault();
         const normalized = normalizeInviteCode(code);
-        if (normalized) router.push(`/rejoindre/${normalized}`);
+        if (normalized) {
+          startTransition(() => router.push(`/rejoindre/${normalized}`));
+        }
       }}
     >
       <Input
@@ -29,7 +32,9 @@ export function InviteCodeForm() {
         autoComplete="off"
         required
       />
-      <Button type="submit">Valider</Button>
+      <Button type="submit" loading={isPending}>
+        Valider
+      </Button>
     </form>
   );
 }

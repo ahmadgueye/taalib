@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -88,15 +87,8 @@ export function SearchForm({
         </div>
       </div>
 
-      <Button type="submit" className="mt-4" disabled={isPending}>
-        {isPending ? (
-          <>
-            <Loader2 className="size-4 animate-spin" />
-            Recherche…
-          </>
-        ) : (
-          "Rechercher"
-        )}
+      <Button type="submit" className="mt-4" loading={isPending}>
+        {isPending ? "Recherche…" : "Rechercher"}
       </Button>
     </form>
   );
