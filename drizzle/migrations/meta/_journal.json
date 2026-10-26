@@ -176,6 +176,20 @@
       "when": 1793030056486,
       "tag": "0024_class_cours_unlocks",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793030712267,
+      "tag": "0025_class_item_unlocks",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793030712986,
+      "tag": "0026_drop_class_thematique_unlocks",
+      "breakpoints": true
     }
   ]
 }

@@ -45,8 +45,9 @@ export default async function ClassPage({ params }: Props) {
           Cours
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Débloque les thématiques au fil de l&apos;avancement de la classe.
-          Une thématique verrouillée restera invisible pour les étudiants.
+          Débloque les ressources et les quiz au fil des semaines. Les
+          étudiants ne voient que ce qui est débloqué, et une thématique
+          apparaît dès que l&apos;un de ses éléments l&apos;est.
         </p>
         <div className="mt-4">
           <ClassCours

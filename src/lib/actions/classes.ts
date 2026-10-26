@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, notExists, sql, type SQL } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -11,9 +11,12 @@ import { db } from "@/lib/db";
 import {
   classCours,
   classMembers,
-  classUnlocks,
+  classQuizUnlocks,
+  classRessourceUnlocks,
   classes,
   profiles,
+  quiz,
+  ressources,
   thematiques,
 } from "@/lib/db/schema";
 
@@ -182,21 +185,35 @@ export async function addClassCours(
   return undefined;
 }
 
-// Retirer un cours efface aussi les déblocages de ses thématiques pour cette
-// classe : le remettre plus tard repart d'un cours entièrement verrouillé.
+// Retirer un cours efface aussi les déblocages de ses ressources et quiz pour
+// cette classe : le remettre plus tard repart d'un cours entièrement verrouillé.
 export async function removeClassCours(classId: string, coursId: string) {
   await requireAdmin();
   await db.transaction(async (tx) => {
-    const coursThematiques = tx
-      .select({ id: thematiques.id })
-      .from(thematiques)
+    const coursRessources = tx
+      .select({ id: ressources.id })
+      .from(ressources)
+      .innerJoin(thematiques, eq(thematiques.id, ressources.thematiqueId))
+      .where(eq(thematiques.coursId, coursId));
+    const coursQuiz = tx
+      .select({ id: quiz.id })
+      .from(quiz)
+      .innerJoin(thematiques, eq(thematiques.id, quiz.thematiqueId))
       .where(eq(thematiques.coursId, coursId));
     await tx
-      .delete(classUnlocks)
+      .delete(classRessourceUnlocks)
       .where(
         and(
-          eq(classUnlocks.classId, classId),
-          inArray(classUnlocks.thematiqueId, coursThematiques)
+          eq(classRessourceUnlocks.classId, classId),
+          inArray(classRessourceUnlocks.ressourceId, coursRessources)
+        )
+      );
+    await tx
+      .delete(classQuizUnlocks)
+      .where(
+        and(
+          eq(classQuizUnlocks.classId, classId),
+          inArray(classQuizUnlocks.quizId, coursQuiz)
         )
       );
     await tx
@@ -206,14 +223,13 @@ export async function removeClassCours(classId: string, coursId: string) {
   revalidatePath(`/dashboard/classes/${classId}`);
 }
 
-// Ne débloque que des thématiques dont le cours est bien suivi par la classe.
-async function thematiquesOfClassCours(
-  classId: string,
-  where: ReturnType<typeof eq>
-) {
+// Seuls les éléments publiés d'un cours suivi par la classe se débloquent :
+// un brouillon reste invisible quoi qu'il arrive.
+function classRessources(classId: string, where: SQL | undefined) {
   return db
-    .select({ id: thematiques.id })
-    .from(thematiques)
+    .select({ id: ressources.id })
+    .from(ressources)
+    .innerJoin(thematiques, eq(thematiques.id, ressources.thematiqueId))
     .innerJoin(
       classCours,
       and(
@@ -221,36 +237,50 @@ async function thematiquesOfClassCours(
         eq(classCours.classId, classId)
       )
     )
-    .where(where);
+    .where(and(eq(ressources.status, "published"), where));
 }
 
-export async function setThematiqueUnlocked(
+function classQuiz(classId: string, where: SQL | undefined) {
+  return db
+    .select({ id: quiz.id })
+    .from(quiz)
+    .innerJoin(thematiques, eq(thematiques.id, quiz.thematiqueId))
+    .innerJoin(
+      classCours,
+      and(
+        eq(classCours.coursId, thematiques.coursId),
+        eq(classCours.classId, classId)
+      )
+    )
+    .where(and(eq(quiz.status, "published"), where));
+}
+
+const notInClass = {
+  error: "Cet élément ne fait partie d'aucun cours publié de la classe.",
+};
+
+export async function setRessourceUnlocked(
   classId: string,
-  thematiqueId: string,
+  ressourceId: string,
   unlocked: boolean
 ): Promise<{ error?: string }> {
   await requireAdmin();
 
   if (!unlocked) {
     await db
-      .delete(classUnlocks)
+      .delete(classRessourceUnlocks)
       .where(
         and(
-          eq(classUnlocks.classId, classId),
-          eq(classUnlocks.thematiqueId, thematiqueId)
+          eq(classRessourceUnlocks.classId, classId),
+          eq(classRessourceUnlocks.ressourceId, ressourceId)
         )
       );
   } else {
-    const [found] = await thematiquesOfClassCours(
-      classId,
-      eq(thematiques.id, thematiqueId)
-    );
-    if (!found) {
-      return { error: "Cette thématique ne fait partie d'aucun cours de la classe." };
-    }
+    const [found] = await classRessources(classId, eq(ressources.id, ressourceId));
+    if (!found) return notInClass;
     await db
-      .insert(classUnlocks)
-      .values({ classId, thematiqueId })
+      .insert(classRessourceUnlocks)
+      .values({ classId, ressourceId })
       .onConflictDoNothing();
   }
 
@@ -258,16 +288,86 @@ export async function setThematiqueUnlocked(
   return {};
 }
 
-export async function unlockAllThematiques(classId: string, coursId: string) {
+export async function setQuizUnlocked(
+  classId: string,
+  quizId: string,
+  unlocked: boolean
+): Promise<{ error?: string }> {
   await requireAdmin();
-  const rows = await thematiquesOfClassCours(
-    classId,
-    eq(thematiques.coursId, coursId)
-  );
-  if (rows.length > 0) {
+
+  if (!unlocked) {
     await db
-      .insert(classUnlocks)
-      .values(rows.map((r) => ({ classId, thematiqueId: r.id })))
+      .delete(classQuizUnlocks)
+      .where(
+        and(eq(classQuizUnlocks.classId, classId), eq(classQuizUnlocks.quizId, quizId))
+      );
+  } else {
+    const [found] = await classQuiz(classId, eq(quiz.id, quizId));
+    if (!found) return notInClass;
+    await db
+      .insert(classQuizUnlocks)
+      .values({ classId, quizId })
+      .onConflictDoNothing();
+  }
+
+  revalidatePath(`/dashboard/classes/${classId}`);
+  return {};
+}
+
+// Le geste de la semaine : ouvre la première ressource encore verrouillée de
+// la thématique, dans l'ordre défini dans le dashboard.
+export async function unlockNextRessource(
+  classId: string,
+  thematiqueId: string
+): Promise<{ error?: string }> {
+  await requireAdmin();
+  const [next] = await classRessources(
+    classId,
+    and(
+      eq(ressources.thematiqueId, thematiqueId),
+      notExists(
+        db
+          .select({ one: sql`1` })
+          .from(classRessourceUnlocks)
+          .where(
+            and(
+              eq(classRessourceUnlocks.classId, classId),
+              eq(classRessourceUnlocks.ressourceId, ressources.id)
+            )
+          )
+      )
+    )
+  )
+    .orderBy(asc(ressources.orderIndex), asc(ressources.title))
+    .limit(1);
+  if (!next) {
+    return { error: "Toutes les ressources de cette thématique sont déjà débloquées." };
+  }
+
+  await db
+    .insert(classRessourceUnlocks)
+    .values({ classId, ressourceId: next.id })
+    .onConflictDoNothing();
+  revalidatePath(`/dashboard/classes/${classId}`);
+  return {};
+}
+
+export async function unlockAllInThematique(classId: string, thematiqueId: string) {
+  await requireAdmin();
+  const [ressourceRows, quizRows] = await Promise.all([
+    classRessources(classId, eq(ressources.thematiqueId, thematiqueId)),
+    classQuiz(classId, eq(quiz.thematiqueId, thematiqueId)),
+  ]);
+  if (ressourceRows.length > 0) {
+    await db
+      .insert(classRessourceUnlocks)
+      .values(ressourceRows.map((r) => ({ classId, ressourceId: r.id })))
+      .onConflictDoNothing();
+  }
+  if (quizRows.length > 0) {
+    await db
+      .insert(classQuizUnlocks)
+      .values(quizRows.map((q) => ({ classId, quizId: q.id })))
       .onConflictDoNothing();
   }
   revalidatePath(`/dashboard/classes/${classId}`);

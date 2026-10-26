@@ -253,8 +253,9 @@ et sa révision espacée) passe par la base applicative.
 ## Classes
 
 Une classe (`classes`) regroupe des étudiants de l'institut (`class_members`)
-et suit des cours (`class_cours`) dont l'enseignant débloque les thématiques
-au fil de l'avancement (`class_unlocks`). Elle ne possède aucun contenu : elle
+et suit des cours (`class_cours`) dont l'enseignant débloque les ressources
+et les quiz au fil des semaines (`class_ressource_unlocks`,
+`class_quiz_unlocks`). Elle ne possède aucun contenu : elle
 pointe vers des cours du catalogue, comme une séance ou un parcours. Le
 verrouillage de l'accès côté étudiant n'est pas encore branché : tant que ce
 n'est pas fait, le contenu reste public comme décrit plus haut.
@@ -274,14 +275,21 @@ n'est pas fait, le contenu reste public comme décrit plus haut.
   `/rejoindre/[code]`, génère un nouveau code (l'ancien cesse de
   fonctionner) ou ferme les inscriptions (`invite_enabled`).
 - **Cours et déblocage** — sur la page de la classe, l'admin ajoute des cours
-  (`addClassCours`), puis débloque ou reverrouille chaque thématique
-  (`setThematiqueUnlocked`), ou toutes celles d'un cours d'un coup
-  (`unlockAllThematiques`). Le déblocage se fait par **thématique**, l'unité
-  qui porte ressources, hadiths et quiz. Il est propre à chaque classe : un
-  même cours peut être dans plusieurs classes à des rythmes différents. Une
-  thématique ne peut être débloquée que si son cours est suivi par la classe,
-  et retirer un cours (`removeClassCours`) efface ses déblocages pour cette
-  classe : le remettre repart d'un cours entièrement verrouillé.
+  (`addClassCours`), puis débloque leur contenu **ressource par ressource**
+  (et quiz par quiz) : une thématique peut s'étaler sur plusieurs mois, on
+  ouvre en général une ressource par semaine. Pour chaque thématique :
+  « Débloquer la suivante » (`unlockNextRessource`, la première ressource
+  verrouillée dans l'ordre du dashboard), « Tout débloquer »
+  (`unlockAllInThematique`, ressources et quiz), ou le cadenas d'un élément
+  (`setRessourceUnlocked`, `setQuizUnlocked`) pour ouvrir ou refermer.
+  - Seuls les éléments **publiés** d'un cours suivi par la classe se
+    débloquent ; un brouillon publié plus tard arrive verrouillé.
+  - Une thématique sera visible pour la classe dès qu'un de ses éléments est
+    débloqué ; ses **hadiths** suivent la thématique, sans déblocage propre.
+  - Les déblocages sont propres à chaque classe : un même cours peut être
+    suivi par plusieurs classes à des rythmes différents.
+  - Retirer un cours (`removeClassCours`) efface ses déblocages pour cette
+    classe : le remettre repart d'un cours entièrement verrouillé.
 - **Rejoindre** — `/rejoindre` (saisie du code) et `/rejoindre/[code]`. Le
   code est normalisé (majuscules, sans espaces ni tirets). Un visiteur non
   connecté est envoyé vers `/login?next=/rejoindre/CODE` et revient sur la

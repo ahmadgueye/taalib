@@ -27,8 +27,10 @@ erDiagram
     classes ||--o{ class_members : groups
     classes ||--o{ class_cours : follows
     cours ||--o{ class_cours : "followed via"
-    classes ||--o{ class_unlocks : unlocks
-    thematiques ||--o{ class_unlocks : "unlocked via"
+    classes ||--o{ class_ressource_unlocks : unlocks
+    ressources ||--o{ class_ressource_unlocks : "unlocked via"
+    classes ||--o{ class_quiz_unlocks : unlocks
+    quiz ||--o{ class_quiz_unlocks : "unlocked via"
 
     cours ||--o{ thematiques : contains
     thematiques ||--o{ ressources : contains
@@ -181,10 +183,15 @@ erDiagram
         uuid cours_id FK
         timestamptz added_at
     }
-    class_unlocks {
+    class_ressource_unlocks {
         uuid class_id FK
-        uuid thematique_id FK
+        uuid ressource_id FK
         timestamptz unlocked_at "pas de ligne = verrouillée"
+    }
+    class_quiz_unlocks {
+        uuid class_id FK
+        uuid quiz_id FK
+        timestamptz unlocked_at "pas de ligne = verrouillé"
     }
 ```
 
@@ -218,9 +225,11 @@ Points notables :
   étudiant n'est qu'une fois dans une classe, mais peut être dans plusieurs)
   et un index sur `user_id` pour retrouver les classes d'un étudiant.
   Supprimer une classe ou un profil supprime ses lignes en cascade, sans
-  toucher à la progression de l'étudiant. `class_cours` et `class_unlocks`
-  suivent le même modèle (clé composite, cascade depuis la classe, le cours
-  ou la thématique). Voir [`domain.md`](./domain.md#classes).
+  toucher à la progression de l'étudiant. `class_cours`, `class_ressource_unlocks`
+  et `class_quiz_unlocks` suivent le même modèle (clé composite, cascade
+  depuis la classe, le cours, la ressource ou le quiz). La table
+  `class_unlocks` (déblocage par thématique) créée par `0024` a été remplacée
+  par ces deux tables et supprimée par `0026`. Voir [`domain.md`](./domain.md#classes).
 - `quiz_tentatives` conserve chaque tentative (pas seulement la meilleure) :
   `score`/`total_questions` sont dénormalisés au moment de la soumission,
   `quiz_reponses` détaille les choix cochés par question pour permettre
@@ -238,7 +247,8 @@ RLS est la **vraie** barrière de sécurité, pas les vérifications
 défense en profondeur qui donne des messages d'erreur propres). Résumé (détail
 dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 `0006_hadiths_rls.sql`, `0013_flat_lifeguard.sql`,
-`0019_quran_memorization_rls.sql`, `0020_parcours_rls.sql`, `0023_classes.sql`, `0024_class_cours_unlocks.sql`) :
+`0019_quran_memorization_rls.sql`, `0020_parcours_rls.sql`, `0023_classes.sql`, `0024_class_cours_unlocks.sql`,
+`0025_class_item_unlocks.sql`) :
 
 | Table | Lecture | Écriture |
 |---|---|---|
@@ -248,7 +258,7 @@ dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 | `quiz_tentatives`, `quiz_reponses` | l'utilisateur lui-même (ses propres tentatives) | l'utilisateur lui-même, en `INSERT` seulement (pas d'édition d'une tentative passée) |
 | `classes` | `admin` uniquement (**pas** de lecture publique : `invite_code` ouvrirait la classe à quiconque interroge l'API REST) | `admin` uniquement |
 | `class_members` | `admin`, et l'étudiant pour ses propres lignes | `admin` uniquement (l'inscription par code passe par une Server Action, hors RLS) |
-| `class_cours`, `class_unlocks` | `admin`, et les membres de la classe concernée | `admin` uniquement |
+| `class_cours`, `class_ressource_unlocks`, `class_quiz_unlocks` | `admin`, et les membres de la classe concernée | `admin` uniquement |
 
 `is_contributor()` et `is_admin()` sont des fonctions SQL `SECURITY DEFINER`
 qui lisent `profiles.role` pour `auth.uid()`. Elles doivent rester en phase

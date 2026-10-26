@@ -1,7 +1,13 @@
 "use client";
 
 import { useActionState, useTransition } from "react";
-import { Lock, LockOpen } from "lucide-react";
+import {
+  ChevronRight,
+  HelpCircle,
+  Lock,
+  LockOpen,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { DeleteButton } from "@/components/dashboard/delete-button";
@@ -19,16 +25,14 @@ import {
 import {
   addClassCours,
   removeClassCours,
-  setThematiqueUnlocked,
-  unlockAllThematiques,
+  setQuizUnlocked,
+  setRessourceUnlocked,
+  unlockAllInThematique,
+  unlockNextRessource,
   type ActionState,
 } from "@/lib/actions/classes";
-
-type CoursOutline = {
-  id: string;
-  title: string;
-  thematiques: { id: string; title: string; unlockedAt: Date | null }[];
-};
+import type { ClassCoursOutline } from "@/lib/db/queries/classes";
+import { ressourceTypeConfig } from "@/lib/ressource-types";
 
 export function ClassCours({
   classId,
@@ -36,7 +40,7 @@ export function ClassCours({
   availableCours,
 }: {
   classId: string;
-  cours: CoursOutline[];
+  cours: ClassCoursOutline[];
   availableCours: { id: string; title: string }[];
 }) {
   return (
@@ -106,97 +110,184 @@ function CoursBlock({
   cours,
 }: {
   classId: string;
-  cours: CoursOutline;
+  cours: ClassCoursOutline;
 }) {
-  const [isPending, startTransition] = useTransition();
-  const unlockedCount = cours.thematiques.filter((t) => t.unlockedAt).length;
-  const total = cours.thematiques.length;
-
-  function toggle(thematiqueId: string, unlock: boolean) {
-    startTransition(async () => {
-      const result = await setThematiqueUnlocked(classId, thematiqueId, unlock);
-      if (result.error) toast.error(result.error);
-    });
-  }
-
   return (
     <div className="border">
       <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
-        <div className="min-w-0">
-          <p className="truncate font-medium" title={cours.title}>
-            {cours.title}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Thématiques débloquées : {unlockedCount}/{total}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          {unlockedCount < total && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={isPending}
-              onClick={() =>
-                startTransition(() => unlockAllThematiques(classId, cours.id))
-              }
-            >
-              Tout débloquer
-            </Button>
-          )}
-          <DeleteButton
-            action={removeClassCours.bind(null, classId, cours.id)}
-            itemLabel={cours.title}
-            title={`Retirer « ${cours.title} » de la classe ?`}
-            description="Le cours n'est pas supprimé. Ses déblocages pour cette classe sont effacés."
-            confirmLabel="Retirer"
-          />
-        </div>
+        <p className="min-w-0 truncate font-medium" title={cours.title}>
+          {cours.title}
+        </p>
+        <DeleteButton
+          action={removeClassCours.bind(null, classId, cours.id)}
+          itemLabel={cours.title}
+          title={`Retirer « ${cours.title} » de la classe ?`}
+          description="Le cours n'est pas supprimé. Ses déblocages pour cette classe sont effacés."
+          confirmLabel="Retirer"
+        />
       </div>
-      {total === 0 ? (
+      {cours.thematiques.length === 0 ? (
         <p className="px-4 py-3 text-sm text-muted-foreground">
           Ce cours n&apos;a pas encore de thématique.
         </p>
       ) : (
-        <ul className="divide-y">
+        <div className="divide-y">
           {cours.thematiques.map((t) => (
-            <li
-              key={t.id}
-              className="flex items-center justify-between gap-2 px-4 py-2"
-            >
-              <span className="min-w-0 truncate text-sm" title={t.title}>
-                {t.title}
-              </span>
-              <div className="flex shrink-0 items-center gap-2">
-                {t.unlockedAt ? (
-                  <Badge>
-                    Débloquée le{" "}
-                    {new Date(t.unlockedAt).toLocaleDateString("fr-FR")}
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">Verrouillée</Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={isPending}
-                  aria-label={
-                    t.unlockedAt
-                      ? `Verrouiller ${t.title}`
-                      : `Débloquer ${t.title}`
-                  }
-                  onClick={() => toggle(t.id, !t.unlockedAt)}
-                >
-                  {t.unlockedAt ? (
-                    <Lock className="size-4" />
-                  ) : (
-                    <LockOpen className="size-4" />
-                  )}
-                </Button>
-              </div>
-            </li>
+            <ThematiqueBlock key={t.id} classId={classId} thematique={t} />
           ))}
-        </ul>
+        </div>
       )}
     </div>
+  );
+}
+
+type Thematique = ClassCoursOutline["thematiques"][number];
+
+function ThematiqueBlock({
+  classId,
+  thematique,
+}: {
+  classId: string;
+  thematique: Thematique;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const { ressources, quiz } = thematique;
+  const unlockedRessources = ressources.filter((r) => r.unlockedAt).length;
+  const unlockedQuiz = quiz.filter((q) => q.unlockedAt).length;
+  const allUnlocked =
+    unlockedRessources === ressources.length && unlockedQuiz === quiz.length;
+  const isEmpty = ressources.length === 0 && quiz.length === 0;
+  // Déplier d'office la thématique en cours de déblocage.
+  const inProgress = unlockedRessources + unlockedQuiz > 0 && !allUnlocked;
+
+  function run(action: () => Promise<{ error?: string } | void>) {
+    startTransition(async () => {
+      const result = await action();
+      if (result?.error) toast.error(result.error);
+    });
+  }
+
+  return (
+    <details open={inProgress} className="group">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2 hover:bg-muted/50">
+        <span className="flex min-w-0 items-center gap-2">
+          <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
+          <span className="truncate text-sm font-medium" title={thematique.title}>
+            {thematique.title}
+          </span>
+        </span>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {isEmpty
+            ? "Vide"
+            : `Ressources ${unlockedRessources}/${ressources.length}${
+                quiz.length > 0 ? ` · Quiz ${unlockedQuiz}/${quiz.length}` : ""
+              }`}
+        </span>
+      </summary>
+
+      {!isEmpty && (
+        <div className="px-4 pb-3">
+          {!allUnlocked && (
+            <div className="flex flex-wrap gap-2 py-2">
+              {unlockedRessources < ressources.length && (
+                <Button
+                  size="sm"
+                  disabled={isPending}
+                  onClick={() =>
+                    run(() => unlockNextRessource(classId, thematique.id))
+                  }
+                >
+                  <LockOpen className="size-4" />
+                  Débloquer la suivante
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={isPending}
+                onClick={() =>
+                  run(() => unlockAllInThematique(classId, thematique.id))
+                }
+              >
+                Tout débloquer
+              </Button>
+            </div>
+          )}
+          <ul className="divide-y border-t">
+            {ressources.map((r) => (
+              <ItemRow
+                key={r.id}
+                icon={ressourceTypeConfig[r.type].icon}
+                kind={ressourceTypeConfig[r.type].label}
+                title={r.title}
+                unlockedAt={r.unlockedAt}
+                disabled={isPending}
+                onToggle={() =>
+                  run(() => setRessourceUnlocked(classId, r.id, !r.unlockedAt))
+                }
+              />
+            ))}
+            {quiz.map((q) => (
+              <ItemRow
+                key={q.id}
+                icon={HelpCircle}
+                kind="Quiz"
+                title={q.title}
+                unlockedAt={q.unlockedAt}
+                disabled={isPending}
+                onToggle={() =>
+                  run(() => setQuizUnlocked(classId, q.id, !q.unlockedAt))
+                }
+              />
+            ))}
+          </ul>
+        </div>
+      )}
+    </details>
+  );
+}
+
+function ItemRow({
+  icon: Icon,
+  kind,
+  title,
+  unlockedAt,
+  disabled,
+  onToggle,
+}: {
+  icon: LucideIcon;
+  kind: string;
+  title: string;
+  unlockedAt: Date | null;
+  disabled: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <li className="flex items-center justify-between gap-2 py-2">
+      <span className="flex min-w-0 items-center gap-2 text-sm">
+        <Icon className="size-4 shrink-0 text-muted-foreground" aria-label={kind} />
+        <span className="truncate" title={title}>
+          {title}
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-2">
+        {unlockedAt ? (
+          <Badge>
+            Depuis le {new Date(unlockedAt).toLocaleDateString("fr-FR")}
+          </Badge>
+        ) : (
+          <Badge variant="secondary">À venir</Badge>
+        )}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled={disabled}
+          aria-label={unlockedAt ? `Verrouiller ${title}` : `Débloquer ${title}`}
+          onClick={onToggle}
+        >
+          {unlockedAt ? <Lock className="size-4" /> : <LockOpen className="size-4" />}
+        </Button>
+      </span>
+    </li>
   );
 }

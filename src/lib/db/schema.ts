@@ -371,21 +371,39 @@ export const classCours = pgTable(
   (table) => [primaryKey({ columns: [table.classId, table.coursId] })]
 );
 
-// Thématiques ouvertes à une classe. Pas de ligne = verrouillée.
-export const classUnlocks = pgTable(
-  "class_unlocks",
+// Ressources et quiz ouverts à une classe, un par un au fil des semaines.
+// Pas de ligne = verrouillé. Une thématique devient visible pour la classe dès
+// qu'un de ses éléments est débloqué (ses hadiths la suivent).
+export const classRessourceUnlocks = pgTable(
+  "class_ressource_unlocks",
   {
     classId: uuid("class_id")
       .notNull()
       .references(() => classes.id, { onDelete: "cascade" }),
-    thematiqueId: uuid("thematique_id")
+    ressourceId: uuid("ressource_id")
       .notNull()
-      .references(() => thematiques.id, { onDelete: "cascade" }),
+      .references(() => ressources.id, { onDelete: "cascade" }),
     unlockedAt: timestamp("unlocked_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (table) => [primaryKey({ columns: [table.classId, table.thematiqueId] })]
+  (table) => [primaryKey({ columns: [table.classId, table.ressourceId] })]
+);
+
+export const classQuizUnlocks = pgTable(
+  "class_quiz_unlocks",
+  {
+    classId: uuid("class_id")
+      .notNull()
+      .references(() => classes.id, { onDelete: "cascade" }),
+    quizId: uuid("quiz_id")
+      .notNull()
+      .references(() => quiz.id, { onDelete: "cascade" }),
+    unlockedAt: timestamp("unlocked_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.classId, table.quizId] })]
 );
 
 export const coursRelations = relations(cours, ({ many }) => ({
@@ -557,7 +575,8 @@ export const quranMemorizationRelations = relations(
 export const classesRelations = relations(classes, ({ many }) => ({
   members: many(classMembers),
   cours: many(classCours),
-  unlocks: many(classUnlocks),
+  ressourceUnlocks: many(classRessourceUnlocks),
+  quizUnlocks: many(classQuizUnlocks),
 }));
 
 export const classMembersRelations = relations(classMembers, ({ one }) => ({
@@ -582,13 +601,30 @@ export const classCoursRelations = relations(classCours, ({ one }) => ({
   }),
 }));
 
-export const classUnlocksRelations = relations(classUnlocks, ({ one }) => ({
-  class: one(classes, {
-    fields: [classUnlocks.classId],
-    references: [classes.id],
-  }),
-  thematique: one(thematiques, {
-    fields: [classUnlocks.thematiqueId],
-    references: [thematiques.id],
-  }),
-}));
+export const classRessourceUnlocksRelations = relations(
+  classRessourceUnlocks,
+  ({ one }) => ({
+    class: one(classes, {
+      fields: [classRessourceUnlocks.classId],
+      references: [classes.id],
+    }),
+    ressource: one(ressources, {
+      fields: [classRessourceUnlocks.ressourceId],
+      references: [ressources.id],
+    }),
+  })
+);
+
+export const classQuizUnlocksRelations = relations(
+  classQuizUnlocks,
+  ({ one }) => ({
+    class: one(classes, {
+      fields: [classQuizUnlocks.classId],
+      references: [classes.id],
+    }),
+    quiz: one(quiz, {
+      fields: [classQuizUnlocks.quizId],
+      references: [quiz.id],
+    }),
+  })
+);

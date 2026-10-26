@@ -4,10 +4,13 @@ import { db } from "@/lib/db";
 import {
   classCours,
   classMembers,
-  classUnlocks,
+  classQuizUnlocks,
+  classRessourceUnlocks,
   classes,
   cours,
   profiles,
+  quiz,
+  ressources,
   thematiques,
 } from "@/lib/db/schema";
 
@@ -66,10 +69,11 @@ export async function isClassMember(classId: string, userId: string) {
   return Boolean(row);
 }
 
-// Cours de la classe avec leurs thématiques, chacune annotée de sa date de
-// déblocage pour cette classe (null = verrouillée).
+// Cours de la classe, thématique par thématique, avec leurs ressources et
+// quiz publiés annotés de leur date de déblocage pour cette classe (null =
+// verrouillé).
 export async function getClassCoursOutline(classId: string) {
-  const [rows, unlocks] = await Promise.all([
+  const [rows, ressourceUnlocks, quizUnlocks] = await Promise.all([
     db.query.classCours.findMany({
       where: eq(classCours.classId, classId),
       with: {
@@ -77,6 +81,16 @@ export async function getClassCoursOutline(classId: string) {
           with: {
             thematiques: {
               orderBy: [asc(thematiques.orderIndex), asc(thematiques.title)],
+              with: {
+                ressources: {
+                  where: eq(ressources.status, "published"),
+                  orderBy: [asc(ressources.orderIndex), asc(ressources.title)],
+                },
+                quiz: {
+                  where: eq(quiz.status, "published"),
+                  orderBy: [asc(quiz.orderIndex), asc(quiz.title)],
+                },
+              },
             },
           },
         },
@@ -84,14 +98,24 @@ export async function getClassCoursOutline(classId: string) {
     }),
     db
       .select({
-        thematiqueId: classUnlocks.thematiqueId,
-        unlockedAt: classUnlocks.unlockedAt,
+        id: classRessourceUnlocks.ressourceId,
+        unlockedAt: classRessourceUnlocks.unlockedAt,
       })
-      .from(classUnlocks)
-      .where(eq(classUnlocks.classId, classId)),
+      .from(classRessourceUnlocks)
+      .where(eq(classRessourceUnlocks.classId, classId)),
+    db
+      .select({
+        id: classQuizUnlocks.quizId,
+        unlockedAt: classQuizUnlocks.unlockedAt,
+      })
+      .from(classQuizUnlocks)
+      .where(eq(classQuizUnlocks.classId, classId)),
   ]);
 
-  const unlockedAt = new Map(unlocks.map((u) => [u.thematiqueId, u.unlockedAt]));
+  const ressourceUnlockedAt = new Map(
+    ressourceUnlocks.map((u) => [u.id, u.unlockedAt])
+  );
+  const quizUnlockedAt = new Map(quizUnlocks.map((u) => [u.id, u.unlockedAt]));
 
   return rows
     .map((r) => ({
@@ -100,11 +124,25 @@ export async function getClassCoursOutline(classId: string) {
       thematiques: r.cours.thematiques.map((t) => ({
         id: t.id,
         title: t.title,
-        unlockedAt: unlockedAt.get(t.id) ?? null,
+        ressources: t.ressources.map((res) => ({
+          id: res.id,
+          title: res.title,
+          type: res.type,
+          unlockedAt: ressourceUnlockedAt.get(res.id) ?? null,
+        })),
+        quiz: t.quiz.map((q) => ({
+          id: q.id,
+          title: q.title,
+          unlockedAt: quizUnlockedAt.get(q.id) ?? null,
+        })),
       })),
     }))
     .sort((a, b) => a.title.localeCompare(b.title));
 }
+
+export type ClassCoursOutline = Awaited<
+  ReturnType<typeof getClassCoursOutline>
+>[number];
 
 export async function getCoursNotInClass(classId: string) {
   const inClass = db
