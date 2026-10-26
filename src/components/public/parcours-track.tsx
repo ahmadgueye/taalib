@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Lock } from "lucide-react";
+import { Check, Hourglass, Lock } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import type { ParcoursStep } from "@/lib/db/queries/parcours";
@@ -45,12 +45,14 @@ function StepMarker({
         state === "completed" &&
           "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-400 dark:bg-emerald-400 dark:text-emerald-950",
         state === "active" && "bg-background border-foreground text-foreground",
-        state === "locked" &&
+        (state === "locked" || state === "upcoming") &&
           "bg-background border-border text-locked-foreground",
       )}
     >
       {state === "completed" ? (
         <Check className="size-4" />
+      ) : state === "upcoming" ? (
+        <Hourglass className="size-4" />
       ) : state === "locked" ? (
         <Lock className="size-4" />
       ) : (
@@ -69,7 +71,7 @@ function StepCard({
 }) {
   const { thematique, state } = step;
 
-  if (state === "locked") {
+  if (state === "locked" || state === "upcoming") {
     return (
       <div className="flex-1 border border-dashed bg-muted p-4">
         <div className="text-xs text-locked-foreground">
@@ -84,10 +86,19 @@ function StepCard({
           </p>
         )}
         <p className="mt-3 flex items-center gap-1.5 text-xs text-locked-foreground">
-          <Lock className="size-3.5 shrink-0" />
-          {previousTitle
-            ? `Débloqué en réussissant les quiz de « ${previousTitle} »`
-            : "Verrouillé"}
+          {state === "upcoming" ? (
+            <>
+              <Hourglass className="size-3.5 shrink-0" />
+              À venir : ton enseignant ouvrira cette étape au fil des cours
+            </>
+          ) : (
+            <>
+              <Lock className="size-3.5 shrink-0" />
+              {previousTitle
+                ? `Débloqué en réussissant les quiz de « ${previousTitle} »`
+                : "Verrouillé"}
+            </>
+          )}
         </p>
       </div>
     );

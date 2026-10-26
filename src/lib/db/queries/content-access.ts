@@ -15,7 +15,12 @@ import {
 // Un élément n'est visible que s'il est publié, débloqué pour une classe de
 // l'étudiant, et que son cours est toujours suivi par cette classe.
 export async function getStudentAccess(userId: string): Promise<ContentAccess> {
-  const [coursRows, ressourceRows, quizRows] = await Promise.all([
+  const [memberships, coursRows, ressourceRows, quizRows] = await Promise.all([
+    db
+      .select({ classId: classMembers.classId })
+      .from(classMembers)
+      .where(eq(classMembers.userId, userId))
+      .limit(1),
     db
       .selectDistinct({ id: classCours.coursId })
       .from(classCours)
@@ -61,6 +66,7 @@ export async function getStudentAccess(userId: string): Promise<ContentAccess> {
 
   return {
     all: false,
+    inAnyClass: memberships.length > 0,
     coursIds: new Set(coursRows.map((r) => r.id)),
     thematiqueIds: new Set([
       ...ressourceRows.map((r) => r.thematiqueId),

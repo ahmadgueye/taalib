@@ -5,6 +5,9 @@ import {
   type ParcoursWithProgress,
 } from "@/lib/db/queries/parcours";
 import type { QuizScore } from "@/lib/db/queries/quiz-tentatives";
+import type { ContentAccess } from "@/lib/content-access";
+
+const staff: ContentAccess = { all: true };
 
 const { getQuizScoresMock, getCompletedRessourceIdsMock } = vi.hoisted(() => ({
   getQuizScoresMock: vi.fn(),
@@ -62,7 +65,7 @@ describe("getParcoursProgress", () => {
       etape({ id: "2", quiz: [{ id: "q2", passingScore: 80 }] }),
     ]);
 
-    const steps = await getParcoursProgress(parcours, null);
+    const steps = await getParcoursProgress(parcours, null, staff);
 
     expect(steps.map((s) => s.state)).toEqual(["active", "locked"]);
     expect(steps.some((s) => s.state === "completed")).toBe(false);
@@ -79,7 +82,7 @@ describe("getParcoursProgress", () => {
       etape({ id: "2", quiz: [{ id: "q2", passingScore: 80 }] }),
     ]);
 
-    const steps = await getParcoursProgress(parcours, "user-1");
+    const steps = await getParcoursProgress(parcours, "user-1", staff);
 
     expect(steps.map((s) => s.state)).toEqual(["completed", "active"]);
   });
@@ -95,7 +98,7 @@ describe("getParcoursProgress", () => {
       etape({ id: "2", quiz: [{ id: "q2", passingScore: 80 }] }),
     ]);
 
-    const steps = await getParcoursProgress(parcours, "user-1");
+    const steps = await getParcoursProgress(parcours, "user-1", staff);
 
     expect(steps.map((s) => s.state)).toEqual(["active", "locked"]);
   });
@@ -109,7 +112,7 @@ describe("getParcoursProgress", () => {
       etape({ id: "2", quiz: [{ id: "q2", passingScore: 80 }] }),
     ]);
 
-    const steps = await getParcoursProgress(parcours, "user-1");
+    const steps = await getParcoursProgress(parcours, "user-1", staff);
 
     expect(steps.map((s) => s.state)).toEqual(["completed", "active"]);
   });
@@ -126,9 +129,59 @@ describe("getParcoursProgress", () => {
       }),
     ]);
 
-    const steps = await getParcoursProgress(parcours, "user-1");
+    const steps = await getParcoursProgress(parcours, "user-1", staff);
 
     expect(steps[0].state).toBe("active");
     expect(steps[0].ressourceProgress).toEqual({ completed: 1, total: 2 });
+  });
+});
+
+describe("getParcoursProgress for a student", () => {
+  // Étudiant dont la classe suit cours-1, avec seulement l'étape 1 débloquée.
+  const student: ContentAccess = {
+    all: false,
+    inAnyClass: true,
+    coursIds: new Set(["cours-1"]),
+    thematiqueIds: new Set(["thematique-1"]),
+    ressourceIds: new Set(["r1"]),
+    quizIds: new Set(),
+  };
+
+  it("shows not-yet-unlocked steps as upcoming instead of hiding them", async () => {
+    getQuizScoresMock.mockResolvedValue(new Map());
+    getCompletedRessourceIdsMock.mockResolvedValue(new Set(["r1"]));
+
+    const steps = await getParcoursProgress(
+      parcoursWith([
+        etape({ id: "1", ressources: [{ id: "r1" }, { id: "r2" }] }),
+        etape({ id: "2" }),
+      ]),
+      "user-1",
+      student
+    );
+
+    expect(steps.map((s) => s.state)).toEqual(["completed", "upcoming"]);
+  });
+
+  it("keeps a step active while its quiz is not unlocked yet", async () => {
+    getQuizScoresMock.mockResolvedValue(new Map());
+    getCompletedRessourceIdsMock.mockResolvedValue(new Set());
+
+    const steps = await getParcoursProgress(
+      parcoursWith([
+        etape({
+          id: "1",
+          quiz: [{ id: "q1", passingScore: 80 }],
+          ressources: [{ id: "r1" }, { id: "r2" }],
+        }),
+      ]),
+      "user-1",
+      student
+    );
+
+    expect(steps[0].state).toBe("active");
+    // La progression compte toutes les leçons de l'étape, y compris celles à
+    // venir : l'étudiant voit ce qui lui reste à apprendre.
+    expect(steps[0].ressourceProgress).toEqual({ completed: 0, total: 2 });
   });
 });

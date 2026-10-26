@@ -16,6 +16,7 @@ import {
 // verrouillé.
 const studentA: ContentAccess = {
   all: false,
+  inAnyClass: true,
   coursIds: new Set(["cours-a"]),
   thematiqueIds: new Set(["them-a1"]),
   ressourceIds: new Set(["res-a1-1"]),

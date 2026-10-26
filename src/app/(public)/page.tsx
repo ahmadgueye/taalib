@@ -13,7 +13,7 @@ import {
   getFirstParcours,
   getParcoursProgress,
   getThematiquesHorsParcours,
-  visibleParcours,
+  parcoursForAccess,
 } from "@/lib/db/queries/parcours";
 
 type Props = {
@@ -31,11 +31,13 @@ export default async function Home({ searchParams }: Props) {
 
   const access = await getContentAccess();
   if (!access.all && access.coursIds.size === 0) {
-    return <SansClasse showWelcome={showWelcome} />;
+    return (
+      <SansClasse showWelcome={showWelcome} inAnyClass={access.inAnyClass} />
+    );
   }
 
   const firstParcours = await getFirstParcours();
-  const parcours = firstParcours && visibleParcours(access, firstParcours);
+  const parcours = firstParcours && parcoursForAccess(access, firstParcours);
 
   if (!parcours || parcours.etapes.length === 0) {
     const coursList = (await getAllCours()).filter((c) =>
@@ -92,7 +94,7 @@ export default async function Home({ searchParams }: Props) {
   }
 
   const [steps, allThematiquesLibres] = await Promise.all([
-    getParcoursProgress(parcours, profile.id),
+    getParcoursProgress(parcours, profile.id, access),
     getThematiquesHorsParcours(parcours.id),
   ]);
   const thematiquesLibres = allThematiquesLibres.filter((t) =>
@@ -200,7 +202,15 @@ function Vitrine() {
   );
 }
 
-function SansClasse({ showWelcome }: { showWelcome: boolean }) {
+// Deux cas bien distincts pour l'étudiant : pas encore inscrit (il lui faut
+// un code), ou inscrit dans une classe qui ne suit encore aucun cours.
+function SansClasse({
+  showWelcome,
+  inAnyClass,
+}: {
+  showWelcome: boolean;
+  inAnyClass: boolean;
+}) {
   return (
     <div className="flex flex-col gap-10 animate-in fade-in duration-300">
       <WelcomeToast show={showWelcome} />
@@ -209,13 +219,16 @@ function SansClasse({ showWelcome }: { showWelcome: boolean }) {
           Bienvenue sur Taalib
         </h1>
         <p className="mt-4 text-muted-foreground">
-          Tu ne fais encore partie d&apos;aucune classe. Saisis le code
-          d&apos;invitation donné par ton enseignant pour accéder à tes cours.
+          {inAnyClass
+            ? "Ta classe n'a pas encore de cours. Ton enseignant les ajoutera bientôt."
+            : "Tu ne fais encore partie d'aucune classe. Saisis le code d'invitation donné par ton enseignant pour accéder à tes cours."}
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
-          <Button render={<Link href="/rejoindre" />} nativeButton={false}>
-            Rejoindre une classe
-          </Button>
+          {!inAnyClass && (
+            <Button render={<Link href="/rejoindre" />} nativeButton={false}>
+              Rejoindre une classe
+            </Button>
+          )}
           <Button
             render={<Link href="/coran" />}
             nativeButton={false}

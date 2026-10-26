@@ -1,8 +1,8 @@
 import { asc, eq } from "drizzle-orm";
 
 import {
+  canSeeCours,
   canSeeThematique,
-  visibleItems,
   type ContentAccess,
 } from "@/lib/content-access";
 import { db } from "@/lib/db";
@@ -79,23 +79,23 @@ export type ParcoursWithProgress = NonNullable<
   Awaited<ReturnType<typeof getFirstParcours>>
 >;
 
-// Réduit un parcours à ses étapes visibles (thématiques débloquées), avec
-// seulement leurs ressources et quiz débloqués : la progression se calcule
-// alors sur ce que l'étudiant peut réellement faire.
-export function visibleParcours(
+// Feuille de route d'un étudiant : les étapes des cours de ses classes, y
+// compris celles pas encore débloquées (affichées « à venir », sans lien), pour
+// qu'il voie ce qu'il a appris et ce qui l'attend. Les étapes d'autres cours
+// ne le concernent pas et sont retirées.
+export function parcoursForAccess(
   access: ContentAccess,
   p: ParcoursWithProgress
 ): ParcoursWithProgress {
   if (access.all) return p;
   return {
     ...p,
-    etapes: p.etapes
-      .filter((e) => canSeeThematique(access, e.thematique.id))
-      .map((e) => ({ ...e, thematique: visibleItems(access, e.thematique) })),
+    etapes: p.etapes.filter((e) => canSeeCours(access, e.thematique.cours.id)),
   };
 }
 
-export type ParcoursStepState = "completed" | "active" | "locked";
+// "upcoming" : thématique pas encore débloquée par l'enseignant pour la classe.
+export type ParcoursStepState = "completed" | "active" | "locked" | "upcoming";
 
 export type ParcoursStep = {
   etapeId: string;
@@ -117,7 +117,8 @@ export type ParcoursStep = {
 // visiteur non connecté n'a par définition rien "terminé".
 export async function getParcoursProgress(
   parcoursWithEtapes: ParcoursWithProgress,
-  userId: string | null
+  userId: string | null,
+  access: ContentAccess
 ): Promise<ParcoursStep[]> {
   const allQuizIds = parcoursWithEtapes.etapes.flatMap((etape) =>
     etape.thematique.quiz.map((q) => q.id)
@@ -145,18 +146,24 @@ export async function getParcoursProgress(
       return { id: q.id, passingScore: q.passingScore, bestPercent };
     });
 
+    // Un quiz pas encore débloqué ne peut pas être réussi : l'étape reste
+    // alors en cours, même si l'étudiant a tout lu.
+    const unlocked = canSeeThematique(access, etape.thematique.id);
     const thematiqueComplete =
       userId !== null &&
+      unlocked &&
       (quizzes.length === 0 ||
         quizSummaries.every(
           (q) => q.bestPercent !== null && q.bestPercent >= q.passingScore
         ));
 
-    const state: ParcoursStepState = !previousComplete
-      ? "locked"
-      : thematiqueComplete
-        ? "completed"
-        : "active";
+    const state: ParcoursStepState = !unlocked
+      ? "upcoming"
+      : !previousComplete
+        ? "locked"
+        : thematiqueComplete
+          ? "completed"
+          : "active";
 
     let ressourceProgress: { completed: number; total: number } | undefined;
     if (state === "active" && userId) {

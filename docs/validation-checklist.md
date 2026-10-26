@@ -45,6 +45,11 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
 Inscrire le compte dans une classe qui suit au moins un cours, et débloquer
 quelques ressources et un quiz depuis `/dashboard/classes`.
 - [ ] Sans classe : l'accueil propose de rejoindre une classe, `/cours` est vide
+- [ ] Dans une classe qui ne suit aucun cours : « Ta classe n'a pas encore de
+      cours », sans bouton « Rejoindre »
+- [ ] Accueil : feuille de route du parcours avec les étapes des cours de la
+      classe ; une étape pas encore débloquée est « À venir » (sablier, pas de
+      lien) ; aucune étape d'un autre cours
 - [ ] Avec classe : `/cours` ne montre que les cours de la classe ; un cours
       sans rien de débloqué affiche « sera débloqué au fil des séances »
 - [ ] Une thématique n'apparaît que si un de ses éléments est débloqué, avec

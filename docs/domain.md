@@ -314,11 +314,16 @@ Le catalogue est **réservé aux étudiants de l'institut**. Seuls l'accueil
     **hadiths** ;
   - une **séance** si elle référence au moins une thématique ou ressource
     visible, réduite à ce qui l'est ;
-  - un **parcours** réduit à ses étapes visibles, dont la progression se
-    calcule sur ce qui est débloqué.
+  - un **parcours** comme feuille de route : ses étapes des cours de ses
+    classes, **y compris celles pas encore débloquées**, affichées « À venir »
+    (sablier, sans lien) pour qu'il voie ce qui l'attend. Les étapes d'autres
+    cours sont retirées. La barre « x/y leçons » compte toutes les leçons de
+    l'étape, et une étape dont le quiz n'est pas encore débloqué reste en
+    cours (`parcoursForAccess`, état `upcoming` de `getParcoursProgress`).
 - **Visiteur** : rien. `proxy.ts` le renvoie vers `/login?next=...`.
 - **Étudiant sans classe** : l'accueil l'invite à saisir un code
-  d'invitation.
+  d'invitation. Inscrit dans une classe qui ne suit encore aucun cours, il
+  voit « Ta classe n'a pas encore de cours » (`access.inAnyClass`).
 
 Tout ce qui n'est pas visible répond **404** (« Page introuvable »), titre
 d'onglet et image Open Graph compris : on ne révèle pas qu'un contenu existe.

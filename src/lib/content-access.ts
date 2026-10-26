@@ -8,6 +8,8 @@ export type ContentAccess =
   | { all: true }
   | {
       all: false;
+      // Membre d'au moins une classe (qui peut ne suivre encore aucun cours).
+      inAnyClass: boolean;
       // Cours des classes de l'étudiant, même si rien n'y est encore débloqué.
       coursIds: Set<string>;
       // Thématiques ayant au moins une ressource ou un quiz débloqué.
@@ -18,6 +20,7 @@ export type ContentAccess =
 
 export const noAccess: ContentAccess = {
   all: false,
+  inAnyClass: false,
   coursIds: new Set(),
   thematiqueIds: new Set(),
   ressourceIds: new Set(),

@@ -75,6 +75,7 @@ describe("markRessourceCompleted access", () => {
   it("refuses a ressource not unlocked for the student's classes", async () => {
     mocks.getContentAccess.mockResolvedValue({
       all: false,
+      inAnyClass: true,
       coursIds: new Set(),
       thematiqueIds: new Set(),
       ressourceIds: new Set(["another"]),

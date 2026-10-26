@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { EntityCard } from "@/components/public/entity-card";
 import { getContentAccess } from "@/lib/auth/content-access";
-import { canSeeThematique } from "@/lib/content-access";
+import { canSeeCours } from "@/lib/content-access";
 import { getAllParcours } from "@/lib/db/queries/parcours";
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default async function ParcoursListPage() {
   const parcoursList = allParcours
     .map((p) => ({
       ...p,
-      etapes: p.etapes.filter((e) => canSeeThematique(access, e.thematique.id)),
+      etapes: p.etapes.filter((e) => canSeeCours(access, e.thematique.cours.id)),
     }))
     .filter((p) => p.etapes.length > 0 || access.all);
 

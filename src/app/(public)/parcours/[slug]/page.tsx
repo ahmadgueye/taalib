@@ -9,7 +9,7 @@ import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 import {
   getParcoursBySlug,
   getParcoursProgress,
-  visibleParcours,
+  parcoursForAccess,
 } from "@/lib/db/queries/parcours";
 import { getContentAccess } from "@/lib/auth/content-access";
 
@@ -25,7 +25,7 @@ export async function generateMetadata({
     getParcoursBySlug(slug),
     getContentAccess(),
   ]);
-  const p = found && visibleParcours(access, found);
+  const p = found && parcoursForAccess(access, found);
   const title = p && (access.all || p.etapes.length > 0) ? p.title : "Parcours";
   const description =
     (p && (access.all || p.etapes.length > 0) && p.description) ||
@@ -43,12 +43,12 @@ export default async function ParcoursDetailPage({ params }: Props) {
     getParcoursBySlug(slug),
     getContentAccess(),
   ]);
-  const p = found && visibleParcours(access, found);
+  const p = found && parcoursForAccess(access, found);
 
   if (!p || (!access.all && p.etapes.length === 0)) notFound();
 
   const profile = await getCurrentProfile();
-  const steps = await getParcoursProgress(p, profile?.id ?? null);
+  const steps = await getParcoursProgress(p, profile?.id ?? null, access);
 
   return (
     <div className="animate-in fade-in duration-300">
