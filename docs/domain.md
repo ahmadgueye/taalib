@@ -123,15 +123,16 @@ Chaque étape (une thématique) a un état :
   leçons publiées de l'étape, débloquées ou non : l'étudiant voit ce qui lui
   reste.
 
-En haut de la page, une carte **« Continuer »** (`continue-card.tsx`)
-mène en un clic à ce que l'étudiant a à faire maintenant. En suivant la
+En haut de la page, une liste **« À faire »** (`todo-list.tsx`) récapitule
+en une ligne par cours ce que l'étudiant a à faire maintenant, puisque
+deux cours peuvent avancer en parallèle. Pour chaque cours, en suivant la
 feuille de route, c'est la première leçon débloquée et pas encore lue. À
-défaut, c'est le premier quiz débloqué et pas encore réussi (« Passer le
-quiz »). Si tout ce qui est ouvert est fait, la carte affiche « Tu es à
-jour ».
+défaut, c'est le premier quiz débloqué et pas encore réussi (« Quiz : … »).
+Un cours dont tout ce qui est ouvert est fait n'a pas de ligne. Si aucun
+n'en a, la liste affiche « Tu es à jour ».
 
 Un élément débloqué depuis moins de 7 jours (`NEW_FOR_DAYS`) et pas encore
-fait est signalé **« Nouveau »**, sur la carte « Continuer » et sur son
+fait est signalé **« Nouveau »**, sur sa ligne « À faire » et sur son
 étape. La date retenue est celle du plus ancien déblocage pour les classes
 de l'étudiant (`getUnlockDates`), et le badge disparaît dès que la leçon
 est lue ou le quiz réussi.

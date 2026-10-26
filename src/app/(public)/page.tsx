@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-import { ContinueCard } from "@/components/public/continue-card";
 import { EntityCard } from "@/components/public/entity-card";
 import { RoadmapTrack } from "@/components/public/roadmap-track";
+import { TodoList } from "@/components/public/todo-list";
 import { WelcomeToast } from "@/components/public/welcome-toast";
 import { Button } from "@/components/ui/button";
 import { getContentAccess } from "@/lib/auth/content-access";
@@ -66,7 +66,7 @@ export default async function Home({ searchParams }: Props) {
     );
   }
 
-  const { cours: roadmap, next } = await getStudentRoadmap(profile.id, access);
+  const { cours: roadmap, todo } = await getStudentRoadmap(profile.id, access);
   if (roadmap.length === 0) {
     return (
       <SansClasse showWelcome={showWelcome} inAnyClass={access.inAnyClass} />
@@ -85,7 +85,7 @@ export default async function Home({ searchParams }: Props) {
           étapes s&apos;ouvrent au fil des cours.
         </p>
         <div className="mt-6">
-          <ContinueCard next={next} />
+          <TodoList todo={todo} />
         </div>
       </section>
 

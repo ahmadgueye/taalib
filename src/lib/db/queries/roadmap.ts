@@ -44,9 +44,9 @@ export type RoadmapCours = {
   steps: RoadmapStep[];
 };
 
-// Ce que l'étudiant a à faire maintenant : la première leçon débloquée et
-// non lue, ou à défaut le premier quiz débloqué et non réussi, en suivant la
-// feuille de route.
+// Ce que l'étudiant a à faire maintenant dans un cours : la première leçon
+// débloquée et non lue, ou à défaut le premier quiz débloqué et non réussi,
+// en suivant la feuille de route.
 export type RoadmapNext = {
   kind: "ressource" | "quiz";
   id: string;
@@ -58,8 +58,9 @@ export type RoadmapNext = {
 
 export type StudentRoadmap = {
   cours: RoadmapCours[];
-  // null : l'étudiant a tout fait de ce qui est débloqué.
-  next: RoadmapNext | null;
+  // Un élément par cours qui a encore quelque chose d'ouvert à faire (deux
+  // cours peuvent avancer en parallèle) ; vide si tout est fait.
+  todo: RoadmapNext[];
 };
 
 // Feuille de route d'un étudiant, générée à partir de ses classes : leurs
@@ -85,7 +86,7 @@ export async function getStudentRoadmap(
     .orderBy(asc(classMembers.joinedAt), asc(classCours.orderIndex));
   // Un cours suivi par deux classes de l'étudiant n'apparaît qu'une fois.
   const coursIds = [...new Set(rows.map((r) => r.coursId))];
-  if (coursIds.length === 0) return { cours: [], next: null };
+  if (coursIds.length === 0) return { cours: [], todo: [] };
   const activeCoursIds = new Set(
     rows.filter((r) => r.leftAt === null).map((r) => r.coursId)
   );
@@ -168,7 +169,7 @@ export async function getStudentRoadmap(
     .map((id) => byId.get(id))
     .filter((c) => c !== undefined);
 
-  let next: RoadmapNext | null = null;
+  const todo: RoadmapNext[] = [];
   for (const c of ordered) {
     for (const t of c.thematiques) {
       const ressource = t.ressources.find(
@@ -179,18 +180,17 @@ export async function getStudentRoadmap(
         : t.quiz.find((q) => canSee(q.id) && !isPassed(q));
       const item = ressource ?? exam;
       if (item) {
-        next = {
+        todo.push({
           kind: ressource ? "ressource" : "quiz",
           id: item.id,
           title: item.title,
           coursTitle: c.title,
           thematiqueTitle: t.title,
           isNew: isRecent(item.id),
-        };
+        });
         break;
       }
     }
-    if (next) break;
   }
 
   return {
@@ -207,6 +207,6 @@ export async function getStudentRoadmap(
         };
       })
       .filter((c) => activeCoursIds.has(c.id) || c.steps.length > 0),
-    next,
+    todo,
   };
 }

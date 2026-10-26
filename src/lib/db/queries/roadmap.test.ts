@@ -95,7 +95,7 @@ describe("getStudentRoadmap", () => {
     mocks.classCoursRows.mockResolvedValue([]);
     expect(await getStudentRoadmap("u1", access({}))).toEqual({
       cours: [],
-      next: null,
+      todo: [],
     });
     expect(mocks.coursFindMany).not.toHaveBeenCalled();
   });
@@ -157,30 +157,31 @@ describe("getStudentRoadmap", () => {
     expect(roadmap[0].steps.map((s) => s.thematique.id)).toEqual(["tawhid"]);
   });
 
-  it("points to the first unread unlocked lesson, then to an unpassed quiz", async () => {
+  it("lists, per cours, the first unread unlocked lesson, then an unpassed quiz", async () => {
     const unlocked = access({
       thematiqueIds: new Set(["priere", "tawhid"]),
       ressourceIds: new Set(["r4", "r1", "r2"]),
       quizIds: new Set(["q1"]),
     });
+    const ids = async () =>
+      (await getStudentRoadmap("u1", unlocked)).todo.map((t) => [t.kind, t.id]);
 
-    // Fiqh passe en premier dans la feuille de route de la classe.
-    let { next } = await getStudentRoadmap("u1", unlocked);
-    expect(next).toMatchObject({ kind: "ressource", id: "r4", coursTitle: "Fiqh" });
+    // Deux cours avancent en parallèle, dans l'ordre de la feuille de route.
+    expect(await ids()).toEqual([
+      ["ressource", "r4"],
+      ["ressource", "r1"],
+    ]);
 
     mocks.completedIds.mockResolvedValue(new Set(["r4", "r1"]));
-    ({ next } = await getStudentRoadmap("u1", unlocked));
-    expect(next).toMatchObject({ kind: "ressource", id: "r2" });
+    expect(await ids()).toEqual([["ressource", "r2"]]);
 
     mocks.completedIds.mockResolvedValue(new Set(["r4", "r1", "r2"]));
-    ({ next } = await getStudentRoadmap("u1", unlocked));
-    expect(next).toMatchObject({ kind: "quiz", id: "q1", thematiqueTitle: "tawhid" });
+    expect(await ids()).toEqual([["quiz", "q1"]]);
 
     mocks.quizScores.mockResolvedValue(
       new Map([["q1", { bestScore: 10, bestTotal: 10 }]])
     );
-    ({ next } = await getStudentRoadmap("u1", unlocked));
-    expect(next).toBeNull();
+    expect(await ids()).toEqual([]);
   });
 
   it("flags what was unlocked this week and is not done yet as new", async () => {
@@ -202,7 +203,7 @@ describe("getStudentRoadmap", () => {
     let roadmap = await getStudentRoadmap("u1", unlocked, now);
     let aqida = roadmap.cours.find((c) => c.id === "aqida")!;
     expect(aqida.steps[0].newCount).toBe(2);
-    expect(roadmap.next).toMatchObject({ id: "r2", isNew: true });
+    expect(roadmap.todo).toMatchObject([{ id: "r2", isNew: true }]);
 
     // Une fois lue, la leçon n'est plus signalée.
     mocks.completedIds.mockResolvedValue(new Set(["r1", "r2"]));
