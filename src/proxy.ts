@@ -15,7 +15,6 @@ const PROTECTED_PREFIXES = [
   "/quiz",
   "/hadiths",
   "/seances",
-  "/parcours",
   "/recherche",
   "/memorisation",
 ];

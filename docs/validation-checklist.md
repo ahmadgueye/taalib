@@ -19,7 +19,7 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
 - [ ] Accueil : vitrine avec « Se connecter », « Rejoindre une classe »,
       « Lire le Coran » ; aucun cours, parcours ni thématique affiché
 - [ ] `/cours`, `/thematiques/...`, `/ressources/...`, `/quiz/...`,
-      `/hadiths`, `/seances`, `/parcours`, `/recherche` redirigent vers
+      `/hadiths`, `/seances`, `/recherche` redirigent vers
       `/login?next=...`, et on revient sur la page après connexion
 - [ ] `/coran` : liste des sourates, lecture, audio (bandeau en bas), mode
       Zen, changement de récitateur
@@ -61,7 +61,7 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
 - [ ] Recherche, ⌘K et `/recherche` : uniquement du contenu débloqué ; mot
       français avec accent, mot arabe, filtre par type (la recherche est
       sensible aux accents, c'est une limite connue)
-- [ ] `/hadiths`, `/seances`, `/parcours` : uniquement ce qui touche au
+- [ ] `/hadiths`, `/seances` : uniquement ce qui touche au
       contenu débloqué
 - [ ] Débloquer une ressource côté enseignant → elle apparaît pour l'étudiant
       au rechargement ; la reverrouiller → elle disparaît

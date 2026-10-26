@@ -106,9 +106,9 @@ contrairement au pattern CRUD standard des autres entités — voir
 Un parcours (`parcours`) est un chemin pédagogique imposé : une séquence
 ordonnée d'étapes (`parcours_etapes`), chaque étape référençant une
 thématique **déjà existante** ailleurs dans le catalogue (elle ne la possède
-pas — même logique que les séances, voir plus haut). Public :
-`/parcours` (liste) et `/parcours/[slug]` (déroulé d'un parcours,
-`parcours-track.tsx`).
+pas — même logique que les séances, voir plus haut). Il n'a plus de page
+publique dédiée : le premier parcours sert de **feuille de route sur
+l'accueil** (`parcours-track.tsx`), voir [Accès au contenu](#accès-au-contenu).
 
 - **Progression séquentielle et gated** — `getParcoursProgress()`
   (`lib/db/queries/parcours.ts`) calcule pour chaque étape un état

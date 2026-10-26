@@ -105,23 +105,15 @@ export default async function Home({ searchParams }: Props) {
     <div className="flex flex-col gap-16 animate-in fade-in duration-300">
       <WelcomeToast show={showWelcome} />
       <section>
-        <div className="flex items-start justify-between gap-4">
-          <div className="max-w-2xl">
-            <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
-              {parcours.title}
-            </h1>
-            {parcours.description && (
-              <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-                {parcours.description}
-              </p>
-            )}
-          </div>
-          <Link
-            href="/parcours"
-            className="shrink-0 text-sm text-muted-foreground hover:text-foreground"
-          >
-            Tous les parcours →
-          </Link>
+        <div className="max-w-2xl">
+          <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
+            {parcours.title}
+          </h1>
+          {parcours.description && (
+            <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+              {parcours.description}
+            </p>
+          )}
         </div>
 
         <div className="mt-8">

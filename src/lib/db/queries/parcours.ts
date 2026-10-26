@@ -66,15 +66,6 @@ export async function getFirstParcours() {
   return result ?? null;
 }
 
-export async function getParcoursBySlug(slug: string) {
-  const result = await db.query.parcours.findFirst({
-    where: eq(parcours.slug, slug),
-    with: parcoursWithProgressData(),
-  });
-
-  return result ?? null;
-}
-
 export type ParcoursWithProgress = NonNullable<
   Awaited<ReturnType<typeof getFirstParcours>>
 >;
