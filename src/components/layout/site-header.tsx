@@ -44,9 +44,11 @@ export async function SiteHeader({
         <div className="flex items-center justify-end gap-2">
           <ThemeToggle />
           {profile && (
+            // Sur mobile, la recherche est déjà dans la barre du bas.
             <Button
               variant="ghost"
               size="icon"
+              className="hidden sm:inline-flex"
               title="Recherche (⌘K)"
               render={<Link href="/recherche" />}
               nativeButton={false}
