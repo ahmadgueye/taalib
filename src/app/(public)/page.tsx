@@ -76,18 +76,19 @@ export default async function Home({ searchParams }: Props) {
   return (
     <div className="flex flex-col gap-12 animate-in fade-in duration-300">
       <WelcomeToast show={showWelcome} />
-      <section className="max-w-2xl">
-        <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
-          Ma feuille de route
-        </h1>
-        <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-          Ce que tu as appris, où tu en es, et ce qui t&apos;attend. Les
-          étapes s&apos;ouvrent au fil des cours.
-        </p>
-        <div className="mt-6">
-          <TodoList todo={todo} />
-        </div>
-      </section>
+      <div className="flex flex-col gap-6">
+        <section className="max-w-2xl">
+          <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
+            Ma feuille de route
+          </h1>
+          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+            Ce que tu as appris, où tu en es, et ce qui t&apos;attend. Les
+            étapes s&apos;ouvrent au fil des cours.
+          </p>
+        </section>
+        {/* Pleine largeur, hors de l'intro limitée en largeur. */}
+        <TodoList todo={todo} />
+      </div>
 
       {roadmap.map((c) => (
         <section key={c.id}>
