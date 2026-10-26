@@ -119,9 +119,9 @@ Chaque étape (une thématique) a un état :
 - `completed` (« Terminé ») : tout son contenu publié est débloqué, toutes
   ses leçons sont lues et tous ses quiz réussis (meilleur score ≥
   `passingScore`) ;
-- `active` sinon, avec la barre « x/y leçons » qui compte **toutes** les
-  leçons publiées de l'étape, débloquées ou non : l'étudiant voit ce qui lui
-  reste.
+- `active` sinon, avec un anneau de progression et « x/y leçons » qui
+  comptent **toutes** les leçons publiées de l'étape, débloquées ou non :
+  l'étudiant voit ce qui lui reste.
 
 Sous le titre de chaque cours, `course-progress.tsx` résume l'avancement :
 barre de progression sur toutes les leçons du cours, « x/y leçons · a/b
@@ -142,10 +142,12 @@ parallèle) et dans l'ordre de la feuille de route :
 Si tout ce qui est ouvert est fait, la ligne affiche « Tu es à jour ».
 
 Un élément débloqué depuis moins de 7 jours (`NEW_FOR_DAYS`) et pas encore
-fait est signalé **« Nouveau »**, sur sa ligne « À faire » et sur son
-étape. La date retenue est celle du plus ancien déblocage pour les classes
-de l'étudiant (`getUnlockDates`), et le badge disparaît dès que la leçon
-est lue ou le quiz réussi.
+fait est signalé **« Nouveau »** sur sa ligne « À faire ». Sur la feuille
+de route, le carré numéroté de son étape passe à la couleur principale et un
+halo pulse trois fois à l'arrivée (rien si l'étudiant a demandé moins
+d'animations). La date retenue est celle du plus ancien déblocage pour les
+classes de l'étudiant (`getUnlockDates`), et le signal disparaît dès que
+la leçon est lue ou le quiz réussi.
 
 Le seul verrou est le déblocage par l'enseignant : il n'y a plus de
 verrouillage d'une étape par le quiz de la précédente. Le staff, qui
