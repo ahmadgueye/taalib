@@ -354,7 +354,7 @@ export const classMembers = pgTable(
 );
 
 // Cours suivis par une classe. Un même cours peut être dans plusieurs
-// classes, chacune avec son propre rythme de déblocage (class_unlocks).
+// classes, chacune avec son propre rythme de déblocage (class_*_unlocks).
 export const classCours = pgTable(
   "class_cours",
   {
