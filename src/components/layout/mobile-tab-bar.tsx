@@ -10,7 +10,7 @@ import { cn, isNavActive } from "@/lib/utils";
 // lui est ouvert.
 const tabs = [
   { href: "/", label: "Accueil", icon: Home, exact: true, membersOnly: false },
-  { href: "/cours", label: "Cours", icon: BookOpen, membersOnly: true },
+  { href: "/cours", label: "Mes Cours", icon: BookOpen, membersOnly: true },
   { href: "/coran", label: "Quran", icon: BookMarked, membersOnly: false },
   { href: "/hadiths", label: "Hadith", icon: ScrollText, membersOnly: true },
   { href: "/recherche", label: "Recherche", icon: Search, membersOnly: true },
