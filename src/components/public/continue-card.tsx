@@ -27,7 +27,7 @@ export function ContinueCard({ next }: { next: RoadmapNext | null }) {
   return (
     <Link
       href={next.kind === "quiz" ? `/quiz/${next.id}` : `/ressources/${next.id}`}
-      className="group flex items-center gap-4 border border-foreground p-4 transition-colors hover:bg-muted"
+      className="group flex items-start gap-4 border border-foreground p-4 transition-colors hover:bg-muted"
     >
       <div className="flex size-10 shrink-0 items-center justify-center bg-foreground text-background">
         <Icon className="size-4" />
