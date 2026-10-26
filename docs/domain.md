@@ -24,7 +24,7 @@ flowchart TD
   `markdown-content.tsx` / `text-resource-reader.tsx`). Statut
   `draft`/`published` (`lib/ressource-status.ts`) — un brouillon n'apparaît
   jamais côté public, y compris dans les requêtes de progression
-  (`toggleRessourceCompletion` refuse une ressource non `published`, voir
+  (`markRessourceCompleted` refuse une ressource non `published`, voir
   `lib/actions/progress.ts`).
 - **Hadiths** — rattachés à une thématique, pas à une ressource. Toujours en
   arabe + traduction française obligatoire (`translationFr`), traduction
@@ -33,7 +33,9 @@ flowchart TD
 - **Quiz** — rattaché à une thématique comme les ressources, statut
   `draft`/`published`. Sert à valider la compréhension (voir
   [Quiz](#quiz) plus bas) et à débloquer la suite d'un
-  [Parcours](#parcours) le cas échéant.
+  [Parcours](#parcours) le cas échéant. Un quiz en brouillon n'est visible ni
+  sur le site ni soumissible (`submitQuizAttempt` le refuse), sinon la
+  correction en révélerait les réponses.
 - **Séances** — un événement daté (cours en présentiel/live) qui référence
   a posteriori les thématiques et ressources qui y ont été abordées, via les
   tables de jointure `seance_thematiques` / `seance_ressources`. Une séance
@@ -44,8 +46,9 @@ flowchart TD
 
 `ressource_progress` (table pivot `user_id` + `ressource_id`) enregistre
 qu'un utilisateur connecté a marqué une ressource comme terminée
-(`mark-complete-button.tsx` → `toggleRessourceCompletion` en
-`lib/actions/progress.ts`). C'est un simple booléen "complété ou non", pas un
+(clic sur le bouton « suivant » en bas de la ressource,
+`next-chapter-button.tsx` → `markRessourceCompleted` en
+`lib/actions/progress.ts`). Il n'y a pas de décochage. C'est un simple booléen "complété ou non", pas un
 pourcentage — l'agrégation (ex: barre de progression d'un cours) se calcule à
 la volée en comparant le nombre de ressources publiées d'un cours au nombre
 complétées par l'utilisateur (`components/public/progress-ring.tsx`,
@@ -66,16 +69,37 @@ contrairement au pattern CRUD standard des autres entités — voir
   (`lib/actions/quiz-tentatives.ts`).
 - **Correction côté serveur uniquement** — l'action recharge les
   `is_correct` réels depuis la base à partir des questions du quiz, jamais
-  depuis le payload soumis par le client, avant de calculer le score. Chaque
-  passage crée une ligne `quiz_tentatives` (score, total) et des
-  `quiz_reponses` (choix cochés par question) — l'historique complet est
-  gardé, pas seulement le meilleur score.
+  depuis le payload soumis par le client, avant de calculer le score. Une
+  question à choix multiples n'est juste que si l'ensemble coché est
+  **exactement** l'ensemble des bonnes réponses. Chaque passage crée une
+  ligne `quiz_tentatives` (score, total) et des `quiz_reponses` (choix
+  cochés par question) — l'historique complet est gardé, pas seulement le
+  meilleur score.
 - **Score et seuil** — `quiz.passingScore` (0-100, défaut 80) est un seuil en
   pourcentage. `getQuizScores()` (`lib/db/queries/quiz-tentatives.ts`) calcule
   le meilleur score obtenu par un utilisateur sur un quiz ; c'est ce meilleur
   score qui est comparé au seuil, aussi bien pour l'affichage
   (`quiz-item.tsx`, badge vert si un score existe) que pour le déblocage d'un
   [Parcours](#parcours).
+- **Historique (élève)** — `/compte` liste chaque quiz tenté (meilleur score,
+  nombre de tentatives) et renvoie vers `/quiz/[id]/historique`, qui liste
+  chronologiquement les tentatives (`getTentativesForQuiz`). Chaque tentative
+  ouvre `/quiz/[id]/historique/[tentativeId]` : le détail complet (score,
+  correction question par question) via `getTentativeDetail`, le tout scopé
+  à l'utilisateur connecté. La correction est rendue par le composant partagé
+  `QuizCorrections`, réutilisé aussi juste après la soumission dans
+  `quiz-attempt.tsx`.
+- **Soumissions (contributeur/admin)** — `/dashboard/quiz/[id]/soumissions`
+  affiche, pour un quiz donné : tentatives totales, étudiants distincts,
+  score moyen, taux de réussite, et un taux de réussite par question
+  (`getQuizQuestionStats`) recalculé depuis les `is_correct` actuels —
+  contrairement au `score` stocké sur la tentative (figé au moment du
+  passage), ce taux par question reflète toujours le contenu actuel du quiz,
+  donc peut diverger si les choix ont été modifiés après coup.
+  `getQuizSubmissionStats` regroupe aussi les tentatives par étudiant (une
+  ligne par élève avec son meilleur score et la date de sa dernière
+  tentative, via `QuizSubmissionsTable`) ; cliquer une ligne ouvre un modal
+  listant toutes ses tentatives.
 
 ## Parcours
 
@@ -116,8 +140,12 @@ pas — même logique que les séances, voir plus haut). Public :
 seule fonction `searchCatalogue()`, avec filtres optionnels par type
 d'entité et par type de ressource (`lib/search-types.ts` définit
 `ALL_ENTITY_TYPES` / `ALL_RESSOURCE_TYPES`, la source de vérité pour les
-valeurs possibles). UI : `search-command.tsx` (palette de commande, cmdk) +
-`/recherche` (page dédiée).
+valeurs possibles). UI : `search-command.tsx` (palette de commande, cmdk, ⌘K) +
+`/recherche` (page dédiée). La palette désactive le filtrage intégré de cmdk
+(`shouldFilter={false}`) : le serveur filtre déjà, et un second filtrage
+masquerait des résultats trouvés via la description. Limites connues : la
+recherche est sensible aux accents (« priere » ne trouve pas « prière ») et ne
+normalise pas l'arabe.
 
 ## Lecteur du Coran
 
@@ -129,6 +157,7 @@ sur l'API externe Quran Foundation).
   client-credentials auprès de `oauth2.quran.foundation`, puis interroge
   `apis.quran.foundation/content/api/v4`. Les routes internes
   `api/quran/pages/[page]`, `api/quran/chapter-audio/[chapter]`,
+  `api/quran/verse-audio/[chapter]`, `api/quran/verse-timings/[chapter]`,
   `api/quran/recitations`, `api/quran/verse-location` exposent ces données au
   client sans jamais lui donner les credentials (`QURAN_CLIENT_ID`/`SECRET`
   restent server-only).
@@ -173,18 +202,53 @@ concerne que le Coran et n'a aucun lien avec `cours`/`thematiques`.
   sur `/memorisation`, la page de synthèse) : les versets `1..N` passent
   `maitrise`, tout ce qui dépasse `N` est effacé — baisser le nombre "rembobine"
   donc réellement la progression au lieu de laisser des versets orphelins.
-- **Vue d'ensemble** — `/memorisation` (`memorization-summary.tsx`) liste les
+- **Vue d'ensemble** — `/memorisation` (`memorization-workspace.tsx`) affiche
+  d'abord un mini tableau de bord (`memorization-dashboard.tsx` : répartition
+  par statut, sourates à renforcer, proches de la maîtrise, activité
+  récente), puis `memorization-summary.tsx` qui liste les
   114 sourates avec leur statut agrégé, triable par sourate/statut/nombre de
   versets mémorisés/pourcentage, et permet la saisie rapide par comptage
   décrite ci-dessus. `memorization-progress-bar.tsx` affiche une frise
   verset-par-verset (une cellule = un verset) réutilisée dans le lecteur et
   sur cette page.
 
+### Révision espacée
+
+Les versets `maitrise` entrent dans un cycle de révision espacée (boîtes de
+Leitner, `lib/quran/memorization.ts` : `REVIEW_INTERVALS_DAYS = [1, 3, 7, 14,
+30]`), stocké sur `quran_memorization.review_box` / `next_review_at` (`null`
+pour `en_cours`/`a_renforcer` — ce dernier est toujours dû, pas besoin
+d'échéance).
+
+- Un passage manuel à `maitrise` (tap-to-cycle, comptage par sourate)
+  (ré)initialise à la boîte 1, échéance demain — sauf pour un verset déjà
+  `maitrise` recompté via `setChapterMemorizedCount` : sa progression de
+  révision existante est préservée (`coalesce` SQL), pour qu'une simple
+  augmentation du compteur ne remette pas tout à zéro.
+- **`confirmVerseReview`** (`lib/actions/memorization.ts`) : s'applique à un
+  verset `maitrise` **ou** `a_renforcer` dû (sinon erreur). Succès
+  (« Je me souviens ») → statut `maitrise`, boîte+1 et échéance repoussée
+  (`scheduleNextReview`) — un verset qui était `a_renforcer` repart de la
+  boîte 1 (son `review_box` est `null`, traité comme 0). Échec
+  (« J'ai oublié ») → statut `a_renforcer`, boîte/échéance effacées (no-op
+  si déjà `a_renforcer`).
+- **`getDueReviews`/`getDueReviewsSummary`** (`lib/db/queries/quran-memorization.ts`)
+  calculent ce qui est dû aujourd'hui : tout `a_renforcer`, plus tout
+  `maitrise` dont `next_review_at <= now()`.
+- **Page** `/memorisation/revision` (`revision-list.tsx`) : liste groupée
+  "à renforcer" / "échéance de révision", chaque ligne a un lien pour relire
+  le verset (`/coran?sourate=X&verset=Y`) et les deux boutons « Je me
+  souviens » / « J'ai oublié » décrits ci-dessus, pour les deux sections.
+- **Cloche du header** (`notification-bell.tsx`, dans `site-header.tsx`,
+  désormais un composant serveur `async`) : badge + aperçu du compte dû,
+  calculé à chaque chargement de page — pas de table de notifications ni de
+  lu/non-lu, juste un résumé live de `getDueReviewsSummary`.
+
 C'est le module le plus complexe du repo en volume de code (plus de 1200
 lignes pour le seul composant `quran-reader.tsx`) — à isoler mentalement du
 reste pour la partie lecture/audio : elle ne touche ni Drizzle ni Supabase,
-seulement l'API Quran Foundation. Seule la mémorisation (statuts par verset)
-passe par la base applicative.
+seulement l'API Quran Foundation. Seule la mémorisation (statuts par verset,
+et sa révision espacée) passe par la base applicative.
 
 ## Utilisateurs et rôles
 

@@ -1,7 +1,7 @@
 import { and, eq, ilike, inArray, or } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { cours, hadiths, ressources, seances, thematiques } from "@/lib/db/schema";
+import { cours, hadiths, ressources, seances } from "@/lib/db/schema";
 import {
   ALL_ENTITY_TYPES,
   ALL_RESSOURCE_TYPES,

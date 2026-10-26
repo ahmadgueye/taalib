@@ -31,6 +31,7 @@ import { TajweedLegend } from "@/components/public/tajweed-legend";
 import { setVerseMemorizationStatus } from "@/lib/actions/memorization";
 import type { MemorizationStatus } from "@/lib/db/schema";
 import {
+  DUE_REVIEWS_CHANGED_EVENT,
   MEMORIZATION_CYCLE,
   MEMORIZATION_STYLES,
   memorizationStatusLabel,
@@ -164,6 +165,8 @@ function keepChapterVerses(page: QuranPage, chapterId: number): QuranPage {
     verses: page.verses.filter((v) => v.chapterId === chapterId),
   };
 }
+
+const LAST_MUSHAF_PAGE = 604;
 
 async function fetchPage(
   pageNumber: number,
@@ -478,6 +481,8 @@ export function QuranReader({
           return draft;
         });
         toast.error(result.error);
+      } else {
+        window.dispatchEvent(new Event(DUE_REVIEWS_CHANGED_EVENT));
       }
     });
   }
@@ -538,7 +543,6 @@ export function QuranReader({
   const lastMushafIdRef = useRef(mushafId);
 
   const selectedChapter = chaptersById.get(selectedChapterId) ?? chapters[0];
-  const hasMultiplePages = selectedChapter.lastPage > selectedChapter.firstPage;
   const previousChapter = chaptersById.get(selectedChapterId - 1);
   const nextChapter = chaptersById.get(selectedChapterId + 1);
 
@@ -696,7 +700,16 @@ export function QuranReader({
   const lastLoadedPage =
     currentChapterPages.at(-1)?.pageNumber ??
     (pages.length === 0 ? initialPage : selectedChapter.firstPage);
-  const chapterFullyLoaded = lastLoadedPage >= selectedChapter.lastPage;
+  // The API's chapter `pages` range under-reports when a surah's last verses
+  // sit on the page where the next surah starts (e.g. Ash-Sharh is listed as
+  // page 596 only, but verses 3–8 are on 597). So "fully loaded" means the
+  // last verse is actually on screen, not that lastLoadedPage hit the range.
+  const lastVerseLoaded = currentChapterPages.some((p) =>
+    p.verses.some((v) => v.verseNumber === selectedChapter.versesCount),
+  );
+  const chapterFullyLoaded = lastVerseLoaded || lastLoadedPage >= LAST_MUSHAF_PAGE;
+  const hasMultiplePages =
+    selectedChapter.lastPage > selectedChapter.firstPage || !chapterFullyLoaded;
 
   async function loadNextPage() {
     if (loadingNext || chapterFullyLoaded) return;
@@ -913,7 +926,12 @@ export function QuranReader({
                   mushafId={mushafId}
                   pageNumber={page.pageNumber}
                   singlePageChapter={
-                    chapter ? chapter.firstPage === chapter.lastPage : false
+                    chapter
+                      ? page.verses.some((v) => v.verseNumber === 1) &&
+                        page.verses.some(
+                          (v) => v.verseNumber === chapter.versesCount,
+                        )
+                      : false
                   }
                   statusMap={statusMap}
                   onVerseTap={handleVerseTap}

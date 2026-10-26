@@ -27,6 +27,7 @@ type QuizListItem = {
   id: string;
   title: string;
   description: string | null;
+  passingScore: number;
   questions: unknown[];
 };
 
@@ -35,7 +36,6 @@ export function RessourcesHadithsTabs({
   hadiths,
   quiz,
   coursTitle,
-  thematiqueTitle,
   completedIds,
   quizScores,
 }: {
@@ -43,7 +43,6 @@ export function RessourcesHadithsTabs({
   hadiths: HadithListItem[];
   quiz?: QuizListItem[];
   coursTitle: string;
-  thematiqueTitle: string;
   completedIds?: Set<string>;
   quizScores?: Map<string, QuizScore>;
 }) {
@@ -91,11 +90,9 @@ export function RessourcesHadithsTabs({
               <HadithCard
                 key={h.id}
                 slug={h.slug}
-                title={h.title}
                 arabicText={h.arabicText}
                 translationFr={h.translationFr}
                 coursTitle={coursTitle}
-                thematiqueTitle={thematiqueTitle}
               />
             ))}
           </div>
@@ -117,6 +114,7 @@ export function RessourcesHadithsTabs({
                   title={q.title}
                   description={q.description}
                   questionCount={q.questions.length}
+                  passingScore={q.passingScore}
                   score={quizScores?.get(q.id)}
                 />
               ))}

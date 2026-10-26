@@ -29,11 +29,9 @@ export default async function HadithsListPage() {
             <HadithCard
               key={h.id}
               slug={h.slug}
-              title={h.title}
               arabicText={h.arabicText}
               translationFr={h.translationFr}
               coursTitle={h.thematique.cours.title}
-              thematiqueTitle={h.thematique.title}
             />
           ))}
         </div>

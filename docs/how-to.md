@@ -13,9 +13,10 @@ Fichiers à créer/modifier, dans l'ordre :
    elle référence/est référencée par une autre table). Générer et appliquer :
    ```bash
    npm run db:generate
-   npm run db:migrate
+   npm run db:migrate:local   # teste d'abord sur la base locale
    ```
-   Si l'entité doit être publiquement lisible mais éditable seulement par les
+   La production ne reçoit la migration qu'après test et backup, voir
+   [`deployment.md`](./deployment.md#migrer-la-production). Si l'entité doit être publiquement lisible mais éditable seulement par les
    contributeurs (le cas standard), ajouter les policies RLS à la main dans
    le fichier de migration généré — copier le bloc `cours` de
    `drizzle/migrations/0001_rls_and_profile_trigger.sql` (voir
@@ -58,7 +59,11 @@ Fichiers à créer/modifier, dans l'ordre :
      que de tout gérer dans le formulaire d'édition — voir
      `dashboard/quiz/[id]/questions/page.tsx` comme référence.
 
-7. **Page(s) publique(s)**, si l'entité doit être visible côté site vitrine —
+7. **Tests** — ajouter l'entité à la liste de `modules` de
+   `src/lib/actions/authorization.test.ts` : le test vérifie que chaque action
+   refuse un utilisateur non autorisé avant de toucher la base.
+
+8. **Page(s) publique(s)**, si l'entité doit être visible côté site vitrine —
    suivre le pattern de `src/app/(public)/cours/page.tsx` et
    `src/app/(public)/cours/[slug]/page.tsx` (+ `opengraph-image.tsx` si
    l'entité a une page de détail dédiée, voir
@@ -66,7 +71,7 @@ Fichiers à créer/modifier, dans l'ordre :
 
 ## Ajouter un champ à un formulaire existant
 
-1. `schema.ts` → `db:generate` → `db:migrate`.
+1. `schema.ts` → `db:generate` → `db:migrate:local`.
 2. Ajouter le champ au schéma zod dans `lib/actions/<entité>.ts` (create et
    update).
 3. Lire le champ dans `formData.get("champ")` et l'inclure dans
@@ -88,28 +93,59 @@ fichiers de migration. Workflow :
    nécessaire (policies, triggers) à la suite — regarder
    `drizzle/migrations/0006_hadiths_rls.sql` comme exemple d'une migration
    RLS ajoutée après coup sur une table existante.
-3. `npm run db:migrate`.
+3. `npm run db:migrate:local`, puis en production seulement après test et
+   backup (voir [`deployment.md`](./deployment.md#migrer-la-production)).
 
-## Réinitialiser / peupler la base avec des données de démo
+## Réinitialiser / peupler la base locale avec des données de démo
 
 ```bash
-npm run db:seed
+npm run db:local:reset   # repart d'une base locale vide + migrations
+npm run db:seed:local    # données de démo (src/lib/db/seed.ts)
 ```
 
-Voir `src/lib/db/seed.ts`. ⚠️ Cible la base pointée par `DATABASE_URL` dans
-`.env.local` — sur ce projet, c'est la base de **production** (voir
-[`deployment.md`](./deployment.md)). Ne pas lancer sans avoir vérifié la
-cible.
+`npm run db:seed` (sans `:local`) refuse de tourner contre une base distante.
+
+## Copier le contenu de la production en local
+
+Pour développer avec du vrai contenu (cours, hadiths, quiz...) sans copier
+d'utilisateurs ni de progression : un `pg_dump --data-only` des tables de
+contenu (`cours`, `thematiques`, `ressources`, `hadiths`, `quiz`,
+`quiz_questions`, `quiz_choix`, `seances`, `seance_thematiques`,
+`seance_ressources`, `parcours`, `parcours_etapes`), chargé dans la base
+locale après un `TRUNCATE ... CASCADE`. Points d'attention rencontrés :
+
+- ne pas utiliser `--disable-triggers` (demande un super-utilisateur, absent
+  du Supabase local) ;
+- préfixer les tables par `public.` (`-t public.cours`) ;
+- les colonnes `created_by` / `added_by` référencent des profils qui
+  n'existent pas en local : retirer temporairement ces contraintes de clé
+  étrangère, mettre les colonnes à `NULL`, puis les recréer, dans une seule
+  transaction ;
+- le dump vide le `search_path` : préfixer les tables par `public.` dans le
+  SQL de chargement.
+
+C'est une **lecture** de la production : ne jamais écrire dans la base
+distante.
 
 ## Explorer la base sans écrire de SQL
 
 ```bash
-npm run db:studio
+npm run db:studio:local   # base locale
+npm run db:studio         # ⚠️ base de .env.local = production
 ```
 
-Ouvre Drizzle Studio dans le navigateur — permet de lire/éditer les lignes
-directement, utile pour promouvoir manuellement le premier compte `admin`
-(voir [`auth.md`](./auth.md#flux-de-connexion)).
+Ouvre Drizzle Studio dans le navigateur. Pour promouvoir un compte `admin`
+en local, voir [`auth.md`](./auth.md#en-local).
+
+## Écrire un test pour une Server Action
+
+Copier le pattern de `src/lib/actions/progress.test.ts` : `vi.hoisted` pour
+déclarer les mocks, `vi.mock("@/lib/auth/get-session")` pour choisir le
+profil, `vi.mock("@/lib/db")` avec une chaîne minimale
+(`insert().values().onConflictDoNothing()`...) et `vi.mock("next/cache")`.
+Tester au minimum : visiteur anonyme refusé, payload invalide refusé, cas
+nominal (en vérifiant l'`userId` écrit), cas limites métier. Voir
+[`development.md`](./development.md#tests).
 
 ## Ajouter une route API (hors CRUD dashboard)
 
