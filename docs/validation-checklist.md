@@ -99,6 +99,9 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Classes (admin) : créer une classe → un code d'invitation est généré ;
       « Copier le lien », « Nouveau code » (l'ancien lien affiche « Code
       invalide »), fermer/rouvrir les inscriptions
+- [ ] Classes : ajouter un cours ; débloquer une thématique (badge « Débloquée
+      le … »), la reverrouiller, « Tout débloquer » ; retirer le cours puis le
+      remettre → toutes ses thématiques sont de nouveau verrouillées
 - [ ] Classes : ajouter un étudiant par e-mail (compte existant) ; e-mail
       inconnu → message d'erreur ; ajouter deux fois → « déjà membre » ;
       retirer un étudiant

@@ -1,7 +1,15 @@
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq, notInArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { classMembers, classes, profiles } from "@/lib/db/schema";
+import {
+  classCours,
+  classMembers,
+  classUnlocks,
+  classes,
+  cours,
+  profiles,
+  thematiques,
+} from "@/lib/db/schema";
 
 export async function getAllClasses() {
   return db
@@ -56,4 +64,56 @@ export async function isClassMember(classId: string, userId: string) {
     )
     .limit(1);
   return Boolean(row);
+}
+
+// Cours de la classe avec leurs thématiques, chacune annotée de sa date de
+// déblocage pour cette classe (null = verrouillée).
+export async function getClassCoursOutline(classId: string) {
+  const [rows, unlocks] = await Promise.all([
+    db.query.classCours.findMany({
+      where: eq(classCours.classId, classId),
+      with: {
+        cours: {
+          with: {
+            thematiques: {
+              orderBy: [asc(thematiques.orderIndex), asc(thematiques.title)],
+            },
+          },
+        },
+      },
+    }),
+    db
+      .select({
+        thematiqueId: classUnlocks.thematiqueId,
+        unlockedAt: classUnlocks.unlockedAt,
+      })
+      .from(classUnlocks)
+      .where(eq(classUnlocks.classId, classId)),
+  ]);
+
+  const unlockedAt = new Map(unlocks.map((u) => [u.thematiqueId, u.unlockedAt]));
+
+  return rows
+    .map((r) => ({
+      id: r.cours.id,
+      title: r.cours.title,
+      thematiques: r.cours.thematiques.map((t) => ({
+        id: t.id,
+        title: t.title,
+        unlockedAt: unlockedAt.get(t.id) ?? null,
+      })),
+    }))
+    .sort((a, b) => a.title.localeCompare(b.title));
+}
+
+export async function getCoursNotInClass(classId: string) {
+  const inClass = db
+    .select({ id: classCours.coursId })
+    .from(classCours)
+    .where(eq(classCours.classId, classId));
+  return db
+    .select({ id: cours.id, title: cours.title })
+    .from(cours)
+    .where(notInArray(cours.id, inClass))
+    .orderBy(asc(cours.title));
 }

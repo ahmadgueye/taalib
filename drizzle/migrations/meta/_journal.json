@@ -169,6 +169,13 @@
       "when": 1793028958974,
       "tag": "0023_classes",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793030056486,
+      "tag": "0024_class_cours_unlocks",
+      "breakpoints": true
     }
   ]
 }

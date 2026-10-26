@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -8,7 +8,14 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/get-session";
 import { generateInviteCode } from "@/lib/class-invite";
 import { db } from "@/lib/db";
-import { classMembers, classes, profiles } from "@/lib/db/schema";
+import {
+  classCours,
+  classMembers,
+  classUnlocks,
+  classes,
+  profiles,
+  thematiques,
+} from "@/lib/db/schema";
 
 export type ActionState = { error?: string; success?: string } | undefined;
 
@@ -148,5 +155,120 @@ export async function removeClassMember(classId: string, userId: string) {
       and(eq(classMembers.classId, classId), eq(classMembers.userId, userId))
     );
   revalidatePath("/dashboard/classes");
+  revalidatePath(`/dashboard/classes/${classId}`);
+}
+
+const addCoursSchema = z.object({
+  coursId: z.uuid("Choisis un cours."),
+});
+
+export async function addClassCours(
+  classId: string,
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  await requireAdmin();
+  const parsed = addCoursSchema.safeParse({ coursId: formData.get("coursId") });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  await db
+    .insert(classCours)
+    .values({ classId, coursId: parsed.data.coursId })
+    .onConflictDoNothing();
+
+  revalidatePath(`/dashboard/classes/${classId}`);
+  return undefined;
+}
+
+// Retirer un cours efface aussi les déblocages de ses thématiques pour cette
+// classe : le remettre plus tard repart d'un cours entièrement verrouillé.
+export async function removeClassCours(classId: string, coursId: string) {
+  await requireAdmin();
+  await db.transaction(async (tx) => {
+    const coursThematiques = tx
+      .select({ id: thematiques.id })
+      .from(thematiques)
+      .where(eq(thematiques.coursId, coursId));
+    await tx
+      .delete(classUnlocks)
+      .where(
+        and(
+          eq(classUnlocks.classId, classId),
+          inArray(classUnlocks.thematiqueId, coursThematiques)
+        )
+      );
+    await tx
+      .delete(classCours)
+      .where(and(eq(classCours.classId, classId), eq(classCours.coursId, coursId)));
+  });
+  revalidatePath(`/dashboard/classes/${classId}`);
+}
+
+// Ne débloque que des thématiques dont le cours est bien suivi par la classe.
+async function thematiquesOfClassCours(
+  classId: string,
+  where: ReturnType<typeof eq>
+) {
+  return db
+    .select({ id: thematiques.id })
+    .from(thematiques)
+    .innerJoin(
+      classCours,
+      and(
+        eq(classCours.coursId, thematiques.coursId),
+        eq(classCours.classId, classId)
+      )
+    )
+    .where(where);
+}
+
+export async function setThematiqueUnlocked(
+  classId: string,
+  thematiqueId: string,
+  unlocked: boolean
+): Promise<{ error?: string }> {
+  await requireAdmin();
+
+  if (!unlocked) {
+    await db
+      .delete(classUnlocks)
+      .where(
+        and(
+          eq(classUnlocks.classId, classId),
+          eq(classUnlocks.thematiqueId, thematiqueId)
+        )
+      );
+  } else {
+    const [found] = await thematiquesOfClassCours(
+      classId,
+      eq(thematiques.id, thematiqueId)
+    );
+    if (!found) {
+      return { error: "Cette thématique ne fait partie d'aucun cours de la classe." };
+    }
+    await db
+      .insert(classUnlocks)
+      .values({ classId, thematiqueId })
+      .onConflictDoNothing();
+  }
+
+  revalidatePath(`/dashboard/classes/${classId}`);
+  return {};
+}
+
+export async function unlockAllThematiques(classId: string, coursId: string) {
+  await requireAdmin();
+  const rows = await thematiquesOfClassCours(
+    classId,
+    eq(thematiques.coursId, coursId)
+  );
+  if (rows.length > 0) {
+    await db
+      .insert(classUnlocks)
+      .values(rows.map((r) => ({ classId, thematiqueId: r.id })))
+      .onConflictDoNothing();
+  }
   revalidatePath(`/dashboard/classes/${classId}`);
 }

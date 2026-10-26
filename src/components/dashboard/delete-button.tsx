@@ -20,11 +20,13 @@ export function DeleteButton({
   itemLabel,
   title,
   description = "Cette action est irréversible.",
+  confirmLabel = "Supprimer",
 }: {
   action: () => Promise<void>;
   itemLabel: string;
   title?: string;
   description?: string;
+  confirmLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -38,7 +40,17 @@ export function DeleteButton({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" />}>
+      <AlertDialogTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={
+              title?.replace(/\s*\?$/, "") ?? `Supprimer « ${itemLabel} »`
+            }
+          />
+        }
+      >
         <Trash2 className="size-4" />
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -58,10 +70,10 @@ export function DeleteButton({
             {isPending ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                Suppression…
+                {confirmLabel}…
               </>
             ) : (
-              "Supprimer"
+              confirmLabel
             )}
           </Button>
         </AlertDialogFooter>

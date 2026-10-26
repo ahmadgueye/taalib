@@ -252,11 +252,12 @@ et sa révision espacée) passe par la base applicative.
 
 ## Classes
 
-Une classe (`classes`) regroupe des étudiants de l'institut. Elle ne possède
-aucun contenu : pour l'instant elle ne fait que lister des membres
-(`class_members`). Le rattachement de cours à une classe et le déblocage
-progressif des thématiques viendront ensuite ; tant que ce n'est pas fait, le
-contenu reste public comme décrit plus haut.
+Une classe (`classes`) regroupe des étudiants de l'institut (`class_members`)
+et suit des cours (`class_cours`) dont l'enseignant débloque les thématiques
+au fil de l'avancement (`class_unlocks`). Elle ne possède aucun contenu : elle
+pointe vers des cours du catalogue, comme une séance ou un parcours. Le
+verrouillage de l'accès côté étudiant n'est pas encore branché : tant que ce
+n'est pas fait, le contenu reste public comme décrit plus haut.
 
 - **Gestion réservée aux admins** — `/dashboard/classes` (lien de la sidebar
   visible des seuls admins, pages en `notFound()` sinon) et
@@ -272,6 +273,15 @@ contenu reste public comme décrit plus haut.
   le dicter). Depuis la page de la classe, l'admin copie le lien
   `/rejoindre/[code]`, génère un nouveau code (l'ancien cesse de
   fonctionner) ou ferme les inscriptions (`invite_enabled`).
+- **Cours et déblocage** — sur la page de la classe, l'admin ajoute des cours
+  (`addClassCours`), puis débloque ou reverrouille chaque thématique
+  (`setThematiqueUnlocked`), ou toutes celles d'un cours d'un coup
+  (`unlockAllThematiques`). Le déblocage se fait par **thématique**, l'unité
+  qui porte ressources, hadiths et quiz. Il est propre à chaque classe : un
+  même cours peut être dans plusieurs classes à des rythmes différents. Une
+  thématique ne peut être débloquée que si son cours est suivi par la classe,
+  et retirer un cours (`removeClassCours`) efface ses déblocages pour cette
+  classe : le remettre repart d'un cours entièrement verrouillé.
 - **Rejoindre** — `/rejoindre` (saisie du code) et `/rejoindre/[code]`. Le
   code est normalisé (majuscules, sans espaces ni tirets). Un visiteur non
   connecté est envoyé vers `/login?next=/rejoindre/CODE` et revient sur la

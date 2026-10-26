@@ -98,6 +98,7 @@ export function ClassMembers({
                     itemLabel={m.fullName ?? m.email}
                     title={`Retirer ${m.fullName ?? m.email} de la classe ?`}
                     description="Son compte et sa progression sont conservés."
+                    confirmLabel="Retirer"
                   />
                 </TableCell>
               </TableRow>

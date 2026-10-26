@@ -353,6 +353,41 @@ export const classMembers = pgTable(
   ]
 );
 
+// Cours suivis par une classe. Un même cours peut être dans plusieurs
+// classes, chacune avec son propre rythme de déblocage (class_unlocks).
+export const classCours = pgTable(
+  "class_cours",
+  {
+    classId: uuid("class_id")
+      .notNull()
+      .references(() => classes.id, { onDelete: "cascade" }),
+    coursId: uuid("cours_id")
+      .notNull()
+      .references(() => cours.id, { onDelete: "cascade" }),
+    addedAt: timestamp("added_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.classId, table.coursId] })]
+);
+
+// Thématiques ouvertes à une classe. Pas de ligne = verrouillée.
+export const classUnlocks = pgTable(
+  "class_unlocks",
+  {
+    classId: uuid("class_id")
+      .notNull()
+      .references(() => classes.id, { onDelete: "cascade" }),
+    thematiqueId: uuid("thematique_id")
+      .notNull()
+      .references(() => thematiques.id, { onDelete: "cascade" }),
+    unlockedAt: timestamp("unlocked_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.classId, table.thematiqueId] })]
+);
+
 export const coursRelations = relations(cours, ({ many }) => ({
   thematiques: many(thematiques),
 }));
@@ -521,6 +556,8 @@ export const quranMemorizationRelations = relations(
 
 export const classesRelations = relations(classes, ({ many }) => ({
   members: many(classMembers),
+  cours: many(classCours),
+  unlocks: many(classUnlocks),
 }));
 
 export const classMembersRelations = relations(classMembers, ({ one }) => ({
@@ -531,5 +568,27 @@ export const classMembersRelations = relations(classMembers, ({ one }) => ({
   user: one(profiles, {
     fields: [classMembers.userId],
     references: [profiles.id],
+  }),
+}));
+
+export const classCoursRelations = relations(classCours, ({ one }) => ({
+  class: one(classes, {
+    fields: [classCours.classId],
+    references: [classes.id],
+  }),
+  cours: one(cours, {
+    fields: [classCours.coursId],
+    references: [cours.id],
+  }),
+}));
+
+export const classUnlocksRelations = relations(classUnlocks, ({ one }) => ({
+  class: one(classes, {
+    fields: [classUnlocks.classId],
+    references: [classes.id],
+  }),
+  thematique: one(thematiques, {
+    fields: [classUnlocks.thematiqueId],
+    references: [thematiques.id],
   }),
 }));
