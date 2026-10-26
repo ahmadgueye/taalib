@@ -283,9 +283,11 @@ function ItemRow({
           size="icon-sm"
           disabled={disabled}
           aria-label={unlockedAt ? `Verrouiller ${title}` : `Débloquer ${title}`}
+          title={unlockedAt ? "Verrouiller" : "Débloquer"}
           onClick={onToggle}
         >
-          {unlockedAt ? <Lock className="size-4" /> : <LockOpen className="size-4" />}
+          {/* L'icône montre l'état actuel ; l'infobulle dit ce que fait le clic. */}
+          {unlockedAt ? <LockOpen className="size-4" /> : <Lock className="size-4" />}
         </Button>
       </span>
     </li>
