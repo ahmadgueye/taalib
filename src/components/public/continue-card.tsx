@@ -33,17 +33,15 @@ export function ContinueCard({ next }: { next: RoadmapNext | null }) {
         <Icon className="size-4" />
       </div>
       <div className="min-w-0 flex-1">
+        {next.isNew && (
+          <Badge className="mb-1 h-4 px-1.5 text-[10px]">Nouveau</Badge>
+        )}
         <div className="font-medium">{next.title}</div>
         <p className="mt-0.5 truncate text-sm text-muted-foreground">
           {next.coursTitle} · {next.thematiqueTitle}
         </p>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {next.kind === "quiz" ? "Passer le quiz" : "Continuer"}
-          </span>
-          {next.isNew && (
-            <Badge className="h-4 px-1.5 text-[10px]">Nouveau</Badge>
-          )}
+        <div className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {next.kind === "quiz" ? "Passer le quiz" : "Continuer"}
         </div>
       </div>
       <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
