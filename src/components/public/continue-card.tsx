@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Check, ClipboardCheck } from "lucide-react";
+import { BookOpen, Check, ClipboardCheck, MoveRight } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import type { RoadmapNext } from "@/lib/db/queries/roadmap";
@@ -34,17 +34,17 @@ export function ContinueCard({ next }: { next: RoadmapNext | null }) {
       </div>
       <div className="min-w-0 flex-1">
         {next.isNew && (
-          <Badge className="mb-1 h-4 px-1.5 text-[10px]">Nouveau</Badge>
+          <Badge className="mb-1 flex h-4 px-1.5 text-[10px]">Nouveau</Badge>
         )}
         <div className="font-medium">{next.title}</div>
         <p className="mt-0.5 truncate text-sm text-muted-foreground">
           {next.coursTitle} · {next.thematiqueTitle}
         </p>
-        <div className="mt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="mt-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground group-hover:text-foreground">
           {next.kind === "quiz" ? "Passer le quiz" : "Continuer"}
+          <MoveRight className="size-5 shrink-0 transition-transform group-hover:translate-x-1" />
         </div>
       </div>
-      <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
     </Link>
   );
 }
