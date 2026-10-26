@@ -162,8 +162,9 @@ dynamiquement (API `ImageResponse` de Next) : c'est l'aperçu qui s'affiche
 quand on colle un lien dans WhatsApp, par exemple.
 
 - `src/app/sitemap.ts` — liste les pages principales et les slugs de cours,
-  thématiques, hadiths, séances et parcours (lit la base, régénéré toutes les
-  heures via `revalidate`).
+  thématiques, hadiths, séances et parcours (lit la base à chaque requête,
+  `dynamic = "force-dynamic"` : un pré-rendu au build échouerait en CI, qui
+  n'a pas de base).
 - `src/app/robots.ts` — autorise l'indexation sauf `/dashboard`, `/compte`,
   `/login`, `/auth` et `/api`, et référence le sitemap.
 - Les deux et les Open Graph utilisent `NEXT_PUBLIC_SITE_URL` : si elle n'est

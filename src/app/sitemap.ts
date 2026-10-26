@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
 import { cours, hadiths, parcours, seances, thematiques } from "@/lib/db/schema";
 
-// Rebuilt at most once an hour — content changes rarely and the sitemap hits
-// five tables.
-export const revalidate = 3600;
+// Rendered per request, not prerendered at build: the build (CI) has no
+// database to query.
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
