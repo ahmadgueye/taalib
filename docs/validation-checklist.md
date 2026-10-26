@@ -16,25 +16,19 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
       ou seed)
 
 ## 1. Visiteur non connecté
-- [ ] Accueil : parcours mis en avant, thématiques hors parcours, rien de cassé
-- [ ] `/cours` : liste, cours « bientôt disponible » visibles mais sans contenu
-- [ ] Cours → thématique → une ressource de chaque type (vidéo, PDF, lien,
-      texte)
-- [ ] `/hadiths` : arabe lisible (police, RTL), traduction FR, wolof si présent
-- [ ] Page d'un hadith
-- [ ] `/seances` et une séance : thématiques/ressources rattachées cliquables
-- [ ] `/parcours` et un parcours : étapes verrouillées pour un visiteur
-- [ ] Recherche, **⌘K et `/recherche`** : mot français avec accent, mot
-      arabe, filtre par type, aucun résultat (la recherche est sensible aux
-      accents, c'est une limite connue)
+- [ ] Accueil : vitrine avec « Se connecter », « Rejoindre une classe »,
+      « Lire le Coran » ; aucun cours, parcours ni thématique affiché
+- [ ] `/cours`, `/thematiques/...`, `/ressources/...`, `/quiz/...`,
+      `/hadiths`, `/seances`, `/parcours`, `/recherche` redirigent vers
+      `/login?next=...`, et on revient sur la page après connexion
 - [ ] `/coran` : liste des sourates, lecture, audio (bandeau en bas), mode
       Zen, changement de récitateur
 - [ ] Sourates à cheval sur deux pages : **94** (Ash-Sharh, 8 versets) s'affiche
       en entier ; 114 (une page) et 2 (nombreuses pages) se chargent bien
-- [ ] Tenter de terminer une ressource sans être connecté → message clair
 - [ ] `/compte`, `/memorisation`, `/dashboard` redirigent vers `/login`
 - [ ] Thème clair/sombre, navigation, pied de page, page 404
-- [ ] `/sitemap.xml` et `/robots.txt` répondent
+- [ ] `/sitemap.xml` (accueil et `/coran` seulement) et `/robots.txt`
+      répondent
 
 ## 2. Connexion
 - [ ] `/login` : saisir un e-mail → message « Un lien de connexion… »
@@ -48,6 +42,25 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
       toast « Bienvenue sur Taalib ! »
 
 ## 3. Apprenant connecté (rôle viewer)
+Inscrire le compte dans une classe qui suit au moins un cours, et débloquer
+quelques ressources et un quiz depuis `/dashboard/classes`.
+- [ ] Sans classe : l'accueil propose de rejoindre une classe, `/cours` est vide
+- [ ] Avec classe : `/cours` ne montre que les cours de la classe ; un cours
+      sans rien de débloqué affiche « sera débloqué au fil des séances »
+- [ ] Une thématique n'apparaît que si un de ses éléments est débloqué, avec
+      uniquement les ressources/quiz débloqués et ses hadiths
+- [ ] Ouvrir l'URL d'une ressource, d'un quiz ou d'un cours non débloqué →
+      « Page introuvable », titre d'onglet générique
+- [ ] Sur la dernière ressource débloquée : pas de « chapitre suivant » vers
+      une ressource verrouillée
+- [ ] Recherche, ⌘K et `/recherche` : uniquement du contenu débloqué ; mot
+      français avec accent, mot arabe, filtre par type (la recherche est
+      sensible aux accents, c'est une limite connue)
+- [ ] `/hadiths`, `/seances`, `/parcours` : uniquement ce qui touche au
+      contenu débloqué
+- [ ] Débloquer une ressource côté enseignant → elle apparaît pour l'étudiant
+      au rechargement ; la reverrouiller → elle disparaît
+- [ ] Une ressource de chaque type (vidéo, PDF, lien, texte) s'affiche
 - [ ] Terminer une ressource : on la marque comme terminée **en cliquant sur le
       bouton « suivant » en bas de la page** (pas de décochage)
 - [ ] Progression d'un cours / d'une thématique (anneau, compteur) mise à jour

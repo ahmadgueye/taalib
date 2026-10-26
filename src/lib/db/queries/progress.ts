@@ -1,5 +1,10 @@
 import { and, eq, inArray } from "drizzle-orm";
 
+import {
+  canSeeCours,
+  canSeeRessource,
+  type ContentAccess,
+} from "@/lib/content-access";
 import { db } from "@/lib/db";
 import { getCoursOutline } from "@/lib/db/queries/cours";
 import { ressourceProgress } from "@/lib/db/schema";
@@ -23,7 +28,9 @@ export async function getCompletedRessourceIds(
   return new Set(rows.map((row) => row.ressourceId));
 }
 
-export async function getSuiviCours(userId: string) {
+// Progression par cours, calculée sur les seules ressources visibles : une
+// ressource reverrouillée ou un cours retiré de la classe ne compte plus.
+export async function getSuiviCours(userId: string, access: ContentAccess) {
   const rows = await db.query.ressourceProgress.findMany({
     where: eq(ressourceProgress.userId, userId),
     with: {
@@ -40,6 +47,9 @@ export async function getSuiviCours(userId: string) {
   >();
   for (const row of rows) {
     const c = row.ressource.thematique.cours;
+    if (!canSeeCours(access, c.id) || !canSeeRessource(access, row.ressourceId)) {
+      continue;
+    }
     if (!byCoursId.has(c.id)) {
       byCoursId.set(c.id, { cours: c, completedIds: new Set() });
     }
@@ -49,9 +59,9 @@ export async function getSuiviCours(userId: string) {
   const results = await Promise.all(
     Array.from(byCoursId.values()).map(async ({ cours, completedIds }) => {
       const outline = await getCoursOutline(cours.id);
-      const totalRessources = (outline?.thematiques ?? []).flatMap(
-        (t) => t.ressources
-      ).length;
+      const totalRessources = (outline?.thematiques ?? [])
+        .flatMap((t) => t.ressources)
+        .filter((r) => canSeeRessource(access, r.id)).length;
       return {
         cours,
         completedCount: completedIds.size,

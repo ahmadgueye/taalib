@@ -9,7 +9,9 @@ import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 import {
   getParcoursBySlug,
   getParcoursProgress,
+  visibleParcours,
 } from "@/lib/db/queries/parcours";
+import { getContentAccess } from "@/lib/auth/content-access";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -19,9 +21,15 @@ export async function generateMetadata({
   params,
 }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const p = await getParcoursBySlug(slug);
-  const title = p?.title ?? "Parcours";
-  const description = p?.description ?? defaultDescription;
+  const [found, access] = await Promise.all([
+    getParcoursBySlug(slug),
+    getContentAccess(),
+  ]);
+  const p = found && visibleParcours(access, found);
+  const title = p && (access.all || p.etapes.length > 0) ? p.title : "Parcours";
+  const description =
+    (p && (access.all || p.etapes.length > 0) && p.description) ||
+    defaultDescription;
   return {
     title: `${title} — Taalib`,
     description,
@@ -31,9 +39,13 @@ export async function generateMetadata({
 
 export default async function ParcoursDetailPage({ params }: Props) {
   const { slug } = await params;
-  const p = await getParcoursBySlug(slug);
+  const [found, access] = await Promise.all([
+    getParcoursBySlug(slug),
+    getContentAccess(),
+  ]);
+  const p = found && visibleParcours(access, found);
 
-  if (!p) notFound();
+  if (!p || (!access.all && p.etapes.length === 0)) notFound();
 
   const profile = await getCurrentProfile();
   const steps = await getParcoursProgress(p, profile?.id ?? null);

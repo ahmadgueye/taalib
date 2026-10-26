@@ -149,7 +149,7 @@ normalise pas l'arabe.
 
 ## Lecteur du Coran
 
-Accessible en public sur `/coran`, indépendant du reste du contenu (pas de
+Accessible à tous (même sans compte) sur `/coran`, indépendant du reste du contenu (pas de
 lien avec `cours`/`thematiques` en base — c'est un module autonome branché
 sur l'API externe Quran Foundation).
 
@@ -256,9 +256,9 @@ Une classe (`classes`) regroupe des étudiants de l'institut (`class_members`)
 et suit des cours (`class_cours`) dont l'enseignant débloque les ressources
 et les quiz au fil des semaines (`class_ressource_unlocks`,
 `class_quiz_unlocks`). Elle ne possède aucun contenu : elle
-pointe vers des cours du catalogue, comme une séance ou un parcours. Le
-verrouillage de l'accès côté étudiant n'est pas encore branché : tant que ce
-n'est pas fait, le contenu reste public comme décrit plus haut.
+pointe vers des cours du catalogue, comme une séance ou un parcours. C'est
+elle qui détermine ce qu'un étudiant voit, voir
+[Accès au contenu](#accès-au-contenu).
 
 - **Gestion réservée aux admins** — `/dashboard/classes` (lien de la sidebar
   visible des seuls admins, pages en `notFound()` sinon) et
@@ -297,6 +297,42 @@ n'est pas fait, le contenu reste public comme décrit plus haut.
   compte). L'inscription se fait par un bouton (`joinClass`,
   `lib/actions/class-join.ts`), jamais au simple chargement de la page ; elle
   est ouverte à tout utilisateur connecté et idempotente.
+
+## Accès au contenu
+
+Le catalogue est **réservé aux étudiants de l'institut**. Seuls l'accueil
+(vitrine), `/coran`, `/login` et `/rejoindre` sont ouverts sans compte.
+
+- **Staff** (`admin`, `contributor`) : voit tout, comme avant.
+- **Étudiant** (`viewer`) : ne voit que ce qui est débloqué pour l'une de ses
+  classes (`lib/auth/content-access.ts` → `getContentAccess()`, calculé une
+  fois par requête). Concrètement :
+  - les **cours** suivis par ses classes, même si rien n'y est encore
+    débloqué (« Le contenu de ce cours sera débloqué au fil des séances ») ;
+  - les **ressources** et **quiz** publiés et débloqués ;
+  - une **thématique** dès qu'un de ses éléments est débloqué, avec ses
+    **hadiths** ;
+  - une **séance** si elle référence au moins une thématique ou ressource
+    visible, réduite à ce qui l'est ;
+  - un **parcours** réduit à ses étapes visibles, dont la progression se
+    calcule sur ce qui est débloqué.
+- **Visiteur** : rien. `proxy.ts` le renvoie vers `/login?next=...`.
+- **Étudiant sans classe** : l'accueil l'invite à saisir un code
+  d'invitation.
+
+Tout ce qui n'est pas visible répond **404** (« Page introuvable »), titre
+d'onglet et image Open Graph compris : on ne révèle pas qu'un contenu existe.
+La navigation d'une ressource (« chapitre suivant », examen, sommaire du
+cours) ne propose que des éléments débloqués. La recherche (`/recherche` et
+⌘K) filtre en SQL selon le même accès. Les Server Actions des étudiants le
+vérifient aussi : `markRessourceCompleted` refuse une ressource verrouillée,
+`submitQuizAttempt` un quiz verrouillé. `/compte` calcule la progression sur
+les seules ressources visibles.
+
+Les helpers de filtrage sont des fonctions pures dans `lib/content-access.ts`
+(`canSeeCours`, `canSeeThematique`, `canSeeRessource`, `canSeeQuiz`,
+`canSeeSeance`, `visibleItems`), testées dans `content-access.test.ts`. Toute
+nouvelle page ou requête qui affiche du contenu doit passer par eux.
 
 ## Utilisateurs et rôles
 

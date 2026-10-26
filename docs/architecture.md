@@ -43,21 +43,23 @@ renommé `proxy.ts` (voir `AGENTS.md` — c'est le genre de changement qui n'est
 pas dans les données d'entraînement d'un LLM standard). C'est le seul point
 d'entrée qui tourne sur **chaque** requête, avant même les Server Components :
 il rafraîchit la session Supabase (`src/lib/supabase/proxy.ts`) et redirige
-vers `/login` les visiteurs non connectés sur `/dashboard` et `/compte`. Les
-pages qui exigent un compte (`/memorisation`, `/quiz/[id]`...) font leur propre
-`redirect("/login?next=...")` dans le Server Component. Voir
-[`auth.md`](./auth.md).
+vers `/login?next=...` les visiteurs non connectés sur toutes les pages
+réservées (dashboard, compte, catalogue, recherche, mémorisation). Chaque page
+vérifie en plus ce que l'utilisateur a le droit de voir
+(`getContentAccess()`). Voir [`auth.md`](./auth.md).
 
 ## Route groups
 
 `src/app/` utilise deux route groups qui ne changent pas l'URL mais isolent
 deux layouts et deux publics différents :
 
-- **`(public)/`** — le site vitrine, accessible sans compte : accueil,
-  `/cours`, `/hadiths`, `/ressources`, `/seances`, `/thematiques`, `/parcours`,
-  `/quiz`, `/coran`, `/memorisation`, `/recherche`, `/rejoindre` (inscription
-  à une classe par code), `/compte` (nécessite un
-  compte, mais reste dans ce groupe car visuellement c'est le layout public).
+- **`(public)/`** — le site côté étudiant, avec le layout public. Ouverts
+  sans compte : accueil (vitrine), `/coran` et `/rejoindre` (inscription à
+  une classe par code). Le reste exige un compte et n'affiche que le contenu
+  débloqué pour les classes de l'étudiant : `/cours`, `/thematiques`,
+  `/ressources`, `/quiz`, `/hadiths`, `/seances`, `/parcours`, `/recherche`,
+  `/memorisation`, `/compte`. Voir
+  [`domain.md`](./domain.md#accès-au-contenu).
 - **`(dashboard)/dashboard/`** — l'admin, protégé par `proxy.ts` +
   une double vérification de rôle dans
   `src/app/(dashboard)/dashboard/layout.tsx` (un `viewer` qui y accède est
@@ -162,12 +164,12 @@ sourates tenant sur une seule page.
 Open Graph). Chaque route de détail public (`cours/[slug]`, `hadiths/[slug]`,
 `seances/[slug]`, `thematiques/[slug]`) a un `opengraph-image.tsx` généré
 dynamiquement (API `ImageResponse` de Next) : c'est l'aperçu qui s'affiche
-quand on colle un lien dans WhatsApp, par exemple.
+quand on colle un lien dans WhatsApp, par exemple. Comme ces pages exigent un
+compte, l'aperçu ne s'affiche plus pour un lien partagé publiquement ; les
+images appliquent le même filtre d'accès que la page.
 
-- `src/app/sitemap.ts` — liste les pages principales et les slugs de cours,
-  thématiques, hadiths, séances et parcours (lit la base à chaque requête,
-  `dynamic = "force-dynamic"` : un pré-rendu au build échouerait en CI, qui
-  n'a pas de base).
+- `src/app/sitemap.ts` — ne liste que les pages ouvertes à tous (accueil,
+  `/coran`) : le catalogue est réservé aux étudiants. Il ne lit plus la base.
 - `src/app/robots.ts` — autorise l'indexation sauf `/dashboard`, `/compte`, `/rejoindre`,
   `/login`, `/auth` et `/api`, et référence le sitemap.
 - Les deux et les Open Graph utilisent `NEXT_PUBLIC_SITE_URL` : si elle n'est

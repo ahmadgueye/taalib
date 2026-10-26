@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { BackButton } from "@/components/public/back-button";
 import { MarkdownContent } from "@/components/public/markdown-content";
+import { getContentAccess } from "@/lib/auth/content-access";
+import { canSeeThematique } from "@/lib/content-access";
 import { getHadithBySlug } from "@/lib/db/queries/hadiths";
 import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 
@@ -14,7 +16,11 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const h = await getHadithBySlug(slug);
+  const [found, access] = await Promise.all([
+    getHadithBySlug(slug),
+    getContentAccess(),
+  ]);
+  const h = found && canSeeThematique(access, found.thematiqueId) ? found : null;
   const title = h?.title ?? "Hadith";
   const description = h?.translationFr ?? defaultDescription;
   return {
@@ -26,9 +32,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function HadithDetailPage({ params }: Props) {
   const { slug } = await params;
-  const h = await getHadithBySlug(slug);
+  const [h, access] = await Promise.all([
+    getHadithBySlug(slug),
+    getContentAccess(),
+  ]);
 
-  if (!h) notFound();
+  if (!h || !canSeeThematique(access, h.thematiqueId)) notFound();
 
   return (
     <div className="animate-in fade-in duration-300">

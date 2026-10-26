@@ -248,12 +248,12 @@ défense en profondeur qui donne des messages d'erreur propres). Résumé (déta
 dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 `0006_hadiths_rls.sql`, `0013_flat_lifeguard.sql`,
 `0019_quran_memorization_rls.sql`, `0020_parcours_rls.sql`, `0023_classes.sql`, `0024_class_cours_unlocks.sql`,
-`0025_class_item_unlocks.sql`) :
+`0025_class_item_unlocks.sql`, `0027_private_content_rls.sql`) :
 
 | Table | Lecture | Écriture |
 |---|---|---|
-| `cours`, `thematiques`, `ressources`, `hadiths`, `seances`, `seance_*`, `parcours`, `parcours_etapes`, `quiz`, `quiz_questions`, `quiz_choix` | publique (`USING (true)`) | `admin` ou `contributor` (fonction SQL `is_contributor()`) |
-| `profiles` | tout utilisateur **authentifié** | `admin` uniquement (`is_admin()`), et seulement en `UPDATE` |
+| `cours`, `thematiques`, `ressources`, `hadiths`, `seances`, `seance_*`, `parcours`, `parcours_etapes`, `quiz`, `quiz_questions`, `quiz_choix` | `admin` ou `contributor` uniquement (plus de lecture publique depuis `0027` : le contenu est réservé aux étudiants, et les étudiants le lisent via l'app, voir [`auth.md`](./auth.md#les-trois-couches-de-vérification)) | `admin` ou `contributor` (fonction SQL `is_contributor()`) |
+| `profiles` | son propre profil ; tous pour `admin`/`contributor` (depuis `0027`) | `admin` uniquement (`is_admin()`), et seulement en `UPDATE` |
 | `ressource_progress`, `quran_memorization` | l'utilisateur lui-même (`auth.uid() = user_id`) | l'utilisateur lui-même, sur ses propres lignes uniquement |
 | `quiz_tentatives`, `quiz_reponses` | l'utilisateur lui-même (ses propres tentatives) | l'utilisateur lui-même, en `INSERT` seulement (pas d'édition d'une tentative passée) |
 | `classes` | `admin` uniquement (**pas** de lecture publique : `invite_code` ouvrirait la classe à quiconque interroge l'API REST) | `admin` uniquement |

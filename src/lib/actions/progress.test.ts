@@ -7,6 +7,11 @@ const mocks = vi.hoisted(() => ({
   findFirst: vi.fn(),
   insertValues: vi.fn(),
   revalidatePath: vi.fn(),
+  getContentAccess: vi.fn(),
+}));
+
+vi.mock("@/lib/auth/content-access", () => ({
+  getContentAccess: mocks.getContentAccess,
 }));
 
 vi.mock("@/lib/auth/get-session", () => ({
@@ -31,6 +36,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.getCurrentProfile.mockResolvedValue({ id: "user-1" });
   mocks.findFirst.mockResolvedValue({ id: RES });
+  mocks.getContentAccess.mockResolvedValue({ all: true });
 });
 
 describe("markRessourceCompleted", () => {
@@ -62,5 +68,21 @@ describe("markRessourceCompleted", () => {
       ressourceId: RES,
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/thematiques/t");
+  });
+});
+
+describe("markRessourceCompleted access", () => {
+  it("refuses a ressource not unlocked for the student's classes", async () => {
+    mocks.getContentAccess.mockResolvedValue({
+      all: false,
+      coursIds: new Set(),
+      thematiqueIds: new Set(),
+      ressourceIds: new Set(["another"]),
+      quizIds: new Set(),
+    });
+    expect(await markRessourceCompleted(RES, "/x")).toEqual({
+      error: "Ressource introuvable.",
+    });
+    expect(mocks.insertValues).not.toHaveBeenCalled();
   });
 });

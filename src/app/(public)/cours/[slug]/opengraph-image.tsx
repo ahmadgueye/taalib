@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 
+import { getContentAccess } from "@/lib/auth/content-access";
+import { canSeeCours } from "@/lib/content-access";
 import { getCoursBySlug } from "@/lib/db/queries/cours";
 
 export const size = { width: 1200, height: 630 };
@@ -11,7 +13,9 @@ export default async function Image({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const c = await getCoursBySlug(slug);
+  const [found, access] = await Promise.all([getCoursBySlug(slug), getContentAccess()]);
+  // Même règle que la page : rien ne s'affiche de ce qui n'est pas débloqué.
+  const c = found && canSeeCours(access, found.id) ? found : null;
 
   return new ImageResponse(
     (

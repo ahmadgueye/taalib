@@ -1,17 +1,33 @@
 import type { Metadata } from "next";
 
 import { SeancesTabs } from "@/components/public/seances-tabs";
+import { getContentAccess } from "@/lib/auth/content-access";
+import { canSeeSeance, type ContentAccess } from "@/lib/content-access";
 import { getPastSeances, getUpcomingSeances } from "@/lib/db/queries/seances";
+
+type SeanceWithLinks = Awaited<ReturnType<typeof getPastSeances>>[number];
+
+function visibleSeances(access: ContentAccess, list: SeanceWithLinks[]) {
+  return list.filter((s) =>
+    canSeeSeance(access, {
+      thematiqueIds: s.seanceThematiques.map((t) => t.thematiqueId),
+      ressourceIds: s.seanceRessources.map((r) => r.ressourceId),
+    })
+  );
+}
 
 export const metadata: Metadata = {
   title: "Séances de révision — Taalib",
 };
 
 export default async function SeancesListPage() {
-  const [upcoming, past] = await Promise.all([
+  const [allUpcoming, allPast, access] = await Promise.all([
     getUpcomingSeances(),
     getPastSeances(),
+    getContentAccess(),
   ]);
+  const upcoming = visibleSeances(access, allUpcoming);
+  const past = visibleSeances(access, allPast);
 
   return (
     <div className="animate-in fade-in duration-300">

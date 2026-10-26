@@ -4,7 +4,13 @@ import { notFound } from "next/navigation";
 
 import { BackButton } from "@/components/public/back-button";
 import { EntityCard } from "@/components/public/entity-card";
+import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
+import {
+  canSeeCours,
+  canSeeThematique,
+  visibleItems,
+} from "@/lib/content-access";
 import { getCoursBySlug, getCoursOutline } from "@/lib/db/queries/cours";
 import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
 import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
@@ -17,7 +23,11 @@ export async function generateMetadata({
   params,
 }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const c = await getCoursBySlug(slug);
+  const [found, access] = await Promise.all([
+    getCoursBySlug(slug),
+    getContentAccess(),
+  ]);
+  const c = found && canSeeCours(access, found.id) ? found : null;
   const title = c?.title ?? "Cours";
   const description = c?.description ?? defaultDescription;
   return {
@@ -29,12 +39,27 @@ export async function generateMetadata({
 
 export default async function CoursDetailPage({ params }: Props) {
   const { slug } = await params;
-  const c = await getCoursBySlug(slug);
+  const [found, access] = await Promise.all([
+    getCoursBySlug(slug),
+    getContentAccess(),
+  ]);
 
-  if (!c) notFound();
+  if (!found || !canSeeCours(access, found.id)) notFound();
 
+  const c = {
+    ...found,
+    thematiques: found.thematiques.filter((t) =>
+      canSeeThematique(access, t.id)
+    ),
+  };
   const profile = await getCurrentProfile();
-  const outline = profile ? await getCoursOutline(c.id) : null;
+  const fullOutline = profile ? await getCoursOutline(c.id) : null;
+  const outline = fullOutline && {
+    ...fullOutline,
+    thematiques: fullOutline.thematiques.map((t) =>
+      visibleItems(access, { ...t, quiz: [] })
+    ),
+  };
   const completedIds = profile
     ? await getCompletedRessourceIds(
         profile.id,
@@ -86,7 +111,9 @@ export default async function CoursDetailPage({ params }: Props) {
           </h2>
           {c.thematiques.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              Aucune thématique pour ce cours pour le moment.
+              {access.all
+                ? "Aucune thématique pour ce cours pour le moment."
+                : "Le contenu de ce cours sera débloqué au fil des séances."}
             </p>
           ) : (
             <div className="mt-4 grid gap-3">

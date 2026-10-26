@@ -11,7 +11,9 @@ import { ExternalLinkCard } from "@/components/public/external-link-card";
 import { ResourceViewerShell } from "@/components/public/resource-viewer-shell";
 import { TextResourceReader } from "@/components/public/text-resource-reader";
 import { VideoEmbed } from "@/components/public/video-embed";
+import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
+import { canSeeRessource, visibleItems } from "@/lib/content-access";
 import { getCoursOutline } from "@/lib/db/queries/cours";
 import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
 import { getPublishedRessourceById } from "@/lib/db/queries/ressources";
@@ -27,7 +29,11 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const r = await getPublishedRessourceById(id);
+  const [found, access] = await Promise.all([
+    getPublishedRessourceById(id),
+    getContentAccess(),
+  ]);
+  const r = found && canSeeRessource(access, found.id) ? found : null;
   const title = r?.title ?? "Ressource";
   const description = r?.content
     ? stripMarkdown(r.content)
@@ -41,13 +47,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function RessourceDetailPage({ params }: Props) {
   const { id } = await params;
-  const r = await getPublishedRessourceById(id);
+  const [found, access] = await Promise.all([
+    getPublishedRessourceById(id),
+    getContentAccess(),
+  ]);
 
-  if (!r) notFound();
-  if (r.type === "texte" && !r.content) notFound();
+  if (!found || !canSeeRessource(access, found.id)) notFound();
+  if (found.type === "texte" && !found.content) notFound();
+
+  // Navigation, « chapitre suivant » et examen : uniquement parmi ce qui est
+  // débloqué, pour ne jamais pointer vers une page qui répondrait 404.
+  const r = { ...found, thematique: visibleItems(access, found.thematique) };
 
   const outline = await getCoursOutline(r.thematique.cours.id);
-  const thematiques = (outline?.thematiques ?? []).map((thematique) => ({
+  const thematiques = (outline?.thematiques ?? [])
+    .map((thematique) => visibleItems(access, { ...thematique, quiz: [] }))
+    .filter((thematique) => thematique.ressources.length > 0)
+    .map((thematique) => ({
     id: thematique.id,
     title: thematique.title,
     ressources: thematique.ressources.map((ressource) => ({

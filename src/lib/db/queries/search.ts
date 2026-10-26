@@ -1,7 +1,15 @@
-import { and, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, eq, exists, ilike, inArray, or } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { cours, hadiths, ressources, seances } from "@/lib/db/schema";
+import type { ContentAccess } from "@/lib/content-access";
+import {
+  cours,
+  hadiths,
+  ressources,
+  seanceRessources,
+  seanceThematiques,
+  seances,
+} from "@/lib/db/schema";
 import {
   ALL_ENTITY_TYPES,
   ALL_RESSOURCE_TYPES,
@@ -20,12 +28,26 @@ export {
 
 export async function searchCatalogue(
   query: string,
-  options?: { types?: EntityType[]; ressourceTypes?: RessourceType[] }
+  options: {
+    // Obligatoire : la recherche ne doit jamais remonter du contenu qu'une
+    // page refuserait d'afficher.
+    access: ContentAccess;
+    types?: EntityType[];
+    ressourceTypes?: RessourceType[];
+  }
 ): Promise<SearchResult[]> {
   const q = query.trim();
+  const { access } = options;
+  const visible = access.all
+    ? null
+    : {
+        coursIds: [...access.coursIds],
+        thematiqueIds: [...access.thematiqueIds],
+        ressourceIds: [...access.ressourceIds],
+      };
 
-  const types = options?.types?.length ? options.types : ALL_ENTITY_TYPES;
-  const ressourceTypes = options?.ressourceTypes?.length
+  const types = options.types?.length ? options.types : ALL_ENTITY_TYPES;
+  const ressourceTypes = options.ressourceTypes?.length
     ? options.ressourceTypes
     : ALL_RESSOURCE_TYPES;
 
@@ -45,21 +67,27 @@ export async function searchCatalogue(
             .select()
             .from(cours)
             .where(
-              textCondition
-                ? or(
-                    ilike(cours.title, pattern),
-                    ilike(cours.description, pattern)
-                  )
-                : undefined
+              and(
+                textCondition
+                  ? or(
+                      ilike(cours.title, pattern),
+                      ilike(cours.description, pattern)
+                    )
+                  : undefined,
+                visible ? inArray(cours.id, visible.coursIds) : undefined
+              )
             )
             .limit(20)
         : Promise.resolve([]),
       types.includes("thematique")
         ? db.query.thematiques.findMany({
-            where: textCondition
-              ? (t, { ilike: like, or: orOp }) =>
-                  orOp(like(t.title, pattern), like(t.description, pattern))
-              : undefined,
+            where: (t, { ilike: like, or: orOp, and: andOp, inArray: inArr }) =>
+              andOp(
+                textCondition
+                  ? orOp(like(t.title, pattern), like(t.description, pattern))
+                  : undefined,
+                visible ? inArr(t.id, visible.thematiqueIds) : undefined
+              ),
             with: { cours: true },
             limit: 20,
           })
@@ -74,7 +102,8 @@ export async function searchCatalogue(
                   )
                 : undefined,
               inArray(ressources.type, ressourceTypes),
-              eq(ressources.status, "published")
+              eq(ressources.status, "published"),
+              visible ? inArray(ressources.id, visible.ressourceIds) : undefined
             ),
             with: { thematique: true },
             limit: 20,
@@ -85,12 +114,46 @@ export async function searchCatalogue(
             .select()
             .from(seances)
             .where(
-              textCondition
-                ? or(
-                    ilike(seances.title, pattern),
-                    ilike(seances.summary, pattern)
-                  )
-                : undefined
+              and(
+                textCondition
+                  ? or(
+                      ilike(seances.title, pattern),
+                      ilike(seances.summary, pattern)
+                    )
+                  : undefined,
+                visible
+                  ? or(
+                      exists(
+                        db
+                          .select()
+                          .from(seanceThematiques)
+                          .where(
+                            and(
+                              eq(seanceThematiques.seanceId, seances.id),
+                              inArray(
+                                seanceThematiques.thematiqueId,
+                                visible.thematiqueIds
+                              )
+                            )
+                          )
+                      ),
+                      exists(
+                        db
+                          .select()
+                          .from(seanceRessources)
+                          .where(
+                            and(
+                              eq(seanceRessources.seanceId, seances.id),
+                              inArray(
+                                seanceRessources.ressourceId,
+                                visible.ressourceIds
+                              )
+                            )
+                          )
+                      )
+                    )
+                  : undefined
+              )
             )
             .limit(20)
         : Promise.resolve([]),
@@ -99,14 +162,19 @@ export async function searchCatalogue(
             .select()
             .from(hadiths)
             .where(
-              textCondition
-                ? or(
-                    ilike(hadiths.title, pattern),
-                    ilike(hadiths.translationFr, pattern),
-                    ilike(hadiths.translationWolof, pattern),
-                    ilike(hadiths.narrator, pattern)
-                  )
-                : undefined
+              and(
+                textCondition
+                  ? or(
+                      ilike(hadiths.title, pattern),
+                      ilike(hadiths.translationFr, pattern),
+                      ilike(hadiths.translationWolof, pattern),
+                      ilike(hadiths.narrator, pattern)
+                    )
+                  : undefined,
+                visible
+                  ? inArray(hadiths.thematiqueId, visible.thematiqueIds)
+                  : undefined
+              )
             )
             .limit(20)
         : Promise.resolve([]),

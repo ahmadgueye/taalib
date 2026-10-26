@@ -1,5 +1,10 @@
 import { asc, eq } from "drizzle-orm";
 
+import {
+  canSeeThematique,
+  visibleItems,
+  type ContentAccess,
+} from "@/lib/content-access";
 import { db } from "@/lib/db";
 import { getAllThematiques } from "@/lib/db/queries/thematiques";
 import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
@@ -73,6 +78,22 @@ export async function getParcoursBySlug(slug: string) {
 export type ParcoursWithProgress = NonNullable<
   Awaited<ReturnType<typeof getFirstParcours>>
 >;
+
+// Réduit un parcours à ses étapes visibles (thématiques débloquées), avec
+// seulement leurs ressources et quiz débloqués : la progression se calcule
+// alors sur ce que l'étudiant peut réellement faire.
+export function visibleParcours(
+  access: ContentAccess,
+  p: ParcoursWithProgress
+): ParcoursWithProgress {
+  if (access.all) return p;
+  return {
+    ...p,
+    etapes: p.etapes
+      .filter((e) => canSeeThematique(access, e.thematique.id))
+      .map((e) => ({ ...e, thematique: visibleItems(access, e.thematique) })),
+  };
+}
 
 export type ParcoursStepState = "completed" | "active" | "locked";
 

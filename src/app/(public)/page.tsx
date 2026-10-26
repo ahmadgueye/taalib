@@ -3,13 +3,17 @@ import Link from "next/link";
 import { EntityCard } from "@/components/public/entity-card";
 import { ParcoursTrack } from "@/components/public/parcours-track";
 import { WelcomeToast } from "@/components/public/welcome-toast";
+import { Button } from "@/components/ui/button";
+import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
+import { canSeeCours, canSeeThematique } from "@/lib/content-access";
 import { coursStatusConfig } from "@/lib/cours-status";
 import { getAllCours } from "@/lib/db/queries/cours";
 import {
   getFirstParcours,
   getParcoursProgress,
   getThematiquesHorsParcours,
+  visibleParcours,
 } from "@/lib/db/queries/parcours";
 
 type Props = {
@@ -20,10 +24,23 @@ export default async function Home({ searchParams }: Props) {
   const { welcome } = await searchParams;
   const showWelcome = welcome === "1";
   const profile = await getCurrentProfile();
-  const parcours = await getFirstParcours();
 
-  if (!parcours) {
-    const coursList = await getAllCours();
+  // Le contenu est réservé aux étudiants de l'institut : un visiteur ne voit
+  // qu'une vitrine.
+  if (!profile) return <Vitrine />;
+
+  const access = await getContentAccess();
+  if (!access.all && access.coursIds.size === 0) {
+    return <SansClasse showWelcome={showWelcome} />;
+  }
+
+  const firstParcours = await getFirstParcours();
+  const parcours = firstParcours && visibleParcours(access, firstParcours);
+
+  if (!parcours || parcours.etapes.length === 0) {
+    const coursList = (await getAllCours()).filter((c) =>
+      canSeeCours(access, c.id)
+    );
     return (
       <div className="flex flex-col gap-16 animate-in fade-in duration-300">
         <WelcomeToast show={showWelcome} />
@@ -74,10 +91,13 @@ export default async function Home({ searchParams }: Props) {
     );
   }
 
-  const [steps, thematiquesLibres] = await Promise.all([
-    getParcoursProgress(parcours, profile?.id ?? null),
+  const [steps, allThematiquesLibres] = await Promise.all([
+    getParcoursProgress(parcours, profile.id),
     getThematiquesHorsParcours(parcours.id),
   ]);
+  const thematiquesLibres = allThematiquesLibres.filter((t) =>
+    canSeeThematique(access, t.id)
+  );
 
   return (
     <div className="flex flex-col gap-16 animate-in fade-in duration-300">
@@ -92,14 +112,6 @@ export default async function Home({ searchParams }: Props) {
               <p className="mt-4 text-base text-muted-foreground sm:text-lg">
                 {parcours.description}
               </p>
-            )}
-            {!profile && (
-              <Link
-                href="/login"
-                className="mt-4 inline-block text-sm font-medium underline underline-offset-4"
-              >
-                Se connecter pour commencer →
-              </Link>
             )}
           </div>
           <Link
@@ -148,6 +160,71 @@ export default async function Home({ searchParams }: Props) {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+function Vitrine() {
+  return (
+    <div className="flex flex-col gap-10 animate-in fade-in duration-300">
+      <section className="max-w-2xl">
+        <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
+          Des ressources authentiques pour apprendre l&apos;Islam, toujours
+          à leur place.
+        </h1>
+        <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+          Basée sur le Qur&apos;an et la Sunnah. Les cours sont réservés aux
+          étudiants de l&apos;institut ; le Coran reste ouvert à tous.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Button render={<Link href="/login" />} nativeButton={false}>
+            Se connecter
+          </Button>
+          <Button
+            render={<Link href="/rejoindre" />}
+            nativeButton={false}
+            variant="outline"
+          >
+            Rejoindre une classe
+          </Button>
+          <Button
+            render={<Link href="/coran" />}
+            nativeButton={false}
+            variant="ghost"
+          >
+            Lire le Coran →
+          </Button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SansClasse({ showWelcome }: { showWelcome: boolean }) {
+  return (
+    <div className="flex flex-col gap-10 animate-in fade-in duration-300">
+      <WelcomeToast show={showWelcome} />
+      <section className="max-w-2xl">
+        <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance">
+          Bienvenue sur Taalib
+        </h1>
+        <p className="mt-4 text-muted-foreground">
+          Tu ne fais encore partie d&apos;aucune classe. Saisis le code
+          d&apos;invitation donné par ton enseignant pour accéder à tes cours.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Button render={<Link href="/rejoindre" />} nativeButton={false}>
+            Rejoindre une classe
+          </Button>
+          <Button
+            render={<Link href="/coran" />}
+            nativeButton={false}
+            variant="ghost"
+          >
+            Lire le Coran →
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }

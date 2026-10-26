@@ -4,7 +4,9 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
+import { canSeeRessource } from "@/lib/content-access";
 import { db } from "@/lib/db";
 import { ressourceProgress, ressources } from "@/lib/db/schema";
 
@@ -33,7 +35,7 @@ export async function markRessourceCompleted(
       eq(ressources.status, "published")
     ),
   });
-  if (!ressource) {
+  if (!ressource || !canSeeRessource(await getContentAccess(), ressource.id)) {
     return { error: "Ressource introuvable." };
   }
 
