@@ -1,4 +1,5 @@
 import { and, eq, isNull, lte, or } from "drizzle-orm";
+import { cache } from "react";
 
 import type { ContentAccess } from "@/lib/content-access";
 import { db } from "@/lib/db";
@@ -16,7 +17,10 @@ import {
 // l'étudiant, et que son cours est toujours suivi par cette classe. Dans une
 // classe terminée (ancien élève), seuls comptent les déblocages antérieurs à
 // son départ, et ses cours ne sont visibles que s'il y garde quelque chose.
-export async function getStudentAccess(userId: string): Promise<ContentAccess> {
+//
+// Mis en cache par requête : l'accès et les dates de déblocage de l'accueil
+// (getUnlockDates) partent des mêmes lignes.
+const getStudentUnlocks = cache(async (userId: string) => {
   const activeMember = and(
     eq(classMembers.userId, userId),
     isNull(classMembers.leftAt)
@@ -37,6 +41,7 @@ export async function getStudentAccess(userId: string): Promise<ContentAccess> {
         id: ressources.id,
         thematiqueId: ressources.thematiqueId,
         coursId: thematiques.coursId,
+        unlockedAt: classRessourceUnlocks.unlockedAt,
       })
       .from(classRessourceUnlocks)
       .innerJoin(
@@ -67,6 +72,7 @@ export async function getStudentAccess(userId: string): Promise<ContentAccess> {
         id: quiz.id,
         thematiqueId: quiz.thematiqueId,
         coursId: thematiques.coursId,
+        unlockedAt: classQuizUnlocks.unlockedAt,
       })
       .from(classQuizUnlocks)
       .innerJoin(classMembers, eq(classMembers.classId, classQuizUnlocks.classId))
@@ -90,7 +96,12 @@ export async function getStudentAccess(userId: string): Promise<ContentAccess> {
         )
       ),
   ]);
+  return { memberships, coursRows, ressourceRows, quizRows };
+});
 
+export async function getStudentAccess(userId: string): Promise<ContentAccess> {
+  const { memberships, coursRows, ressourceRows, quizRows } =
+    await getStudentUnlocks(userId);
   return {
     all: false,
     inAnyClass: memberships.length > 0,
@@ -106,4 +117,16 @@ export async function getStudentAccess(userId: string): Promise<ContentAccess> {
     ressourceIds: new Set(ressourceRows.map((r) => r.id)),
     quizIds: new Set(quizRows.map((q) => q.id)),
   };
+}
+
+// Date à laquelle chaque ressource et quiz visible s'est ouvert pour
+// l'étudiant (le plus ancien déblocage s'il est dans plusieurs classes).
+export async function getUnlockDates(userId: string) {
+  const { ressourceRows, quizRows } = await getStudentUnlocks(userId);
+  const dates = new Map<string, Date>();
+  for (const row of [...ressourceRows, ...quizRows]) {
+    const known = dates.get(row.id);
+    if (!known || row.unlockedAt < known) dates.set(row.id, row.unlockedAt);
+  }
+  return dates;
 }

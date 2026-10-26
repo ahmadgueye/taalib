@@ -96,6 +96,9 @@ function StepCard({ step }: { step: RoadmapStep }) {
             </p>
           )}
         </div>
+        {step.newCount > 0 && state !== "completed" && (
+          <Badge className="shrink-0">Nouveau</Badge>
+        )}
         {state === "completed" && (
           <Badge
             variant="outline"

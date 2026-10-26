@@ -2,6 +2,7 @@ import { asc, eq, inArray } from "drizzle-orm";
 
 import { canSeeThematique, type ContentAccess } from "@/lib/content-access";
 import { db } from "@/lib/db";
+import { getUnlockDates } from "@/lib/db/queries/content-access";
 import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
 import { getQuizScores } from "@/lib/db/queries/quiz-tentatives";
 import {
@@ -12,6 +13,11 @@ import {
   ressources,
   thematiques,
 } from "@/lib/db/schema";
+
+// Un élément débloqué depuis moins longtemps, et pas encore fait, est
+// signalé « Nouveau » : l'enseignant ouvre en général une ressource par
+// semaine.
+export const NEW_FOR_DAYS = 7;
 
 // "upcoming" : rien de la thématique n'est encore débloqué pour la classe.
 export type RoadmapStepState = "completed" | "active" | "upcoming";
@@ -27,6 +33,8 @@ export type RoadmapStep = {
   // Toutes les leçons publiées de la thématique, débloquées ou non :
   // l'étudiant voit ce qu'il a fait et ce qui lui reste.
   ressourceProgress: { completed: number; total: number };
+  // Leçons et quiz récemment débloqués et pas encore faits.
+  newCount: number;
 };
 
 export type RoadmapCours = {
@@ -34,6 +42,24 @@ export type RoadmapCours = {
   slug: string;
   title: string;
   steps: RoadmapStep[];
+};
+
+// Ce que l'étudiant a à faire maintenant : la première leçon débloquée et
+// non lue, ou à défaut le premier quiz débloqué et non réussi, en suivant la
+// feuille de route.
+export type RoadmapNext = {
+  kind: "ressource" | "quiz";
+  id: string;
+  title: string;
+  coursTitle: string;
+  thematiqueTitle: string;
+  isNew: boolean;
+};
+
+export type StudentRoadmap = {
+  cours: RoadmapCours[];
+  // null : l'étudiant a tout fait de ce qui est débloqué.
+  next: RoadmapNext | null;
 };
 
 // Feuille de route d'un étudiant, générée à partir de ses classes : leurs
@@ -48,8 +74,9 @@ export type RoadmapCours = {
 // aucune.
 export async function getStudentRoadmap(
   userId: string,
-  access: ContentAccess
-): Promise<RoadmapCours[]> {
+  access: ContentAccess,
+  now = new Date()
+): Promise<StudentRoadmap> {
   const rows = await db
     .select({ coursId: classCours.coursId, leftAt: classMembers.leftAt })
     .from(classCours)
@@ -58,7 +85,7 @@ export async function getStudentRoadmap(
     .orderBy(asc(classMembers.joinedAt), asc(classCours.orderIndex));
   // Un cours suivi par deux classes de l'étudiant n'apparaît qu'une fois.
   const coursIds = [...new Set(rows.map((r) => r.coursId))];
-  if (coursIds.length === 0) return [];
+  if (coursIds.length === 0) return { cours: [], next: null };
   const activeCoursIds = new Set(
     rows.filter((r) => r.leftAt === null).map((r) => r.coursId)
   );
@@ -71,11 +98,13 @@ export async function getStudentRoadmap(
         with: {
           ressources: {
             where: eq(ressources.status, "published"),
-            columns: { id: true },
+            orderBy: [asc(ressources.orderIndex), asc(ressources.title)],
+            columns: { id: true, title: true },
           },
           quiz: {
             where: eq(quiz.status, "published"),
-            columns: { id: true, passingScore: true },
+            orderBy: [asc(quiz.createdAt)],
+            columns: { id: true, title: true, passingScore: true },
           },
         },
       },
@@ -83,7 +112,7 @@ export async function getStudentRoadmap(
   });
 
   const allThematiques = coursList.flatMap((c) => c.thematiques);
-  const [completedIds, scores] = await Promise.all([
+  const [completedIds, scores, unlockDates] = await Promise.all([
     getCompletedRessourceIds(
       userId,
       allThematiques.flatMap((t) => t.ressources.map((r) => r.id))
@@ -92,23 +121,34 @@ export async function getStudentRoadmap(
       userId,
       allThematiques.flatMap((t) => t.quiz.map((q) => q.id))
     ),
+    getUnlockDates(userId),
   ]);
+
+  const canSee = (id: string) =>
+    access.all || access.ressourceIds.has(id) || access.quizIds.has(id);
+  const isPassed = (q: { id: string; passingScore: number }) => {
+    const s = scores.get(q.id);
+    return s !== undefined && (s.bestScore / s.bestTotal) * 100 >= q.passingScore;
+  };
+  const newSince = now.getTime() - NEW_FOR_DAYS * 24 * 60 * 60 * 1000;
+  const isRecent = (id: string) =>
+    (unlockDates.get(id)?.getTime() ?? 0) > newSince;
 
   function stepFor(t: (typeof allThematiques)[number]): RoadmapStep {
     const completed = t.ressources.filter((r) => completedIds.has(r.id)).length;
     const allUnlocked =
-      t.ressources.every((r) => access.all || access.ressourceIds.has(r.id)) &&
-      t.quiz.every((q) => access.all || access.quizIds.has(q.id));
-    const quizzesPassed = t.quiz.every((q) => {
-      const s = scores.get(q.id);
-      return s !== undefined && (s.bestScore / s.bestTotal) * 100 >= q.passingScore;
-    });
+      t.ressources.every((r) => canSee(r.id)) && t.quiz.every((q) => canSee(q.id));
+    const quizzesPassed = t.quiz.every(isPassed);
 
     const state: RoadmapStepState = !canSeeThematique(access, t.id)
       ? "upcoming"
       : allUnlocked && completed === t.ressources.length && quizzesPassed
         ? "completed"
         : "active";
+
+    const newCount =
+      t.ressources.filter((r) => isRecent(r.id) && !completedIds.has(r.id))
+        .length + t.quiz.filter((q) => isRecent(q.id) && !isPassed(q)).length;
 
     return {
       thematique: {
@@ -119,23 +159,54 @@ export async function getStudentRoadmap(
       },
       state,
       ressourceProgress: { completed, total: t.ressources.length },
+      newCount,
     };
   }
 
   const byId = new Map(coursList.map((c) => [c.id, c]));
-  return coursIds
+  const ordered = coursIds
     .map((id) => byId.get(id))
-    .filter((c) => c !== undefined)
-    .map((c) => {
-      const steps = c.thematiques.map(stepFor);
-      return {
-        id: c.id,
-        slug: c.slug,
-        title: c.title,
-        steps: activeCoursIds.has(c.id)
-          ? steps
-          : steps.filter((s) => s.state !== "upcoming"),
-      };
-    })
-    .filter((c) => activeCoursIds.has(c.id) || c.steps.length > 0);
+    .filter((c) => c !== undefined);
+
+  let next: RoadmapNext | null = null;
+  for (const c of ordered) {
+    for (const t of c.thematiques) {
+      const ressource = t.ressources.find(
+        (r) => canSee(r.id) && !completedIds.has(r.id)
+      );
+      const exam = ressource
+        ? undefined
+        : t.quiz.find((q) => canSee(q.id) && !isPassed(q));
+      const item = ressource ?? exam;
+      if (item) {
+        next = {
+          kind: ressource ? "ressource" : "quiz",
+          id: item.id,
+          title: item.title,
+          coursTitle: c.title,
+          thematiqueTitle: t.title,
+          isNew: isRecent(item.id),
+        };
+        break;
+      }
+    }
+    if (next) break;
+  }
+
+  return {
+    cours: ordered
+      .map((c) => {
+        const steps = c.thematiques.map(stepFor);
+        return {
+          id: c.id,
+          slug: c.slug,
+          title: c.title,
+          steps: activeCoursIds.has(c.id)
+            ? steps
+            : steps.filter((s) => s.state !== "upcoming"),
+        };
+      })
+      .filter((c) => activeCoursIds.has(c.id) || c.steps.length > 0),
+    next,
+  };
 }

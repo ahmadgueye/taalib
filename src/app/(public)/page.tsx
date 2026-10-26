@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ContinueCard } from "@/components/public/continue-card";
 import { EntityCard } from "@/components/public/entity-card";
 import { RoadmapTrack } from "@/components/public/roadmap-track";
 import { WelcomeToast } from "@/components/public/welcome-toast";
@@ -65,7 +66,7 @@ export default async function Home({ searchParams }: Props) {
     );
   }
 
-  const roadmap = await getStudentRoadmap(profile.id, access);
+  const { cours: roadmap, next } = await getStudentRoadmap(profile.id, access);
   if (roadmap.length === 0) {
     return (
       <SansClasse showWelcome={showWelcome} inAnyClass={access.inAnyClass} />
@@ -83,6 +84,9 @@ export default async function Home({ searchParams }: Props) {
           Ce que tu as appris, où tu en es, et ce qui t&apos;attend. Les
           étapes s&apos;ouvrent au fil des cours.
         </p>
+        <div className="mt-6">
+          <ContinueCard next={next} />
+        </div>
       </section>
 
       {roadmap.map((c) => (

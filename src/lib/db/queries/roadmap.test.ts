@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   coursFindMany: vi.fn(),
   completedIds: vi.fn(),
   quizScores: vi.fn(),
+  unlockDates: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -24,6 +25,9 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/db/queries/progress", () => ({
   getCompletedRessourceIds: mocks.completedIds,
 }));
+vi.mock("@/lib/db/queries/content-access", () => ({
+  getUnlockDates: mocks.unlockDates,
+}));
 vi.mock("@/lib/db/queries/quiz-tentatives", () => ({
   getQuizScores: mocks.quizScores,
 }));
@@ -33,15 +37,15 @@ import { getStudentRoadmap } from "@/lib/db/queries/roadmap";
 function thematique(
   id: string,
   ressourceIds: string[],
-  quiz: { id: string; passingScore: number }[] = []
+  quiz: { id: string; passingScore: number; title?: string }[] = []
 ) {
   return {
     id,
     slug: id,
     title: id,
     description: null,
-    ressources: ressourceIds.map((r) => ({ id: r })),
-    quiz,
+    ressources: ressourceIds.map((r) => ({ id: r, title: r })),
+    quiz: quiz.map((q) => ({ title: q.id, ...q })),
   };
 }
 
@@ -78,22 +82,26 @@ beforeEach(() => {
   ]);
   mocks.completedIds.mockResolvedValue(new Set());
   mocks.quizScores.mockResolvedValue(new Map());
+  mocks.unlockDates.mockResolvedValue(new Map());
 });
 
 describe("getStudentRoadmap", () => {
   it("follows the class's cours order, each cours once", async () => {
-    const roadmap = await getStudentRoadmap("u1", access({}));
+    const { cours: roadmap } = await getStudentRoadmap("u1", access({}));
     expect(roadmap.map((c) => c.id)).toEqual(["fiqh", "aqida"]);
   });
 
   it("returns nothing for a student whose classes follow no cours", async () => {
     mocks.classCoursRows.mockResolvedValue([]);
-    expect(await getStudentRoadmap("u1", access({}))).toEqual([]);
+    expect(await getStudentRoadmap("u1", access({}))).toEqual({
+      cours: [],
+      next: null,
+    });
     expect(mocks.coursFindMany).not.toHaveBeenCalled();
   });
 
   it("shows not-yet-unlocked thematiques as upcoming, with all their lessons counted", async () => {
-    const roadmap = await getStudentRoadmap(
+    const { cours: roadmap } = await getStudentRoadmap(
       "u1",
       access({ thematiqueIds: new Set(["tawhid"]), ressourceIds: new Set(["r1"]) })
     );
@@ -111,14 +119,14 @@ describe("getStudentRoadmap", () => {
     mocks.completedIds.mockResolvedValue(new Set(["r1", "r2"]));
 
     // Tout lu, quiz pas encore réussi : en cours.
-    let aqida = (await getStudentRoadmap("u1", everything)).find((c) => c.id === "aqida")!;
+    let aqida = (await getStudentRoadmap("u1", everything)).cours.find((c) => c.id === "aqida")!;
     expect(aqida.steps[0].state).toBe("active");
 
     // Quiz réussi : terminée.
     mocks.quizScores.mockResolvedValue(
       new Map([["q1", { bestScore: 9, bestTotal: 10 }]])
     );
-    aqida = (await getStudentRoadmap("u1", everything)).find((c) => c.id === "aqida")!;
+    aqida = (await getStudentRoadmap("u1", everything)).cours.find((c) => c.id === "aqida")!;
     expect(aqida.steps[0].state).toBe("completed");
 
     // Même tout lu et réussi, une ressource encore verrouillée garde l'étape en cours.
@@ -131,7 +139,7 @@ describe("getStudentRoadmap", () => {
           quizIds: new Set(["q1"]),
         })
       )
-    ).find((c) => c.id === "aqida")!;
+    ).cours.find((c) => c.id === "aqida")!;
     expect(aqida.steps[0].state).toBe("active");
   });
 
@@ -140,12 +148,66 @@ describe("getStudentRoadmap", () => {
       { coursId: "aqida", leftAt: new Date("2026-06-01") },
       { coursId: "fiqh", leftAt: new Date("2026-06-01") },
     ]);
-    const roadmap = await getStudentRoadmap(
+    const { cours: roadmap } = await getStudentRoadmap(
       "u1",
       access({ thematiqueIds: new Set(["tawhid"]), ressourceIds: new Set(["r1"]) })
     );
     // Fiqh : rien de débloqué avant le départ, le cours disparaît.
     expect(roadmap.map((c) => c.id)).toEqual(["aqida"]);
     expect(roadmap[0].steps.map((s) => s.thematique.id)).toEqual(["tawhid"]);
+  });
+
+  it("points to the first unread unlocked lesson, then to an unpassed quiz", async () => {
+    const unlocked = access({
+      thematiqueIds: new Set(["priere", "tawhid"]),
+      ressourceIds: new Set(["r4", "r1", "r2"]),
+      quizIds: new Set(["q1"]),
+    });
+
+    // Fiqh passe en premier dans la feuille de route de la classe.
+    let { next } = await getStudentRoadmap("u1", unlocked);
+    expect(next).toMatchObject({ kind: "ressource", id: "r4", coursTitle: "Fiqh" });
+
+    mocks.completedIds.mockResolvedValue(new Set(["r4", "r1"]));
+    ({ next } = await getStudentRoadmap("u1", unlocked));
+    expect(next).toMatchObject({ kind: "ressource", id: "r2" });
+
+    mocks.completedIds.mockResolvedValue(new Set(["r4", "r1", "r2"]));
+    ({ next } = await getStudentRoadmap("u1", unlocked));
+    expect(next).toMatchObject({ kind: "quiz", id: "q1", thematiqueTitle: "tawhid" });
+
+    mocks.quizScores.mockResolvedValue(
+      new Map([["q1", { bestScore: 10, bestTotal: 10 }]])
+    );
+    ({ next } = await getStudentRoadmap("u1", unlocked));
+    expect(next).toBeNull();
+  });
+
+  it("flags what was unlocked this week and is not done yet as new", async () => {
+    const now = new Date("2026-10-26T12:00:00Z");
+    mocks.unlockDates.mockResolvedValue(
+      new Map([
+        ["r1", new Date("2026-10-01")], // trop ancien
+        ["r2", new Date("2026-10-24")],
+        ["q1", new Date("2026-10-25")],
+      ])
+    );
+    mocks.completedIds.mockResolvedValue(new Set(["r1"]));
+    const unlocked = access({
+      thematiqueIds: new Set(["tawhid"]),
+      ressourceIds: new Set(["r1", "r2"]),
+      quizIds: new Set(["q1"]),
+    });
+
+    let roadmap = await getStudentRoadmap("u1", unlocked, now);
+    let aqida = roadmap.cours.find((c) => c.id === "aqida")!;
+    expect(aqida.steps[0].newCount).toBe(2);
+    expect(roadmap.next).toMatchObject({ id: "r2", isNew: true });
+
+    // Une fois lue, la leçon n'est plus signalée.
+    mocks.completedIds.mockResolvedValue(new Set(["r1", "r2"]));
+    roadmap = await getStudentRoadmap("u1", unlocked, now);
+    aqida = roadmap.cours.find((c) => c.id === "aqida")!;
+    expect(aqida.steps[0].newCount).toBe(1);
   });
 });
