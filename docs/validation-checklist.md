@@ -96,7 +96,18 @@ Passer le compte en `contributor` puis `admin` dans Studio
       moyen, taux de réussite), réussite par question, une ligne par étudiant
       (meilleur score, dernière tentative) ; cliquer une ligne ouvre un modal
       avec toutes ses tentatives
+- [ ] Classes (admin) : créer une classe → un code d'invitation est généré ;
+      « Copier le lien », « Nouveau code » (l'ancien lien affiche « Code
+      invalide »), fermer/rouvrir les inscriptions
+- [ ] Classes : ajouter un étudiant par e-mail (compte existant) ; e-mail
+      inconnu → message d'erreur ; ajouter deux fois → « déjà membre » ;
+      retirer un étudiant
+- [ ] `/rejoindre/[code]` déconnecté → « Se connecter », puis retour sur la
+      page après connexion ; « Rejoindre la classe » → « Tu fais partie de
+      cette classe » ; code saisi en minuscules ou avec tiret accepté sur
+      `/rejoindre`
 - [ ] Un contributeur ne voit pas / ne peut pas ouvrir `/dashboard/utilisateurs`
+      ni `/dashboard/classes`
 - [ ] Un viewer qui tape l'URL `/dashboard/...` est renvoyé vers l'accueil
 
 ## 5. Qualité transversale

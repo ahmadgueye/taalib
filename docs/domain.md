@@ -250,6 +250,36 @@ reste pour la partie lecture/audio : elle ne touche ni Drizzle ni Supabase,
 seulement l'API Quran Foundation. Seule la mémorisation (statuts par verset,
 et sa révision espacée) passe par la base applicative.
 
+## Classes
+
+Une classe (`classes`) regroupe des étudiants de l'institut. Elle ne possède
+aucun contenu : pour l'instant elle ne fait que lister des membres
+(`class_members`). Le rattachement de cours à une classe et le déblocage
+progressif des thématiques viendront ensuite ; tant que ce n'est pas fait, le
+contenu reste public comme décrit plus haut.
+
+- **Gestion réservée aux admins** — `/dashboard/classes` (lien de la sidebar
+  visible des seuls admins, pages en `notFound()` sinon) et
+  `lib/actions/classes.ts` (`requireAdmin()` partout). Les contributeurs
+  gèrent le contenu, pas les listes d'étudiants.
+- **Ajout manuel** — `addClassMember` cherche un profil par e-mail
+  (insensible à la casse). L'étudiant doit donc s'être connecté au moins une
+  fois ; sinon l'action renvoie une erreur qui l'oriente vers le code
+  d'invitation. Retirer un membre (`removeClassMember`) ne supprime ni son
+  compte ni sa progression.
+- **Code d'invitation** — chaque classe reçoit à sa création un code de 8
+  caractères (`lib/class-invite.ts`, alphabet sans 0/O ni 1/I/L pour pouvoir
+  le dicter). Depuis la page de la classe, l'admin copie le lien
+  `/rejoindre/[code]`, génère un nouveau code (l'ancien cesse de
+  fonctionner) ou ferme les inscriptions (`invite_enabled`).
+- **Rejoindre** — `/rejoindre` (saisie du code) et `/rejoindre/[code]`. Le
+  code est normalisé (majuscules, sans espaces ni tirets). Un visiteur non
+  connecté est envoyé vers `/login?next=/rejoindre/CODE` et revient sur la
+  page après connexion (et après l'onboarding du nom pour un nouveau
+  compte). L'inscription se fait par un bouton (`joinClass`,
+  `lib/actions/class-join.ts`), jamais au simple chargement de la page ; elle
+  est ouverte à tout utilisateur connecté et idempotente.
+
 ## Utilisateurs et rôles
 
 Voir [`auth.md`](./auth.md) pour le détail — en résumé côté modèle : chaque

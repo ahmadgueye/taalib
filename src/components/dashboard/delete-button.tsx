@@ -18,9 +18,13 @@ import { Button } from "@/components/ui/button";
 export function DeleteButton({
   action,
   itemLabel,
+  title,
+  description = "Cette action est irréversible.",
 }: {
   action: () => Promise<void>;
   itemLabel: string;
+  title?: string;
+  description?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -39,10 +43,10 @@ export function DeleteButton({
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer « {itemLabel} » ?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Cette action est irréversible.
-          </AlertDialogDescription>
+          <AlertDialogTitle>
+            {title ?? `Supprimer « ${itemLabel} » ?`}
+          </AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Annuler</AlertDialogCancel>

@@ -55,7 +55,8 @@ deux layouts et deux publics différents :
 
 - **`(public)/`** — le site vitrine, accessible sans compte : accueil,
   `/cours`, `/hadiths`, `/ressources`, `/seances`, `/thematiques`, `/parcours`,
-  `/quiz`, `/coran`, `/memorisation`, `/recherche`, `/compte` (nécessite un
+  `/quiz`, `/coran`, `/memorisation`, `/recherche`, `/rejoindre` (inscription
+  à une classe par code), `/compte` (nécessite un
   compte, mais reste dans ce groupe car visuellement c'est le layout public).
 - **`(dashboard)/dashboard/`** — l'admin, protégé par `proxy.ts` +
   une double vérification de rôle dans
@@ -67,7 +68,9 @@ deux layouts et deux publics différents :
   et `foo-table.tsx` partagés entre create/edit et list. `quiz` est la seule
   exception : `createQuiz` redirige vers une cinquième page,
   `dashboard/quiz/[id]/questions/page.tsx`, dédiée à la gestion des questions
-  et choix imbriqués. Voir [`how-to.md`](./how-to.md) pour dupliquer ce
+  et choix imbriqués. `classes` (admin seulement) n'a pas de page `edit` :
+  `dashboard/classes/[id]/page.tsx` réunit le formulaire, le code
+  d'invitation et la liste des étudiants. Voir [`how-to.md`](./how-to.md) pour dupliquer ce
   pattern sur une nouvelle entité.
 
 Chaque groupe a son propre `layout.tsx` — pas de layout racine partagé au-delà
@@ -165,7 +168,7 @@ quand on colle un lien dans WhatsApp, par exemple.
   thématiques, hadiths, séances et parcours (lit la base à chaque requête,
   `dynamic = "force-dynamic"` : un pré-rendu au build échouerait en CI, qui
   n'a pas de base).
-- `src/app/robots.ts` — autorise l'indexation sauf `/dashboard`, `/compte`,
+- `src/app/robots.ts` — autorise l'indexation sauf `/dashboard`, `/compte`, `/rejoindre`,
   `/login`, `/auth` et `/api`, et référence le sitemap.
 - Les deux et les Open Graph utilisent `NEXT_PUBLIC_SITE_URL` : si elle n'est
   pas définie sur Vercel, les liens pointent vers `localhost`.

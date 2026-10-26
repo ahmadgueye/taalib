@@ -23,6 +23,8 @@ erDiagram
     profiles ||--o{ ressource_progress : tracks
     profiles ||--o{ quiz_tentatives : attempts
     profiles ||--o{ quran_memorization : tracks
+    profiles ||--o{ class_members : "member of"
+    classes ||--o{ class_members : groups
 
     cours ||--o{ thematiques : contains
     thematiques ||--o{ ressources : contains
@@ -157,6 +159,19 @@ erDiagram
         int review_box "boîte Leitner, 1..5 ; null si pas maitrise"
         timestamptz next_review_at "échéance de révision ; null si pas maitrise"
     }
+    classes {
+        uuid id PK
+        text name
+        text description
+        text invite_code UK "8 caractères, régénérable"
+        boolean invite_enabled
+        uuid created_by FK
+    }
+    class_members {
+        uuid class_id FK
+        uuid user_id FK
+        timestamptz joined_at
+    }
 ```
 
 Points notables :
@@ -185,6 +200,12 @@ Points notables :
   une migration de backfill (`0022_backfill_quran_memorization_review.sql`)
   initialise ces colonnes pour les versets `maitrise` déjà en base avant
   l'ajout de cette fonctionnalité.
+- `class_members` a une clé primaire composite `(class_id, user_id)` (un
+  étudiant n'est qu'une fois dans une classe, mais peut être dans plusieurs)
+  et un index sur `user_id` pour retrouver les classes d'un étudiant.
+  Supprimer une classe ou un profil supprime ses lignes en cascade, sans
+  toucher à la progression de l'étudiant. Voir
+  [`domain.md`](./domain.md#classes).
 - `quiz_tentatives` conserve chaque tentative (pas seulement la meilleure) :
   `score`/`total_questions` sont dénormalisés au moment de la soumission,
   `quiz_reponses` détaille les choix cochés par question pour permettre
@@ -202,7 +223,7 @@ RLS est la **vraie** barrière de sécurité, pas les vérifications
 défense en profondeur qui donne des messages d'erreur propres). Résumé (détail
 dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 `0006_hadiths_rls.sql`, `0013_flat_lifeguard.sql`,
-`0019_quran_memorization_rls.sql`, `0020_parcours_rls.sql`) :
+`0019_quran_memorization_rls.sql`, `0020_parcours_rls.sql`, `0023_classes.sql`) :
 
 | Table | Lecture | Écriture |
 |---|---|---|
@@ -210,6 +231,8 @@ dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 | `profiles` | tout utilisateur **authentifié** | `admin` uniquement (`is_admin()`), et seulement en `UPDATE` |
 | `ressource_progress`, `quran_memorization` | l'utilisateur lui-même (`auth.uid() = user_id`) | l'utilisateur lui-même, sur ses propres lignes uniquement |
 | `quiz_tentatives`, `quiz_reponses` | l'utilisateur lui-même (ses propres tentatives) | l'utilisateur lui-même, en `INSERT` seulement (pas d'édition d'une tentative passée) |
+| `classes` | `admin` uniquement (**pas** de lecture publique : `invite_code` ouvrirait la classe à quiconque interroge l'API REST) | `admin` uniquement |
+| `class_members` | `admin`, et l'étudiant pour ses propres lignes | `admin` uniquement (l'inscription par code passe par une Server Action, hors RLS) |
 
 `is_contributor()` et `is_admin()` sont des fonctions SQL `SECURITY DEFINER`
 qui lisent `profiles.role` pour `auth.uid()`. Elles doivent rester en phase

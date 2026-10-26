@@ -315,6 +315,44 @@ export const quranMemorization = pgTable(
   ]
 );
 
+// Une classe de l'institut : un groupe d'étudiants. Le contenu reste dans le
+// catalogue (cours/thématiques) ; la classe ne fait que regrouper des membres.
+export const classes = pgTable("classes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  // Code à partager pour rejoindre la classe via /rejoindre/[code]. Unique,
+  // régénérable (l'ancien code cesse alors de fonctionner).
+  inviteCode: text("invite_code").notNull().unique(),
+  inviteEnabled: boolean("invite_enabled").notNull().default(true),
+  createdBy: uuid("created_by").references(() => profiles.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const classMembers = pgTable(
+  "class_members",
+  {
+    classId: uuid("class_id")
+      .notNull()
+      .references(() => classes.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.classId, table.userId] }),
+    index("class_members_user_idx").on(table.userId),
+  ]
+);
+
 export const coursRelations = relations(cours, ({ many }) => ({
   thematiques: many(thematiques),
 }));
@@ -480,3 +518,18 @@ export const quranMemorizationRelations = relations(
     }),
   })
 );
+
+export const classesRelations = relations(classes, ({ many }) => ({
+  members: many(classMembers),
+}));
+
+export const classMembersRelations = relations(classMembers, ({ one }) => ({
+  class: one(classes, {
+    fields: [classMembers.classId],
+    references: [classes.id],
+  }),
+  user: one(profiles, {
+    fields: [classMembers.userId],
+    references: [profiles.id],
+  }),
+}));
