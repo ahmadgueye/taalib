@@ -123,6 +123,11 @@ Chaque étape (une thématique) a un état :
   leçons publiées de l'étape, débloquées ou non : l'étudiant voit ce qui lui
   reste.
 
+Sous le titre de chaque cours, `course-progress.tsx` résume l'avancement :
+barre de progression sur toutes les leçons du cours, « x/y leçons · a/b
+étapes terminées » et, quand toutes les étapes sont terminées, le badge
+« Cours terminé ».
+
 En haut de la page, une liste dépliable **« À faire »** (`todo-list.tsx`,
 élément `<details>` natif) récapitule tout ce que l'étudiant a à faire.
 Fermée, elle tient en une ligne : « À faire · 3 leçons et 1 quiz », avec le

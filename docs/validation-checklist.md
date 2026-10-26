@@ -53,7 +53,9 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
       choisi sur la page de la classe, chacun avec ses thématiques ; une
       thématique sans rien de débloqué est « À venir » (sablier, pas de
       lien) ; « x/y leçons » compte toutes les leçons ; une étape tout lue,
-      tout débloquée et quiz réussi passe « Terminé »
+      tout débloquée et quiz réussi passe « Terminé » ; sous chaque cours,
+      barre « x/y leçons · a/b étapes terminées », et « Cours terminé » quand
+      toutes les étapes le sont
 - [ ] Avec classe : `/cours` ne montre que les cours de la classe ; un cours
       sans rien de débloqué affiche « sera débloqué au fil des séances »
 - [ ] Une thématique n'apparaît que si un de ses éléments est débloqué, avec
