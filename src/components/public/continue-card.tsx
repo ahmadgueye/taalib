@@ -37,7 +37,9 @@ export function ContinueCard({ next }: { next: RoadmapNext | null }) {
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {next.kind === "quiz" ? "Passer le quiz" : "Continuer"}
           </span>
-          {next.isNew && <Badge>Nouveau</Badge>}
+          {next.isNew && (
+            <Badge className="h-4 px-1.5 text-[10px]">Nouveau</Badge>
+          )}
         </div>
         <div className="mt-1 font-medium">{next.title}</div>
         <p className="mt-0.5 truncate text-sm text-muted-foreground">
