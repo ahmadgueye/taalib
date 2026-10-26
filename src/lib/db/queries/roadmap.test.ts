@@ -157,7 +157,7 @@ describe("getStudentRoadmap", () => {
     expect(roadmap[0].steps.map((s) => s.thematique.id)).toEqual(["tawhid"]);
   });
 
-  it("lists, per cours, the first unread unlocked lesson, then an unpassed quiz", async () => {
+  it("lists every unread unlocked lesson, then the quiz once its lessons are read", async () => {
     const unlocked = access({
       thematiqueIds: new Set(["priere", "tawhid"]),
       ressourceIds: new Set(["r4", "r1", "r2"]),
@@ -166,10 +166,12 @@ describe("getStudentRoadmap", () => {
     const ids = async () =>
       (await getStudentRoadmap("u1", unlocked)).todo.map((t) => [t.kind, t.id]);
 
-    // Deux cours avancent en parallèle, dans l'ordre de la feuille de route.
+    // Deux cours avancent en parallèle, dans l'ordre de la feuille de route ;
+    // le quiz attend que les leçons de sa thématique soient lues.
     expect(await ids()).toEqual([
       ["ressource", "r4"],
       ["ressource", "r1"],
+      ["ressource", "r2"],
     ]);
 
     mocks.completedIds.mockResolvedValue(new Set(["r4", "r1"]));
@@ -204,6 +206,7 @@ describe("getStudentRoadmap", () => {
     let aqida = roadmap.cours.find((c) => c.id === "aqida")!;
     expect(aqida.steps[0].newCount).toBe(2);
     expect(roadmap.todo).toMatchObject([{ id: "r2", isNew: true }]);
+    // r1 est lue ; q1 attend que r2 le soit.
 
     // Une fois lue, la leçon n'est plus signalée.
     mocks.completedIds.mockResolvedValue(new Set(["r1", "r2"]));

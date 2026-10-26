@@ -44,12 +44,11 @@ export type RoadmapCours = {
   steps: RoadmapStep[];
 };
 
-// Ce que l'étudiant a à faire maintenant dans un cours : la première leçon
-// débloquée et non lue, ou à défaut le premier quiz débloqué et non réussi,
-// en suivant la feuille de route.
-export type RoadmapNext = {
+// Une leçon débloquée et non lue, ou un quiz débloqué et non réussi.
+export type RoadmapTodo = {
   kind: "ressource" | "quiz";
   id: string;
+  coursId: string;
   title: string;
   coursTitle: string;
   thematiqueTitle: string;
@@ -58,9 +57,9 @@ export type RoadmapNext = {
 
 export type StudentRoadmap = {
   cours: RoadmapCours[];
-  // Un élément par cours qui a encore quelque chose d'ouvert à faire (deux
-  // cours peuvent avancer en parallèle) ; vide si tout est fait.
-  todo: RoadmapNext[];
+  // Tout ce que l'étudiant a à faire, dans l'ordre de la feuille de route
+  // (plusieurs cours peuvent avancer en parallèle) ; vide si tout est fait.
+  todo: RoadmapTodo[];
 };
 
 // Feuille de route d'un étudiant, générée à partir de ses classes : leurs
@@ -169,26 +168,32 @@ export async function getStudentRoadmap(
     .map((id) => byId.get(id))
     .filter((c) => c !== undefined);
 
-  const todo: RoadmapNext[] = [];
+  // Les quiz d'une thématique n'y figurent qu'une fois ses leçons ouvertes
+  // toutes lues : l'étudiant n'est pas prêt à les passer avant.
+  const todo: RoadmapTodo[] = [];
   for (const c of ordered) {
     for (const t of c.thematiques) {
-      const ressource = t.ressources.find(
+      const unread = t.ressources.filter(
         (r) => canSee(r.id) && !completedIds.has(r.id)
       );
-      const exam = ressource
-        ? undefined
-        : t.quiz.find((q) => canSee(q.id) && !isPassed(q));
-      const item = ressource ?? exam;
-      if (item) {
+      const exams =
+        unread.length > 0
+          ? []
+          : t.quiz.filter((q) => canSee(q.id) && !isPassed(q));
+      const items = [
+        ...unread.map((r) => ({ kind: "ressource" as const, item: r })),
+        ...exams.map((q) => ({ kind: "quiz" as const, item: q })),
+      ];
+      for (const { kind, item } of items) {
         todo.push({
-          kind: ressource ? "ressource" : "quiz",
+          kind,
           id: item.id,
+          coursId: c.id,
           title: item.title,
           coursTitle: c.title,
           thematiqueTitle: t.title,
           isNew: isRecent(item.id),
         });
-        break;
       }
     }
   }

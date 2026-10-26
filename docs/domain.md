@@ -123,13 +123,18 @@ Chaque étape (une thématique) a un état :
   leçons publiées de l'étape, débloquées ou non : l'étudiant voit ce qui lui
   reste.
 
-En haut de la page, une liste **« À faire »** (`todo-list.tsx`) récapitule
-en une ligne par cours ce que l'étudiant a à faire maintenant, puisque
-deux cours peuvent avancer en parallèle. Pour chaque cours, en suivant la
-feuille de route, c'est la première leçon débloquée et pas encore lue. À
-défaut, c'est le premier quiz débloqué et pas encore réussi (« Quiz : … »).
-Un cours dont tout ce qui est ouvert est fait n'a pas de ligne. Si aucun
-n'en a, la liste affiche « Tu es à jour ».
+En haut de la page, une liste dépliable **« À faire »** (`todo-list.tsx`,
+élément `<details>` natif) récapitule tout ce que l'étudiant a à faire.
+Fermée, elle tient en une ligne : « À faire · 3 leçons et 1 quiz », avec le
+nombre de nouveautés. Elle est ouverte d'office quand il y a du nouveau.
+Ouverte, elle liste, groupés par cours (plusieurs cours peuvent avancer en
+parallèle) et dans l'ordre de la feuille de route :
+
+- chaque leçon débloquée et pas encore lue ;
+- chaque quiz débloqué et pas encore réussi (« Quiz : … »), mais seulement
+  une fois toutes les leçons ouvertes de sa thématique lues.
+
+Si tout ce qui est ouvert est fait, la ligne affiche « Tu es à jour ».
 
 Un élément débloqué depuis moins de 7 jours (`NEW_FOR_DAYS`) et pas encore
 fait est signalé **« Nouveau »**, sur sa ligne « À faire » et sur son
