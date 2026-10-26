@@ -12,7 +12,7 @@ export function SiteFooter() {
           {/* <BookOpen className="size-5" /> */}
           طالب
         </Link>{" "}
-        — la plateforme de cours de l&apos;institut{" "}
+        — la plateforme de cours du programme{" "}
         <a
           href="https://bayanun.com"
           target="_blank"

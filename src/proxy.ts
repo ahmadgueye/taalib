@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { updateSession } from "@/lib/supabase/proxy";
 
-// Pages qui exigent un compte. Le catalogue est réservé aux étudiants de
-// l'institut ; restent ouverts l'accueil (vitrine), /coran, /login et
+// Pages qui exigent un compte. Le catalogue est réservé aux étudiants
+// du programme Bayān ; restent ouverts l'accueil (vitrine), /coran, /login et
 // /rejoindre. Ce n'est qu'un raccourci UX : chaque page vérifie aussi l'accès
 // de l'utilisateur au contenu (lib/auth/content-access.ts).
 const PROTECTED_PREFIXES = [

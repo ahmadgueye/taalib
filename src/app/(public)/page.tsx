@@ -117,12 +117,12 @@ function Vitrine() {
           Taalib
         </h1>
         <p className="mt-2 text-lg sm:text-xl">
-          La plateforme de cours de l&apos;institut{" "}
+          La plateforme de cours du programme{" "}
           <span className="font-semibold">Bayān</span>.
         </p>
         <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-          Les cours, ressources et quiz sont réservés aux étudiants de
-          l&apos;institut, au rythme de leur classe. Le Coran reste ouvert à
+          Les cours, ressources et quiz sont réservés aux étudiants
+          du programme, au rythme de leur classe. Le Coran reste ouvert à
           tous.
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
@@ -150,7 +150,7 @@ function Vitrine() {
           rel="noopener noreferrer"
           className="mt-8 inline-block text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
         >
-          Découvrir l&apos;institut Bayān → bayanun.com
+          Découvrir le programme Bayān → bayanun.com
         </a>
       </section>
     </div>

@@ -250,7 +250,7 @@ et sa révision espacée) passe par la base applicative.
 
 ## Classes
 
-Une classe (`classes`) regroupe des étudiants de l'institut (`class_members`)
+Une classe (`classes`) regroupe des étudiants du programme (`class_members`)
 et suit des cours (`class_cours`) dont l'enseignant débloque les ressources
 et les quiz au fil des semaines (`class_ressource_unlocks`,
 `class_quiz_unlocks`). Elle ne possède aucun contenu : elle
@@ -298,7 +298,7 @@ elle qui détermine ce qu'un étudiant voit, voir
 
 ## Accès au contenu
 
-Le catalogue est **réservé aux étudiants de l'institut**. Seuls l'accueil
+Le catalogue est **réservé aux étudiants du programme Bayān**. Seuls l'accueil
 (vitrine), `/coran`, `/login` et `/rejoindre` sont ouverts sans compte.
 
 - **Staff** (`admin`, `contributor`) : voit tout, comme avant.

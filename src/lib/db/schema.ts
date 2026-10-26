@@ -282,7 +282,7 @@ export const quranMemorization = pgTable(
   ]
 );
 
-// Une classe de l'institut : un groupe d'étudiants. Le contenu reste dans le
+// Une classe du programme : un groupe d'étudiants. Le contenu reste dans le
 // catalogue (cours/thématiques) ; la classe ne fait que regrouper des membres.
 export const classes = pgTable("classes", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
