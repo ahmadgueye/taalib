@@ -12,7 +12,16 @@ export function SiteFooter() {
           {/* <BookOpen className="size-5" /> */}
           طالب
         </Link>{" "}
-        — catalogue de ressources d&apos;études islamiques.
+        — la plateforme de cours du programme{" "}
+        <a
+          href="https://bayanun.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-4 hover:text-foreground"
+        >
+          Bayān
+        </a>
+        .
       </div>
     </footer>
   );

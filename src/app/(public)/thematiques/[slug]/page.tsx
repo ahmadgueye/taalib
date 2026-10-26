@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 import { BackButton } from "@/components/public/back-button";
 import { ProgressIndicator } from "@/components/public/progress-indicator";
 import { RessourcesHadithsTabs } from "@/components/public/ressources-hadiths-tabs";
+import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
+import { canSeeThematique, visibleItems } from "@/lib/content-access";
 import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
 import { getQuizScores } from "@/lib/db/queries/quiz-tentatives";
 import { getThematiqueBySlug } from "@/lib/db/queries/thematiques";
@@ -17,7 +19,11 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const t = await getThematiqueBySlug(slug);
+  const [found, access] = await Promise.all([
+    getThematiqueBySlug(slug),
+    getContentAccess(),
+  ]);
+  const t = found && canSeeThematique(access, found.id) ? found : null;
   const title = t?.title ?? "Thématique";
   const description = t?.description ?? defaultDescription;
   return {
@@ -29,9 +35,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ThematiqueDetailPage({ params }: Props) {
   const { slug } = await params;
-  const t = await getThematiqueBySlug(slug);
+  const [found, access] = await Promise.all([
+    getThematiqueBySlug(slug),
+    getContentAccess(),
+  ]);
 
-  if (!t) notFound();
+  if (!found || !canSeeThematique(access, found.id)) notFound();
+
+  const t = visibleItems(access, found);
 
   const profile = await getCurrentProfile();
   const completedIds = profile

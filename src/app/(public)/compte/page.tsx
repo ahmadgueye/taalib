@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { getSuiviCours } from "@/lib/db/queries/progress";
 import { getQuizAttemptsSummary } from "@/lib/db/queries/quiz-tentatives";
@@ -33,7 +34,7 @@ export default async function ComptePage({ searchParams }: Props) {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login?next=/compte");
 
-  const suivi = await getSuiviCours(profile.id);
+  const suivi = await getSuiviCours(profile.id, await getContentAccess());
   const quizAttempts = await getQuizAttemptsSummary(profile.id);
 
   return (

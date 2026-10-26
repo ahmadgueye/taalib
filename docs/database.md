@@ -18,23 +18,28 @@ erDiagram
     profiles ||--o{ ressources : adds
     profiles ||--o{ hadiths : adds
     profiles ||--o{ seances : creates
-    profiles ||--o{ parcours : creates
     profiles ||--o{ quiz : adds
     profiles ||--o{ ressource_progress : tracks
     profiles ||--o{ quiz_tentatives : attempts
     profiles ||--o{ quran_memorization : tracks
+    profiles ||--o{ class_members : "member of"
+    classes ||--o{ class_members : groups
+    classes ||--o{ class_cours : follows
+    cours ||--o{ class_cours : "followed via"
+    classes ||--o{ class_ressource_unlocks : unlocks
+    ressources ||--o{ class_ressource_unlocks : "unlocked via"
+    classes ||--o{ class_quiz_unlocks : unlocks
+    quiz ||--o{ class_quiz_unlocks : "unlocked via"
 
     cours ||--o{ thematiques : contains
     thematiques ||--o{ ressources : contains
     thematiques ||--o{ hadiths : contains
     thematiques ||--o{ quiz : contains
     thematiques ||--o{ seance_thematiques : "linked via"
-    thematiques ||--o{ parcours_etapes : "linked via"
     ressources ||--o{ seance_ressources : "linked via"
     ressources ||--o{ ressource_progress : "completed by"
     seances ||--o{ seance_thematiques : covers
     seances ||--o{ seance_ressources : covers
-    parcours ||--o{ parcours_etapes : orders
     quiz ||--o{ quiz_questions : contains
     quiz_questions ||--o{ quiz_choix : contains
     quiz ||--o{ quiz_tentatives : "attempted via"
@@ -101,18 +106,6 @@ erDiagram
         uuid ressource_id FK
         timestamp completed_at
     }
-    parcours {
-        uuid id PK
-        text slug UK
-        text title
-        text description
-    }
-    parcours_etapes {
-        uuid id PK
-        uuid parcours_id FK
-        uuid thematique_id FK
-        int order_index
-    }
     quiz {
         uuid id PK
         uuid thematique_id FK
@@ -157,6 +150,36 @@ erDiagram
         int review_box "boîte Leitner, 1..5 ; null si pas maitrise"
         timestamptz next_review_at "échéance de révision ; null si pas maitrise"
     }
+    classes {
+        uuid id PK
+        text name
+        text description
+        text invite_code UK "8 caractères, régénérable"
+        boolean invite_enabled
+        uuid created_by FK
+    }
+    class_members {
+        uuid class_id FK
+        uuid user_id FK
+        timestamptz joined_at
+        timestamptz left_at "ancien élève si renseigné"
+    }
+    class_cours {
+        uuid class_id FK
+        uuid cours_id FK
+        int order_index "ordre dans la feuille de route"
+        timestamptz added_at
+    }
+    class_ressource_unlocks {
+        uuid class_id FK
+        uuid ressource_id FK
+        timestamptz unlocked_at "pas de ligne = verrouillée"
+    }
+    class_quiz_unlocks {
+        uuid class_id FK
+        uuid quiz_id FK
+        timestamptz unlocked_at "pas de ligne = verrouillé"
+    }
 ```
 
 Points notables :
@@ -171,9 +194,7 @@ Points notables :
   (clé primaire composite, pas d'`id` propre) : une séance regroupe des
   thématiques et/ou des ressources ponctuelles déjà existantes, elle ne les
   possède pas (`onDelete: "cascade"` va dans le sens table de jointure →
-  séance/ressource supprimée, pas l'inverse). `parcours_etapes` suit le même
-  principe : elle référence une thématique existante (unique par couple
-  `(parcours_id, thematique_id)`), elle ne la possède pas.
+  séance/ressource supprimée, pas l'inverse).
 - `ressource_progress` a une clé primaire composite `(user_id, ressource_id)` :
   un utilisateur ne peut "compléter" une ressource qu'une fois.
 - `quran_memorization` a une clé primaire composite `(user_id, verse_key)` —
@@ -185,11 +206,22 @@ Points notables :
   une migration de backfill (`0022_backfill_quran_memorization_review.sql`)
   initialise ces colonnes pour les versets `maitrise` déjà en base avant
   l'ajout de cette fonctionnalité.
+- `class_members` a une clé primaire composite `(class_id, user_id)` (un
+  étudiant n'est qu'une fois dans une classe, mais peut être dans plusieurs)
+  et un index sur `user_id` pour retrouver les classes d'un étudiant.
+  `left_at` est renseigné quand l'étudiant a terminé la classe (ancien
+  élève) ; `NULL` pour un membre actif.
+  Supprimer une classe ou un profil supprime ses lignes en cascade, sans
+  toucher à la progression de l'étudiant. `class_cours`, `class_ressource_unlocks`
+  et `class_quiz_unlocks` suivent le même modèle (clé composite, cascade
+  depuis la classe, le cours, la ressource ou le quiz). La table
+  `class_unlocks` (déblocage par thématique) créée par `0024` a été remplacée
+  par ces deux tables et supprimée par `0026`. Voir [`domain.md`](./domain.md#classes).
 - `quiz_tentatives` conserve chaque tentative (pas seulement la meilleure) :
   `score`/`total_questions` sont dénormalisés au moment de la soumission,
   `quiz_reponses` détaille les choix cochés par question pour permettre
   d'afficher la correction après coup.
-- Toutes les FK vers `cours`/`thematiques`/`quiz`/`parcours` sont en
+- Toutes les FK vers `cours`/`thematiques`/`quiz` sont en
   `onDelete: "cascade"` : supprimer un cours supprime en cascade ses
   thématiques, ressources, hadiths et quiz. Pas de confirmation
   supplémentaire côté DB — c'est `components/dashboard/delete-button.tsx` qui
@@ -202,14 +234,18 @@ RLS est la **vraie** barrière de sécurité, pas les vérifications
 défense en profondeur qui donne des messages d'erreur propres). Résumé (détail
 dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 `0006_hadiths_rls.sql`, `0013_flat_lifeguard.sql`,
-`0019_quran_memorization_rls.sql`, `0020_parcours_rls.sql`) :
+`0019_quran_memorization_rls.sql`, `0023_classes.sql`, `0024_class_cours_unlocks.sql`,
+`0025_class_item_unlocks.sql`, `0027_private_content_rls.sql`) :
 
 | Table | Lecture | Écriture |
 |---|---|---|
-| `cours`, `thematiques`, `ressources`, `hadiths`, `seances`, `seance_*`, `parcours`, `parcours_etapes`, `quiz`, `quiz_questions`, `quiz_choix` | publique (`USING (true)`) | `admin` ou `contributor` (fonction SQL `is_contributor()`) |
-| `profiles` | tout utilisateur **authentifié** | `admin` uniquement (`is_admin()`), et seulement en `UPDATE` |
+| `cours`, `thematiques`, `ressources`, `hadiths`, `seances`, `seance_*`, `quiz`, `quiz_questions`, `quiz_choix` | `admin` ou `contributor` uniquement (plus de lecture publique depuis `0027` : le contenu est réservé aux étudiants, et les étudiants le lisent via l'app, voir [`auth.md`](./auth.md#les-trois-couches-de-vérification)) | `admin` ou `contributor` (fonction SQL `is_contributor()`) |
+| `profiles` | son propre profil ; tous pour `admin`/`contributor` (depuis `0027`) | `admin` uniquement (`is_admin()`), et seulement en `UPDATE` |
 | `ressource_progress`, `quran_memorization` | l'utilisateur lui-même (`auth.uid() = user_id`) | l'utilisateur lui-même, sur ses propres lignes uniquement |
 | `quiz_tentatives`, `quiz_reponses` | l'utilisateur lui-même (ses propres tentatives) | l'utilisateur lui-même, en `INSERT` seulement (pas d'édition d'une tentative passée) |
+| `classes` | `admin` uniquement (**pas** de lecture publique : `invite_code` ouvrirait la classe à quiconque interroge l'API REST) | `admin` uniquement |
+| `class_members` | `admin`, et l'étudiant pour ses propres lignes | `admin` uniquement (l'inscription par code passe par une Server Action, hors RLS) |
+| `class_cours`, `class_ressource_unlocks`, `class_quiz_unlocks` | `admin`, et les membres de la classe concernée | `admin` uniquement |
 
 `is_contributor()` et `is_admin()` sont des fonctions SQL `SECURITY DEFINER`
 qui lisent `profiles.role` pour `auth.uid()`. Elles doivent rester en phase

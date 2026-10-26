@@ -4,7 +4,9 @@ import { notFound, redirect } from "next/navigation";
 
 import { BackButton } from "@/components/public/back-button";
 import { QuizAttempt } from "@/components/public/quiz-attempt";
+import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
+import { canSeeQuiz } from "@/lib/content-access";
 import { getQuizForAttempt } from "@/lib/db/queries/quiz";
 import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 
@@ -14,7 +16,11 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const quiz = await getQuizForAttempt(id);
+  const [found, access] = await Promise.all([
+    getQuizForAttempt(id),
+    getContentAccess(),
+  ]);
+  const quiz = found && canSeeQuiz(access, found.id) ? found : null;
   const title = quiz?.title ?? "Quiz";
   const description = quiz?.description ?? defaultDescription;
   return {
@@ -30,8 +36,11 @@ export default async function QuizPage({ params }: Props) {
   const profile = await getCurrentProfile();
   if (!profile) redirect(`/login?next=/quiz/${id}`);
 
-  const quiz = await getQuizForAttempt(id);
-  if (!quiz) notFound();
+  const [quiz, access] = await Promise.all([
+    getQuizForAttempt(id),
+    getContentAccess(),
+  ]);
+  if (!quiz || !canSeeQuiz(access, quiz.id)) notFound();
 
   return (
     <div className="animate-in fade-in duration-300">

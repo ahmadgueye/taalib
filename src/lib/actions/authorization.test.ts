@@ -31,9 +31,9 @@ vi.mock("next/navigation", () => ({
   notFound: vi.fn(),
 }));
 
+import * as classes from "@/lib/actions/classes";
 import * as cours from "@/lib/actions/cours";
 import * as hadiths from "@/lib/actions/hadiths";
-import * as parcours from "@/lib/actions/parcours";
 import * as quiz from "@/lib/actions/quiz";
 import * as quizQuestions from "@/lib/actions/quiz-questions";
 import * as ressources from "@/lib/actions/ressources";
@@ -42,9 +42,9 @@ import * as thematiques from "@/lib/actions/thematiques";
 import * as users from "@/lib/actions/users";
 
 const modules = {
+  classes,
   cours,
   hadiths,
-  parcours,
   quiz,
   quizQuestions,
   ressources,

@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   Calendar,
+  GraduationCap,
   HelpCircle,
   LayoutDashboard,
   Link as LinkIcon,
   ListTree,
-  Milestone,
   Quote,
   Users,
 } from "lucide-react";
@@ -21,7 +21,6 @@ import { cn, isNavActive } from "@/lib/utils";
 const navItems = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/dashboard/cours", label: "Cours", icon: BookOpen },
-  { href: "/dashboard/parcours", label: "Parcours", icon: Milestone },
   { href: "/dashboard/thematiques", label: "Thématiques", icon: ListTree },
   { href: "/dashboard/ressources", label: "Ressources", icon: LinkIcon },
   { href: "/dashboard/hadiths", label: "Hadiths", icon: Quote },
@@ -57,6 +56,19 @@ export function DashboardSidebar({ isAdmin }: { isAdmin: boolean }) {
               {label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              href="/dashboard/classes"
+              className={cn(
+                "flex items-center gap-2 px-2 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground",
+                isNavActive(pathname, "/dashboard/classes") &&
+                  "bg-muted text-foreground"
+              )}
+            >
+              <GraduationCap className="size-4" />
+              Classes
+            </Link>
+          )}
           {isAdmin && (
             <Link
               href="/dashboard/utilisateurs"

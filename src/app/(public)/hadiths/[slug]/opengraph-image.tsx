@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 
+import { getContentAccess } from "@/lib/auth/content-access";
+import { canSeeThematique } from "@/lib/content-access";
 import { getHadithBySlug } from "@/lib/db/queries/hadiths";
 
 export const size = { width: 1200, height: 630 };
@@ -11,7 +13,9 @@ export default async function Image({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const h = await getHadithBySlug(slug);
+  const [found, access] = await Promise.all([getHadithBySlug(slug), getContentAccess()]);
+  // Même règle que la page : rien ne s'affiche de ce qui n'est pas débloqué.
+  const h = found && canSeeThematique(access, found.thematiqueId) ? found : null;
 
   return new ImageResponse(
     (

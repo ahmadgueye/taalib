@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { HadithCard } from "@/components/public/hadith-card";
+import { getContentAccess } from "@/lib/auth/content-access";
+import { canSeeThematique } from "@/lib/content-access";
 import { getAllHadiths } from "@/lib/db/queries/hadiths";
 
 export const metadata: Metadata = {
@@ -8,7 +10,13 @@ export const metadata: Metadata = {
 };
 
 export default async function HadithsListPage() {
-  const hadithsList = await getAllHadiths();
+  const [allHadiths, access] = await Promise.all([
+    getAllHadiths(),
+    getContentAccess(),
+  ]);
+  const hadithsList = allHadiths.filter((h) =>
+    canSeeThematique(access, h.thematiqueId)
+  );
 
   return (
     <div className="animate-in fade-in duration-300">

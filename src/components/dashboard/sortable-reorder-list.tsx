@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -85,6 +85,10 @@ export function SortableReorderList({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  // Sans id, dnd-kit numérote ses descriptions avec un compteur global qui
+  // diffère entre le serveur et le client (erreur d'hydratation).
+  const dndId = useId();
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -116,6 +120,7 @@ export function SortableReorderList({
 
   return (
     <DndContext
+      id={dndId}
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}

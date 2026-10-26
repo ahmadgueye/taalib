@@ -3,7 +3,9 @@
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 
+import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
+import { canSeeQuiz } from "@/lib/content-access";
 import { db } from "@/lib/db";
 import {
   quiz,
@@ -55,7 +57,8 @@ export async function submitQuizAttempt(
     columns: { id: true },
     where: and(eq(quiz.id, parsed.data.quizId), eq(quiz.status, "published")),
   });
-  if (!publishedQuiz) {
+  // Idem pour un quiz pas encore débloqué pour la classe de l'étudiant.
+  if (!publishedQuiz || !canSeeQuiz(await getContentAccess(), publishedQuiz.id)) {
     return { error: "Quiz introuvable." };
   }
 

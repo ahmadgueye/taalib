@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { toast } from "sonner";
 
 import { SubmitButton } from "@/components/dashboard/submit-button";
 import {
@@ -13,37 +14,36 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  createParcours,
-  updateParcours,
+  createClass,
+  updateClass,
   type ActionState,
-} from "@/lib/actions/parcours";
+} from "@/lib/actions/classes";
 
-export function ParcoursForm({
-  parcours,
+export function ClassForm({
+  classe,
 }: {
-  parcours?: {
-    id: string;
-    title: string;
-    description: string | null;
-  };
+  classe?: { id: string; name: string; description: string | null };
 }) {
-  const action = parcours
-    ? updateParcours.bind(null, parcours.id)
-    : createParcours;
+  const action = classe ? updateClass.bind(null, classe.id) : createClass;
   const [state, formAction] = useActionState<ActionState, FormData>(
     action,
     undefined
   );
 
+  useEffect(() => {
+    if (state?.success) toast.success(state.success);
+  }, [state]);
+
   return (
     <form action={formAction} className="max-w-lg">
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="title">Titre</FieldLabel>
+          <FieldLabel htmlFor="name">Nom</FieldLabel>
           <Input
-            id="title"
-            name="title"
-            defaultValue={parcours?.title}
+            id="name"
+            name="name"
+            defaultValue={classe?.name}
+            placeholder="Ex : Arabe niveau 1 — 2026"
             required
           />
         </Field>
@@ -52,15 +52,13 @@ export function ParcoursForm({
           <Textarea
             id="description"
             name="description"
-            defaultValue={parcours?.description ?? ""}
+            defaultValue={classe?.description ?? ""}
             rows={3}
           />
-          <FieldDescription>
-            Affichée en intro du parcours sur la page d&apos;accueil.
-          </FieldDescription>
+          <FieldDescription>Facultatif.</FieldDescription>
         </Field>
         {state?.error && <FieldError>{state.error}</FieldError>}
-        <SubmitButton>{parcours ? "Enregistrer" : "Créer"}</SubmitButton>
+        <SubmitButton>{classe ? "Enregistrer" : "Créer"}</SubmitButton>
       </FieldGroup>
     </form>
   );

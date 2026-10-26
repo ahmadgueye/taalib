@@ -111,7 +111,7 @@ Pour développer avec du vrai contenu (cours, hadiths, quiz...) sans copier
 d'utilisateurs ni de progression : un `pg_dump --data-only` des tables de
 contenu (`cours`, `thematiques`, `ressources`, `hadiths`, `quiz`,
 `quiz_questions`, `quiz_choix`, `seances`, `seance_thematiques`,
-`seance_ressources`, `parcours`, `parcours_etapes`), chargé dans la base
+`seance_ressources`), chargé dans la base
 locale après un `TRUNCATE ... CASCADE`. Points d'attention rencontrés :
 
 - ne pas utiliser `--disable-triggers` (demande un super-utilisateur, absent

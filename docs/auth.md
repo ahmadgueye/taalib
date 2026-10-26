@@ -59,9 +59,10 @@ et fait deux choses :
 1. Appelle `updateSession()` (`lib/supabase/proxy.ts`) qui rafraîchit les
    cookies de session Supabase — nécessaire car Server Components ne peuvent
    pas écrire de cookies (voir le commentaire dans `lib/supabase/server.ts`).
-2. Redirige vers `/login` si l'utilisateur n'est pas connecté et essaie
-   d'accéder à `/dashboard/*` ou `/compte/*` (avec `?next=` pour revenir après
-   connexion sur `/compte`).
+2. Redirige vers `/login?next=...` si l'utilisateur n'est pas connecté et
+   essaie d'accéder à une page réservée (`PROTECTED_PREFIXES` : dashboard,
+   compte, tout le catalogue, recherche, mémorisation). Restent ouverts
+   l'accueil, `/coran`, `/login`, `/auth` et `/rejoindre`.
 
 C'est une protection au niveau routing, **pas** la barrière de sécurité
 principale — voir plus bas.
@@ -89,13 +90,23 @@ Retenir l'ordre : **RLS d'abord**, `requireX()` ensuite pour l'UX (message
 d'erreur clair au lieu d'une erreur Postgres brute), `proxy.ts` en dernier
 pour éviter un aller-retour serveur inutile.
 
+**Exception importante : la lecture du contenu par les étudiants.** L'app lit
+via Drizzle, une connexion Postgres directe qui **ne passe pas par la RLS**.
+Ce qu'un étudiant voit est donc décidé côté app par `getContentAccess()`
+(`lib/auth/content-access.ts`, voir
+[`domain.md`](./domain.md#accès-au-contenu)) : c'est la vraie barrière pour
+les lectures, et chaque page ou action qui lit du contenu doit s'en servir.
+La RLS, elle, ferme l'API REST Supabase : depuis
+`0027_private_content_rls.sql`, seul le staff y lit le contenu, et un
+utilisateur n'y lit que son propre profil.
+
 ## Rôles
 
-| Rôle | Peut lire le contenu public | Peut créer/éditer/supprimer du contenu | Peut gérer les rôles utilisateurs |
+| Rôle | Peut lire le contenu | Peut créer/éditer/supprimer du contenu | Peut gérer les rôles et les classes |
 |---|---|---|---|
-| `viewer` (défaut à la création de compte) | ✅ | ❌ | ❌ |
-| `contributor` | ✅ | ✅ | ❌ |
-| `admin` | ✅ | ✅ | ✅ (`/dashboard/utilisateurs`) |
+| `viewer` (défaut à la création de compte, = étudiant) | seulement ce qui est débloqué pour ses classes | ❌ | ❌ |
+| `contributor` | ✅ tout | ✅ | ❌ |
+| `admin` | ✅ tout | ✅ | ✅ (`/dashboard/utilisateurs`, `/dashboard/classes`) |
 
 Un nouveau compte atterrit en `viewer` (défaut de colonne sur `profiles.role`,
 voir `drizzle/migrations/0003_default_viewer_role.sql`). Les concepts de rôle

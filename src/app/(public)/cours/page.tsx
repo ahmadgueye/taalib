@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { EntityCard } from "@/components/public/entity-card";
+import { getContentAccess } from "@/lib/auth/content-access";
+import { canSeeCours } from "@/lib/content-access";
 import { coursStatusConfig } from "@/lib/cours-status";
 import { getAllCours } from "@/lib/db/queries/cours";
 
@@ -9,7 +11,11 @@ export const metadata: Metadata = {
 };
 
 export default async function CoursListPage() {
-  const coursList = await getAllCours();
+  const [allCours, access] = await Promise.all([
+    getAllCours(),
+    getContentAccess(),
+  ]);
+  const coursList = allCours.filter((c) => canSeeCours(access, c.id));
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -22,7 +28,8 @@ export default async function CoursListPage() {
 
       {coursList.length === 0 ? (
         <p className="mt-8 text-sm text-muted-foreground">
-          Aucun cours pour le moment.
+          Aucun cours pour le moment. Tes cours apparaîtront ici dès que tu
+          rejoindras une classe.
         </p>
       ) : (
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
