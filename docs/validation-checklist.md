@@ -76,6 +76,12 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
 - [ ] `/compte` : progression globale cohérente
 - [ ] Quiz : répondre faux → score et corrections (bonnes réponses révélées
       seulement après envoi)
+- [ ] Quiz : compteur « n/N répondues » et barre ; « Valider » avec une
+      question sans réponse → elle est surlignée, scroll dessus, rien n'est
+      envoyé ; vrai/faux = un seul choix (boutons), QCM = cases à cocher
+- [ ] `/cours/[slug]` : progression globale, bouton « Commencer »/« Reprendre »
+      vers la prochaine leçon ou le prochain quiz ; « Tu es à jour » si tout
+      est fait
 - [ ] Quiz : répondre juste ≥ seuil → badge de réussite
 - [ ] Quiz : question à choix multiples (partiellement juste = faux)
 - [ ] Rejouer un quiz : le meilleur score est conservé
