@@ -1,4 +1,4 @@
-import { and, asc, count, eq, notInArray } from "drizzle-orm";
+import { and, asc, count, eq, isNull, notInArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -25,7 +25,11 @@ export async function getAllClasses() {
       memberCount: count(classMembers.userId),
     })
     .from(classes)
-    .leftJoin(classMembers, eq(classMembers.classId, classes.id))
+    // Seuls les membres actifs comptent, pas les anciens élèves.
+    .leftJoin(
+      classMembers,
+      and(eq(classMembers.classId, classes.id), isNull(classMembers.leftAt))
+    )
     .groupBy(classes.id)
     .orderBy(asc(classes.name));
 }
@@ -44,6 +48,7 @@ export async function getClassMembers(classId: string) {
       email: profiles.email,
       fullName: profiles.fullName,
       joinedAt: classMembers.joinedAt,
+      leftAt: classMembers.leftAt,
     })
     .from(classMembers)
     .innerJoin(profiles, eq(profiles.id, classMembers.userId))
@@ -58,12 +63,17 @@ export async function getClassByInviteCode(code: string) {
   return result ?? null;
 }
 
+// Membre actif : un ancien élève peut rejoindre de nouveau avec le code.
 export async function isClassMember(classId: string, userId: string) {
   const [row] = await db
     .select({ userId: classMembers.userId })
     .from(classMembers)
     .where(
-      and(eq(classMembers.classId, classId), eq(classMembers.userId, userId))
+      and(
+        eq(classMembers.classId, classId),
+        eq(classMembers.userId, userId),
+        isNull(classMembers.leftAt)
+      )
     )
     .limit(1);
   return Boolean(row);

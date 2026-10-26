@@ -127,7 +127,10 @@ Passer le compte en `contributor` puis `admin` dans Studio
       « À venir »
 - [ ] Classes : ajouter un étudiant par e-mail (compte existant) ; e-mail
       inconnu → message d'erreur ; ajouter deux fois → « déjà membre » ;
-      retirer un étudiant
+      retirer un étudiant → il ne voit plus rien de la classe ; « Terminer »
+      → il passe dans « Anciens élèves », garde les ressources déjà
+      débloquées mais pas celles débloquées ensuite ; « Réintégrer » → il
+      voit de nouveau tout
 - [ ] `/rejoindre/[code]` déconnecté → « Se connecter », puis retour sur la
       page après connexion ; « Rejoindre la classe » → « Tu fais partie de
       cette classe » ; code saisi en minuscules ou avec tiret accepté sur

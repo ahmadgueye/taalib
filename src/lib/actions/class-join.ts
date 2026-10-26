@@ -25,10 +25,14 @@ export async function joinClass(code: string): Promise<JoinClassState> {
     return { error: "Ce code d'invitation n'est pas valide." };
   }
 
+  // Un ancien élève qui rejoint de nouveau redevient membre actif.
   await db
     .insert(classMembers)
     .values({ classId: found.id, userId: profile.id })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: [classMembers.classId, classMembers.userId],
+      set: { leftAt: null },
+    });
 
   revalidatePath(`/rejoindre/${code}`);
   revalidatePath(`/dashboard/classes/${found.id}`);

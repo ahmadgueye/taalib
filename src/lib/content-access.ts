@@ -8,9 +8,11 @@ export type ContentAccess =
   | { all: true }
   | {
       all: false;
-      // Membre d'au moins une classe (qui peut ne suivre encore aucun cours).
+      // Membre actif d'au moins une classe (qui peut ne suivre encore aucun
+      // cours) : un ancien élève seulement n'en fait pas partie.
       inAnyClass: boolean;
-      // Cours des classes de l'étudiant, même si rien n'y est encore débloqué.
+      // Cours des classes actives de l'étudiant, même si rien n'y est encore
+      // débloqué, plus ceux où il garde du contenu d'une classe terminée.
       coursIds: Set<string>;
       // Thématiques ayant au moins une ressource ou un quiz débloqué.
       thematiqueIds: Set<string>;

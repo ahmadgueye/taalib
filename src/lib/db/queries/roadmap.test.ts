@@ -60,9 +60,9 @@ function access(overrides: Partial<Extract<ContentAccess, { all: false }>>) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.classCoursRows.mockResolvedValue([
-    { coursId: "fiqh" },
-    { coursId: "aqida" },
-    { coursId: "fiqh" }, // suivi par une deuxième classe de l'étudiant
+    { coursId: "fiqh", leftAt: null },
+    { coursId: "aqida", leftAt: null },
+    { coursId: "fiqh", leftAt: null }, // suivi par une deuxième classe de l'étudiant
   ]);
   mocks.coursFindMany.mockResolvedValue([
     {
@@ -133,5 +133,19 @@ describe("getStudentRoadmap", () => {
       )
     ).find((c) => c.id === "aqida")!;
     expect(aqida.steps[0].state).toBe("active");
+  });
+
+  it("keeps only the unlocked steps of a cours from a finished class", async () => {
+    mocks.classCoursRows.mockResolvedValue([
+      { coursId: "aqida", leftAt: new Date("2026-06-01") },
+      { coursId: "fiqh", leftAt: new Date("2026-06-01") },
+    ]);
+    const roadmap = await getStudentRoadmap(
+      "u1",
+      access({ thematiqueIds: new Set(["tawhid"]), ressourceIds: new Set(["r1"]) })
+    );
+    // Fiqh : rien de débloqué avant le départ, le cours disparaît.
+    expect(roadmap.map((c) => c.id)).toEqual(["aqida"]);
+    expect(roadmap[0].steps.map((s) => s.thematique.id)).toEqual(["tawhid"]);
   });
 });

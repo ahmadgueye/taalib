@@ -73,11 +73,13 @@ export default async function ClassPage({ params }: Props) {
 
       <section className="mt-10 max-w-2xl">
         <h2 className="font-heading text-lg font-semibold tracking-tight">
-          Étudiants ({members.length})
+          Étudiants ({members.filter((m) => m.leftAt === null).length})
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Ajoute un étudiant avec l&apos;e-mail de son compte. Il doit
-          s&apos;être connecté au moins une fois.
+          s&apos;être connecté au moins une fois. « Terminer » en fait un
+          ancien élève : il garde ce qui était débloqué jusque-là, sans les
+          déblocages suivants. « Retirer » lui enlève tout accès.
         </p>
         <div className="mt-4">
           <ClassMembers classId={classe.id} members={members} />

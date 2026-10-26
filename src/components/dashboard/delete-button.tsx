@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, type LucideIcon } from "lucide-react";
 
 import {
   AlertDialog,
@@ -21,12 +21,17 @@ export function DeleteButton({
   title,
   description = "Cette action est irréversible.",
   confirmLabel = "Supprimer",
+  icon: Icon = Trash2,
+  destructive = true,
 }: {
   action: () => Promise<void>;
   itemLabel: string;
   title?: string;
   description?: string;
   confirmLabel?: string;
+  // Pour réutiliser la confirmation sur une action non destructive.
+  icon?: LucideIcon;
+  destructive?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -51,7 +56,7 @@ export function DeleteButton({
           />
         }
       >
-        <Trash2 className="size-4" />
+        <Icon className="size-4" />
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -63,7 +68,7 @@ export function DeleteButton({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Annuler</AlertDialogCancel>
           <Button
-            variant="destructive"
+            variant={destructive ? "destructive" : "default"}
             disabled={isPending}
             onClick={handleDelete}
           >

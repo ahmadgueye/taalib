@@ -265,8 +265,18 @@ elle qui détermine ce qu'un étudiant voit, voir
 - **Ajout manuel** — `addClassMember` cherche un profil par e-mail
   (insensible à la casse). L'étudiant doit donc s'être connecté au moins une
   fois ; sinon l'action renvoie une erreur qui l'oriente vers le code
-  d'invitation. Retirer un membre (`removeClassMember`) ne supprime ni son
-  compte ni sa progression.
+  d'invitation. Ajouter un ancien élève le réintègre.
+- **Départ d'un étudiant** — deux façons, aucune ne supprime son compte ni
+  sa progression :
+  - **Retirer** (`removeClassMember`) supprime l'inscription : l'étudiant
+    perd tout le contenu de la classe.
+  - **Terminer** (`finishClassMember`) renseigne `left_at` : l'étudiant
+    devient **ancien élève** et garde ce qui était débloqué avant cette
+    date (déblocages datés par `unlocked_at`), sans les déblocages
+    suivants. Il apparaît dans « Anciens élèves » sur la page de la classe,
+    ne compte plus dans l'effectif, et peut être réintégré
+    (`reinstateClassMember`). Refermer un élément après son départ le lui
+    retire aussi.
 - **Code d'invitation** — chaque classe reçoit à sa création un code de 8
   caractères (`lib/class-invite.ts`, alphabet sans 0/O ni 1/I/L pour pouvoir
   le dicter). Depuis la page de la classe, l'admin copie le lien
@@ -294,7 +304,9 @@ elle qui détermine ce qu'un étudiant voit, voir
   page après connexion (et après l'onboarding du nom pour un nouveau
   compte). L'inscription se fait par un bouton (`joinClass`,
   `lib/actions/class-join.ts`), jamais au simple chargement de la page ; elle
-  est ouverte à tout utilisateur connecté et idempotente.
+  est ouverte à tout utilisateur connecté et idempotente ; un ancien élève
+  qui la rejoint de nouveau redevient membre actif (fermer les inscriptions
+  l'en empêche).
 
 ## Accès au contenu
 
@@ -313,10 +325,14 @@ Le catalogue est **réservé aux étudiants du programme Bayān**. Seuls l'accue
   - une **séance** si elle référence au moins une thématique ou ressource
     visible, réduite à ce qui l'est ;
   - sa **feuille de route** sur l'accueil, avec les étapes pas encore
-    débloquées en « À venir », voir [Feuille de route](#feuille-de-route).
+    débloquées en « À venir », voir [Feuille de route](#feuille-de-route) ;
+  - pour une classe **terminée** (ancien élève), seulement ce qui était
+    débloqué avant son départ : ses cours n'apparaissent que s'il y garde
+    au moins un élément, et la feuille de route n'en montre que les étapes
+    débloquées, sans « À venir ».
 - **Visiteur** : rien. `proxy.ts` le renvoie vers `/login?next=...`.
-- **Étudiant sans classe** : l'accueil l'invite à saisir un code
-  d'invitation. Inscrit dans une classe qui ne suit encore aucun cours, il
+- **Étudiant sans classe** (ou seulement ancien élève, sans contenu
+  conservé) : l'accueil l'invite à saisir un code d'invitation. Inscrit dans une classe qui ne suit encore aucun cours, il
   voit « Ta classe n'a pas encore de cours » (`access.inAnyClass`).
 
 Tout ce qui n'est pas visible répond **404** (« Page introuvable »), titre

@@ -162,6 +162,7 @@ erDiagram
         uuid class_id FK
         uuid user_id FK
         timestamptz joined_at
+        timestamptz left_at "ancien élève si renseigné"
     }
     class_cours {
         uuid class_id FK
@@ -208,6 +209,8 @@ Points notables :
 - `class_members` a une clé primaire composite `(class_id, user_id)` (un
   étudiant n'est qu'une fois dans une classe, mais peut être dans plusieurs)
   et un index sur `user_id` pour retrouver les classes d'un étudiant.
+  `left_at` est renseigné quand l'étudiant a terminé la classe (ancien
+  élève) ; `NULL` pour un membre actif.
   Supprimer une classe ou un profil supprime ses lignes en cascade, sans
   toucher à la progression de l'étudiant. `class_cours`, `class_ressource_unlocks`
   et `class_quiz_unlocks` suivent le même modèle (clé composite, cascade

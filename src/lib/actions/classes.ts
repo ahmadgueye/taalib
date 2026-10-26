@@ -1,6 +1,16 @@
 "use server";
 
-import { and, asc, eq, inArray, max, notExists, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  eq,
+  inArray,
+  isNull,
+  max,
+  notExists,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -136,18 +146,59 @@ export async function addClassMember(
     };
   }
 
-  const inserted = await db
-    .insert(classMembers)
-    .values({ classId, userId: student.id })
-    .onConflictDoNothing()
-    .returning({ userId: classMembers.userId });
-  if (inserted.length === 0) {
+  const [existing] = await db
+    .select({ leftAt: classMembers.leftAt })
+    .from(classMembers)
+    .where(
+      and(eq(classMembers.classId, classId), eq(classMembers.userId, student.id))
+    )
+    .limit(1);
+  if (existing && existing.leftAt === null) {
     return { error: "Cet étudiant fait déjà partie de la classe." };
   }
 
+  // Un ancien élève ajouté de nouveau est simplement réintégré.
+  await db
+    .insert(classMembers)
+    .values({ classId, userId: student.id })
+    .onConflictDoUpdate({
+      target: [classMembers.classId, classMembers.userId],
+      set: { leftAt: null },
+    });
+
   revalidatePath("/dashboard/classes");
   revalidatePath(`/dashboard/classes/${classId}`);
-  return { success: "Étudiant ajouté." };
+  return { success: existing ? "Étudiant réintégré." : "Étudiant ajouté." };
+}
+
+// L'étudiant devient ancien élève : il garde ce qui était débloqué jusqu'ici,
+// sans recevoir les déblocages suivants.
+export async function finishClassMember(classId: string, userId: string) {
+  await requireAdmin();
+  await db
+    .update(classMembers)
+    .set({ leftAt: new Date() })
+    .where(
+      and(
+        eq(classMembers.classId, classId),
+        eq(classMembers.userId, userId),
+        isNull(classMembers.leftAt)
+      )
+    );
+  revalidatePath("/dashboard/classes");
+  revalidatePath(`/dashboard/classes/${classId}`);
+}
+
+export async function reinstateClassMember(classId: string, userId: string) {
+  await requireAdmin();
+  await db
+    .update(classMembers)
+    .set({ leftAt: null })
+    .where(
+      and(eq(classMembers.classId, classId), eq(classMembers.userId, userId))
+    );
+  revalidatePath("/dashboard/classes");
+  revalidatePath(`/dashboard/classes/${classId}`);
 }
 
 export async function removeClassMember(classId: string, userId: string) {

@@ -313,6 +313,9 @@ export const classMembers = pgTable(
     joinedAt: timestamp("joined_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // Renseignée quand l'étudiant a terminé la classe (ancien élève) : il
+    // garde ce qui était débloqué avant cette date, rien de ce qui suit.
+    leftAt: timestamp("left_at", { withTimezone: true }),
   },
   (table) => [
     primaryKey({ columns: [table.classId, table.userId] }),

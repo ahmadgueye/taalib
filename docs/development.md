@@ -84,7 +84,7 @@ simulés.
 | `lib/actions/progress.test.ts` | Seule une ressource publiée est complétable, pour l'utilisateur connecté |
 | `lib/actions/memorization.test.ts` | Bornes des sourates/versets, plage `1..N`, retour en arrière |
 | `lib/actions/quiz-questions.schema.test.ts` | Validation du formulaire de questions |
-| `lib/db/queries/roadmap.test.ts` | Feuille de route : ordre des cours, états `upcoming` / `active` / `completed` |
+| `lib/db/queries/roadmap.test.ts` | Feuille de route : ordre des cours, états `upcoming` / `active` / `completed`, classe terminée réduite aux étapes débloquées |
 | `lib/content-access.test.ts`, `lib/auth/content-access.test.ts` | Ce que voit un visiteur, un étudiant, le staff |
 
 Non couvert : les politiques RLS en base (elles demandent la base locale), les

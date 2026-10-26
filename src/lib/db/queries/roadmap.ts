@@ -43,12 +43,15 @@ export type RoadmapCours = {
 // Une étape est « terminée » quand tout son contenu publié est débloqué, que
 // toutes ses leçons sont lues et tous ses quiz réussis (meilleur score ≥
 // seuil) ; « en cours » dès qu'un élément est débloqué ; « à venir » sinon.
+// Un cours qui ne vient que de classes terminées (ancien élève) n'a plus rien
+// à venir : il ne garde que ses étapes débloquées, et disparaît s'il n'en a
+// aucune.
 export async function getStudentRoadmap(
   userId: string,
   access: ContentAccess
 ): Promise<RoadmapCours[]> {
   const rows = await db
-    .select({ coursId: classCours.coursId })
+    .select({ coursId: classCours.coursId, leftAt: classMembers.leftAt })
     .from(classCours)
     .innerJoin(classMembers, eq(classMembers.classId, classCours.classId))
     .where(eq(classMembers.userId, userId))
@@ -56,6 +59,9 @@ export async function getStudentRoadmap(
   // Un cours suivi par deux classes de l'étudiant n'apparaît qu'une fois.
   const coursIds = [...new Set(rows.map((r) => r.coursId))];
   if (coursIds.length === 0) return [];
+  const activeCoursIds = new Set(
+    rows.filter((r) => r.leftAt === null).map((r) => r.coursId)
+  );
 
   const coursList = await db.query.cours.findMany({
     where: inArray(cours.id, coursIds),
@@ -120,10 +126,16 @@ export async function getStudentRoadmap(
   return coursIds
     .map((id) => byId.get(id))
     .filter((c) => c !== undefined)
-    .map((c) => ({
-      id: c.id,
-      slug: c.slug,
-      title: c.title,
-      steps: c.thematiques.map(stepFor),
-    }));
+    .map((c) => {
+      const steps = c.thematiques.map(stepFor);
+      return {
+        id: c.id,
+        slug: c.slug,
+        title: c.title,
+        steps: activeCoursIds.has(c.id)
+          ? steps
+          : steps.filter((s) => s.state !== "upcoming"),
+      };
+    })
+    .filter((c) => activeCoursIds.has(c.id) || c.steps.length > 0);
 }

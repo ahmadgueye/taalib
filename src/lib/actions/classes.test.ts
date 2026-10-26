@@ -3,7 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   findStudent: vi.fn(),
+  findMembership: vi.fn(),
   insertValues: vi.fn(),
+  upsert: vi.fn(),
   inserted: vi.fn(),
   classItems: vi.fn(),
   deleteWhere: vi.fn(),
@@ -14,11 +16,16 @@ vi.mock("@/lib/auth/get-session", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
+// addClassMember cherche d'abord le compte, puis son éventuelle inscription.
+let limitCalls = 0;
 vi.mock("@/lib/db", () => ({
   db: {
     select: () => ({
       from: () => ({
-        where: () => ({ limit: mocks.findStudent }),
+        where: () => ({
+          limit: () =>
+            limitCalls++ % 2 === 0 ? mocks.findStudent() : mocks.findMembership(),
+        }),
         innerJoin: () => ({
           innerJoin: () => ({ where: mocks.classItems }),
         }),
@@ -28,7 +35,10 @@ vi.mock("@/lib/db", () => ({
     insert: () => ({
       values: (v: unknown) => {
         mocks.insertValues(v);
-        return { onConflictDoNothing: () => ({ returning: mocks.inserted }) };
+        return {
+          onConflictDoNothing: () => ({ returning: mocks.inserted }),
+          onConflictDoUpdate: mocks.upsert,
+        };
       },
     }),
   },
@@ -44,6 +54,8 @@ function form(email: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  limitCalls = 0;
+  mocks.findMembership.mockResolvedValue([]);
   mocks.requireAdmin.mockResolvedValue({ id: "admin-1", role: "admin" });
   mocks.findStudent.mockResolvedValue([{ id: "student-1" }]);
   mocks.inserted.mockResolvedValue([{ userId: "student-1" }]);
@@ -67,10 +79,21 @@ describe("addClassMember", () => {
   });
 
   it("reports a student who is already a member", async () => {
-    mocks.inserted.mockResolvedValue([]);
+    mocks.findMembership.mockResolvedValue([{ leftAt: null }]);
     expect(
       (await addClassMember("class-1", undefined, form("x@y.fr")))?.error
     ).toMatch(/déjà/);
+    expect(mocks.insertValues).not.toHaveBeenCalled();
+  });
+
+  it("reinstates a former student", async () => {
+    mocks.findMembership.mockResolvedValue([{ leftAt: new Date() }]);
+    expect(
+      await addClassMember("class-1", undefined, form("x@y.fr"))
+    ).toEqual({ success: "Étudiant réintégré." });
+    expect(mocks.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ set: { leftAt: null } })
+    );
   });
 
   it("adds the matching account to the class", async () => {

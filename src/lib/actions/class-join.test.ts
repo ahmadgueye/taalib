@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentProfile: vi.fn(),
   getClassByInviteCode: vi.fn(),
   insertValues: vi.fn(),
+  upsert: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/get-session", () => ({
@@ -18,7 +19,7 @@ vi.mock("@/lib/db", () => ({
     insert: () => ({
       values: (v: unknown) => {
         mocks.insertValues(v);
-        return { onConflictDoNothing: async () => undefined };
+        return { onConflictDoUpdate: mocks.upsert };
       },
     }),
   },
@@ -64,5 +65,9 @@ describe("joinClass", () => {
       classId: "class-1",
       userId: "student-1",
     });
+    // Un ancien élève redevient membre actif.
+    expect(mocks.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ set: { leftAt: null } })
+    );
   });
 });
