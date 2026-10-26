@@ -39,19 +39,23 @@ export async function SiteHeader({
             طالب
           </Link>
           <div className="hidden h-6 w-px bg-border sm:block" />
-          <SiteNavLinks />
+          <SiteNavLinks signedIn={Boolean(profile)} />
         </div>
         <div className="flex items-center justify-end gap-2">
           <ThemeToggle />
-          <Button
-            variant="ghost"
-            size="icon"
-            title="Recherche (⌘K)"
-            render={<Link href="/recherche" />}
-            nativeButton={false}
-          >
-            <Search className="size-4" />
-          </Button>
+          {profile && (
+            // Sur mobile, la recherche est déjà dans la barre du bas.
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden sm:inline-flex"
+              title="Recherche (⌘K)"
+              render={<Link href="/recherche" />}
+              nativeButton={false}
+            >
+              <Search className="size-4" />
+            </Button>
+          )}
           {profile && <NotificationBell initialSummary={dueSummary} />}
           {profile ? (
             <DropdownMenu>

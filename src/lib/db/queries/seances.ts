@@ -9,11 +9,19 @@ export async function getAllSeances() {
   });
 }
 
+// Les ids rattachés servent à filtrer les séances selon l'accès de
+// l'utilisateur (voir canSeeSeance dans lib/content-access.ts).
+const linkedIds = {
+  seanceThematiques: { columns: { thematiqueId: true } },
+  seanceRessources: { columns: { ressourceId: true } },
+} as const;
+
 export async function getUpcomingSeances(limit?: number) {
   return db.query.seances.findMany({
     where: gte(seances.sessionDate, sql`CURRENT_DATE`),
     orderBy: [asc(seances.sessionDate)],
     limit,
+    with: linkedIds,
   });
 }
 
@@ -22,6 +30,7 @@ export async function getPastSeances(limit?: number) {
     where: or(lt(seances.sessionDate, sql`CURRENT_DATE`), isNull(seances.sessionDate)),
     orderBy: [sql`${seances.sessionDate} DESC NULLS LAST`],
     limit,
+    with: linkedIds,
   });
 }
 

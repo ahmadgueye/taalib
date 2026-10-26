@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, type LucideIcon } from "lucide-react";
 
 import {
   AlertDialog,
@@ -18,9 +18,20 @@ import { Button } from "@/components/ui/button";
 export function DeleteButton({
   action,
   itemLabel,
+  title,
+  description = "Cette action est irréversible.",
+  confirmLabel = "Supprimer",
+  icon: Icon = Trash2,
+  destructive = true,
 }: {
   action: () => Promise<void>;
   itemLabel: string;
+  title?: string;
+  description?: string;
+  confirmLabel?: string;
+  // Pour réutiliser la confirmation sur une action non destructive.
+  icon?: LucideIcon;
+  destructive?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -34,30 +45,40 @@ export function DeleteButton({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" />}>
-        <Trash2 className="size-4" />
+      <AlertDialogTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={
+              title?.replace(/\s*\?$/, "") ?? `Supprimer « ${itemLabel} »`
+            }
+          />
+        }
+      >
+        <Icon className="size-4" />
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer « {itemLabel} » ?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Cette action est irréversible.
-          </AlertDialogDescription>
+          <AlertDialogTitle>
+            {title ?? `Supprimer « ${itemLabel} » ?`}
+          </AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>Annuler</AlertDialogCancel>
           <Button
-            variant="destructive"
+            variant={destructive ? "destructive" : "default"}
             disabled={isPending}
             onClick={handleDelete}
           >
             {isPending ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                Suppression…
+                {confirmLabel}…
               </>
             ) : (
-              "Supprimer"
+              confirmLabel
             )}
           </Button>
         </AlertDialogFooter>

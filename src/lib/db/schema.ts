@@ -9,7 +9,6 @@ import {
   primaryKey,
   text,
   timestamp,
-  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -254,38 +253,6 @@ export const seanceRessources = pgTable(
   (table) => [primaryKey({ columns: [table.seanceId, table.ressourceId] })]
 );
 
-export const parcours = pgTable("parcours", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  slug: text("slug").notNull().unique(),
-  title: text("title").notNull(),
-  description: text("description"),
-  createdBy: uuid("created_by").references(() => profiles.id),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
-
-export const parcoursEtapes = pgTable(
-  "parcours_etapes",
-  {
-    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-    parcoursId: uuid("parcours_id")
-      .notNull()
-      .references(() => parcours.id, { onDelete: "cascade" }),
-    thematiqueId: uuid("thematique_id")
-      .notNull()
-      .references(() => thematiques.id, { onDelete: "cascade" }),
-    orderIndex: integer("order_index").notNull().default(0),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [unique().on(table.parcoursId, table.thematiqueId)]
-);
-
 export const quranMemorization = pgTable(
   "quran_memorization",
   {
@@ -313,6 +280,102 @@ export const quranMemorization = pgTable(
       table.chapterId
     ),
   ]
+);
+
+// Une classe du programme : un groupe d'étudiants. Le contenu reste dans le
+// catalogue (cours/thématiques) ; la classe ne fait que regrouper des membres.
+export const classes = pgTable("classes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  // Code à partager pour rejoindre la classe via /rejoindre/[code]. Unique,
+  // régénérable (l'ancien code cesse alors de fonctionner).
+  inviteCode: text("invite_code").notNull().unique(),
+  inviteEnabled: boolean("invite_enabled").notNull().default(true),
+  createdBy: uuid("created_by").references(() => profiles.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const classMembers = pgTable(
+  "class_members",
+  {
+    classId: uuid("class_id")
+      .notNull()
+      .references(() => classes.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // Renseignée quand l'étudiant a terminé la classe (ancien élève) : il
+    // garde ce qui était débloqué avant cette date, rien de ce qui suit.
+    leftAt: timestamp("left_at", { withTimezone: true }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.classId, table.userId] }),
+    index("class_members_user_idx").on(table.userId),
+  ]
+);
+
+// Cours suivis par une classe. Un même cours peut être dans plusieurs
+// classes, chacune avec son propre rythme de déblocage (class_*_unlocks).
+export const classCours = pgTable(
+  "class_cours",
+  {
+    classId: uuid("class_id")
+      .notNull()
+      .references(() => classes.id, { onDelete: "cascade" }),
+    coursId: uuid("cours_id")
+      .notNull()
+      .references(() => cours.id, { onDelete: "cascade" }),
+    // Ordre des cours dans la feuille de route de la classe.
+    orderIndex: integer("order_index").notNull().default(0),
+    addedAt: timestamp("added_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.classId, table.coursId] })]
+);
+
+// Ressources et quiz ouverts à une classe, un par un au fil des semaines.
+// Pas de ligne = verrouillé. Une thématique devient visible pour la classe dès
+// qu'un de ses éléments est débloqué (ses hadiths la suivent).
+export const classRessourceUnlocks = pgTable(
+  "class_ressource_unlocks",
+  {
+    classId: uuid("class_id")
+      .notNull()
+      .references(() => classes.id, { onDelete: "cascade" }),
+    ressourceId: uuid("ressource_id")
+      .notNull()
+      .references(() => ressources.id, { onDelete: "cascade" }),
+    unlockedAt: timestamp("unlocked_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.classId, table.ressourceId] })]
+);
+
+export const classQuizUnlocks = pgTable(
+  "class_quiz_unlocks",
+  {
+    classId: uuid("class_id")
+      .notNull()
+      .references(() => classes.id, { onDelete: "cascade" }),
+    quizId: uuid("quiz_id")
+      .notNull()
+      .references(() => quiz.id, { onDelete: "cascade" }),
+    unlockedAt: timestamp("unlocked_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.classId, table.quizId] })]
 );
 
 export const coursRelations = relations(cours, ({ many }) => ({
@@ -453,30 +516,69 @@ export const seanceRessourcesRelations = relations(
   })
 );
 
-export const parcoursRelations = relations(parcours, ({ many }) => ({
-  etapes: many(parcoursEtapes),
-}));
-
-export const parcoursEtapesRelations = relations(
-  parcoursEtapes,
-  ({ one }) => ({
-    parcours: one(parcours, {
-      fields: [parcoursEtapes.parcoursId],
-      references: [parcours.id],
-    }),
-    thematique: one(thematiques, {
-      fields: [parcoursEtapes.thematiqueId],
-      references: [thematiques.id],
-    }),
-  })
-);
-
 export const quranMemorizationRelations = relations(
   quranMemorization,
   ({ one }) => ({
     user: one(profiles, {
       fields: [quranMemorization.userId],
       references: [profiles.id],
+    }),
+  })
+);
+
+export const classesRelations = relations(classes, ({ many }) => ({
+  members: many(classMembers),
+  cours: many(classCours),
+  ressourceUnlocks: many(classRessourceUnlocks),
+  quizUnlocks: many(classQuizUnlocks),
+}));
+
+export const classMembersRelations = relations(classMembers, ({ one }) => ({
+  class: one(classes, {
+    fields: [classMembers.classId],
+    references: [classes.id],
+  }),
+  user: one(profiles, {
+    fields: [classMembers.userId],
+    references: [profiles.id],
+  }),
+}));
+
+export const classCoursRelations = relations(classCours, ({ one }) => ({
+  class: one(classes, {
+    fields: [classCours.classId],
+    references: [classes.id],
+  }),
+  cours: one(cours, {
+    fields: [classCours.coursId],
+    references: [cours.id],
+  }),
+}));
+
+export const classRessourceUnlocksRelations = relations(
+  classRessourceUnlocks,
+  ({ one }) => ({
+    class: one(classes, {
+      fields: [classRessourceUnlocks.classId],
+      references: [classes.id],
+    }),
+    ressource: one(ressources, {
+      fields: [classRessourceUnlocks.ressourceId],
+      references: [ressources.id],
+    }),
+  })
+);
+
+export const classQuizUnlocksRelations = relations(
+  classQuizUnlocks,
+  ({ one }) => ({
+    class: one(classes, {
+      fields: [classQuizUnlocks.classId],
+      references: [classes.id],
+    }),
+    quiz: one(quiz, {
+      fields: [classQuizUnlocks.quizId],
+      references: [quiz.id],
     }),
   })
 );

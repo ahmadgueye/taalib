@@ -16,25 +16,21 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
       ou seed)
 
 ## 1. Visiteur non connecté
-- [ ] Accueil : parcours mis en avant, thématiques hors parcours, rien de cassé
-- [ ] `/cours` : liste, cours « bientôt disponible » visibles mais sans contenu
-- [ ] Cours → thématique → une ressource de chaque type (vidéo, PDF, lien,
-      texte)
-- [ ] `/hadiths` : arabe lisible (police, RTL), traduction FR, wolof si présent
-- [ ] Page d'un hadith
-- [ ] `/seances` et une séance : thématiques/ressources rattachées cliquables
-- [ ] `/parcours` et un parcours : étapes verrouillées pour un visiteur
-- [ ] Recherche, **⌘K et `/recherche`** : mot français avec accent, mot
-      arabe, filtre par type, aucun résultat (la recherche est sensible aux
-      accents, c'est une limite connue)
+- [ ] Accueil : vitrine avec « Se connecter », « Rejoindre une classe »,
+      « Lire le Coran », lien vers bayanun.com ; aucun cours ni thématique
+      affiché ; l'en-tête n'a que Quran et Connexion (pas de Cours, Hadith ni
+      recherche), la barre mobile que Accueil et Quran
+- [ ] `/cours`, `/thematiques/...`, `/ressources/...`, `/quiz/...`,
+      `/hadiths`, `/seances`, `/recherche` redirigent vers
+      `/login?next=...`, et on revient sur la page après connexion
 - [ ] `/coran` : liste des sourates, lecture, audio (bandeau en bas), mode
       Zen, changement de récitateur
 - [ ] Sourates à cheval sur deux pages : **94** (Ash-Sharh, 8 versets) s'affiche
       en entier ; 114 (une page) et 2 (nombreuses pages) se chargent bien
-- [ ] Tenter de terminer une ressource sans être connecté → message clair
 - [ ] `/compte`, `/memorisation`, `/dashboard` redirigent vers `/login`
 - [ ] Thème clair/sombre, navigation, pied de page, page 404
-- [ ] `/sitemap.xml` et `/robots.txt` répondent
+- [ ] `/sitemap.xml` (accueil et `/coran` seulement) et `/robots.txt`
+      répondent
 
 ## 2. Connexion
 - [ ] `/login` : saisir un e-mail → message « Un lien de connexion… »
@@ -48,6 +44,32 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
       toast « Bienvenue sur Taalib ! »
 
 ## 3. Apprenant connecté (rôle viewer)
+Inscrire le compte dans une classe qui suit au moins un cours, et débloquer
+quelques ressources et un quiz depuis `/dashboard/classes`.
+- [ ] Sans classe : l'accueil propose de rejoindre une classe, `/cours` est vide
+- [ ] Dans une classe qui ne suit aucun cours : « Ta classe n'a pas encore de
+      cours », sans bouton « Rejoindre »
+- [ ] Accueil « Ma feuille de route » : les cours de la classe dans l'ordre
+      choisi sur la page de la classe, chacun avec ses thématiques ; une
+      thématique sans rien de débloqué est « À venir » (sablier, pas de
+      lien) ; « x/y leçons » compte toutes les leçons ; une étape tout lue,
+      tout débloquée et quiz réussi passe « Terminé »
+- [ ] Avec classe : `/cours` ne montre que les cours de la classe ; un cours
+      sans rien de débloqué affiche « sera débloqué au fil des séances »
+- [ ] Une thématique n'apparaît que si un de ses éléments est débloqué, avec
+      uniquement les ressources/quiz débloqués et ses hadiths
+- [ ] Ouvrir l'URL d'une ressource, d'un quiz ou d'un cours non débloqué →
+      « Page introuvable », titre d'onglet générique
+- [ ] Sur la dernière ressource débloquée : pas de « chapitre suivant » vers
+      une ressource verrouillée
+- [ ] Recherche, ⌘K et `/recherche` : uniquement du contenu débloqué ; mot
+      français avec accent, mot arabe, filtre par type (la recherche est
+      sensible aux accents, c'est une limite connue)
+- [ ] `/hadiths`, `/seances` : uniquement ce qui touche au
+      contenu débloqué
+- [ ] Débloquer une ressource côté enseignant → elle apparaît pour l'étudiant
+      au rechargement ; la reverrouiller → elle disparaît
+- [ ] Une ressource de chaque type (vidéo, PDF, lien, texte) s'affiche
 - [ ] Terminer une ressource : on la marque comme terminée **en cliquant sur le
       bouton « suivant » en bas de la page** (pas de décochage)
 - [ ] Progression d'un cours / d'une thématique (anneau, compteur) mise à jour
@@ -62,8 +84,6 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
 - [ ] `/quiz/[id]/historique` : liste chronologique des tentatives (date,
       score) ; cliquer une tentative ouvre son détail avec la correction
       complète
-- [ ] Parcours : réussir le quiz de l'étape 1 débloque l'étape 2 ; une étape
-      sans quiz se débloque automatiquement
 - [ ] Mémorisation : toucher un verset → statut (en cours / à renforcer /
       maîtrisé) et retour à « aucun »
 - [ ] `/memorisation` : tableau de bord et progression par sourate ; définir
@@ -89,14 +109,34 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Quiz : créer, ajouter questions QCM et vrai/faux, plusieurs bonnes
       réponses, brouillon invisible et non soumissible côté public
 - [ ] Séances : créer avec thématiques et ressources rattachées
-- [ ] Parcours : créer, ajouter/retirer/réordonner des étapes
+- [ ] Classes : avec deux cours, glisser-déposer « Ordre de la feuille de
+      route » → l'ordre change sur l'accueil des étudiants
 - [ ] Utilisateurs (admin) : changer un rôle ; impossible de retirer le
       dernier admin
 - [ ] Quiz → icône « Soumissions » : stats (tentatives, étudiants, score
       moyen, taux de réussite), réussite par question, une ligne par étudiant
       (meilleur score, dernière tentative) ; cliquer une ligne ouvre un modal
       avec toutes ses tentatives
+- [ ] Classes (admin) : créer une classe → un code d'invitation est généré ;
+      « Copier le lien », « Nouveau code » (l'ancien lien affiche « Code
+      invalide »), fermer/rouvrir les inscriptions
+- [ ] Classes : ajouter un cours ; dans une thématique, « Débloquer la
+      suivante » ouvre les ressources dans l'ordre (badge « Depuis le … ») ;
+      cadenas pour ouvrir/refermer une ressource ou un quiz ; « Tout
+      débloquer » ; retirer le cours puis le remettre → tout est de nouveau
+      « À venir »
+- [ ] Classes : ajouter un étudiant par e-mail (compte existant) ; e-mail
+      inconnu → message d'erreur ; ajouter deux fois → « déjà membre » ;
+      retirer un étudiant → il ne voit plus rien de la classe ; « Terminer »
+      → il passe dans « Anciens élèves », garde les ressources déjà
+      débloquées mais pas celles débloquées ensuite ; « Réintégrer » → il
+      voit de nouveau tout
+- [ ] `/rejoindre/[code]` déconnecté → « Se connecter », puis retour sur la
+      page après connexion ; « Rejoindre la classe » → « Tu fais partie de
+      cette classe » ; code saisi en minuscules ou avec tiret accepté sur
+      `/rejoindre`
 - [ ] Un contributeur ne voit pas / ne peut pas ouvrir `/dashboard/utilisateurs`
+      ni `/dashboard/classes`
 - [ ] Un viewer qui tape l'URL `/dashboard/...` est renvoyé vers l'accueil
 
 ## 5. Qualité transversale

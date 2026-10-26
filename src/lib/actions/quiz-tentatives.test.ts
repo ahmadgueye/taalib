@@ -16,6 +16,11 @@ const mocks = vi.hoisted(() => ({
   findQuiz: vi.fn(),
   tentativeValues: vi.fn(),
   reponsesValues: vi.fn(),
+  getContentAccess: vi.fn(),
+}));
+
+vi.mock("@/lib/auth/content-access", () => ({
+  getContentAccess: mocks.getContentAccess,
 }));
 
 vi.mock("@/lib/auth/get-session", () => ({
@@ -53,6 +58,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.getCurrentProfile.mockResolvedValue({ id: "user-1", role: "viewer" });
   mocks.findQuiz.mockResolvedValue({ id: QUIZ });
+  mocks.getContentAccess.mockResolvedValue({ all: true });
   mocks.findMany.mockResolvedValue([
     {
       id: Q1,
@@ -167,5 +173,23 @@ describe("submitQuizAttempt", () => {
     const q1 = res.corrections.find((c) => c.questionId === Q1)!;
     expect(q1.selectedChoixIds).toEqual([B]);
     expect(q1.choix.find((c) => c.id === A)?.isCorrect).toBe(true);
+  });
+});
+
+describe("submitQuizAttempt access", () => {
+  it("refuses a quiz not unlocked for the student's classes", async () => {
+    mocks.getContentAccess.mockResolvedValue({
+      all: false,
+      inAnyClass: true,
+      coursIds: new Set(),
+      thematiqueIds: new Set(),
+      ressourceIds: new Set(),
+      quizIds: new Set(),
+    });
+    expect(await submitQuizAttempt(QUIZ, [])).toEqual({
+      error: "Quiz introuvable.",
+    });
+    expect(mocks.findMany).not.toHaveBeenCalled();
+    expect(mocks.tentativeValues).not.toHaveBeenCalled();
   });
 });

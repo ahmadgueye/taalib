@@ -118,8 +118,8 @@ export function QuizForm({
             required
           />
           <FieldDescription>
-            En pourcentage. Utilisé pour débloquer l&apos;étape suivante d&apos;un
-            parcours.
+            En pourcentage. Un étudiant doit l&apos;atteindre pour que
+            l&apos;étape soit terminée sur sa feuille de route.
           </FieldDescription>
         </Field>
         {state?.error && <FieldError>{state.error}</FieldError>}

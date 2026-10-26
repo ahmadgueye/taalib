@@ -6,8 +6,37 @@ import { Badge } from "@/components/ui/badge";
 import { BackButton } from "@/components/public/back-button";
 import { MarkdownContent } from "@/components/public/markdown-content";
 import { RessourceItem } from "@/components/public/ressource-item";
+import { getContentAccess } from "@/lib/auth/content-access";
+import {
+  canSeeRessource,
+  canSeeSeance,
+  canSeeThematique,
+  type ContentAccess,
+} from "@/lib/content-access";
 import { getSeanceBySlug } from "@/lib/db/queries/seances";
 import { defaultDescription, siteOpenGraph, stripMarkdown } from "@/lib/metadata";
+
+type Seance = NonNullable<Awaited<ReturnType<typeof getSeanceBySlug>>>;
+
+// Ne garde que les thématiques et ressources visibles ; null si la séance ne
+// référence rien de visible.
+function visibleSeance(access: ContentAccess, s: Seance | null) {
+  if (!s) return null;
+  const visible = canSeeSeance(access, {
+    thematiqueIds: s.seanceThematiques.map((t) => t.thematique.id),
+    ressourceIds: s.seanceRessources.map((r) => r.ressource.id),
+  });
+  if (!visible) return null;
+  return {
+    ...s,
+    seanceThematiques: s.seanceThematiques.filter(({ thematique }) =>
+      canSeeThematique(access, thematique.id)
+    ),
+    seanceRessources: s.seanceRessources.filter(({ ressource }) =>
+      canSeeRessource(access, ressource.id)
+    ),
+  };
+}
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -17,7 +46,11 @@ export async function generateMetadata({
   params,
 }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const s = await getSeanceBySlug(slug);
+  const [found, access] = await Promise.all([
+    getSeanceBySlug(slug),
+    getContentAccess(),
+  ]);
+  const s = visibleSeance(access, found);
   const title = s?.title ?? "Séance";
   const description = s?.summary ? stripMarkdown(s.summary) : defaultDescription;
   return {
@@ -29,7 +62,11 @@ export async function generateMetadata({
 
 export default async function SeanceDetailPage({ params }: Props) {
   const { slug } = await params;
-  const s = await getSeanceBySlug(slug);
+  const [found, access] = await Promise.all([
+    getSeanceBySlug(slug),
+    getContentAccess(),
+  ]);
+  const s = visibleSeance(access, found);
 
   if (!s) notFound();
 

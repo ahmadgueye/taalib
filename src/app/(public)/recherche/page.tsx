@@ -1,3 +1,4 @@
+import { getContentAccess } from "@/lib/auth/content-access";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen, Calendar, ListTree, Quote, type LucideIcon } from "lucide-react";
@@ -81,6 +82,7 @@ export default async function RecherchePage({ searchParams }: Props) {
   const hasSearched = params.q !== undefined;
   const results = hasSearched
     ? await searchCatalogue(q, {
+        access: await getContentAccess(),
         types: selectedTypes,
         ressourceTypes: selectedRessourceTypes,
       })

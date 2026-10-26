@@ -10,7 +10,7 @@ flowchart TD
     Them --> Qz["Quiz\n(qcm | vrai_faux, passing_score)"]
     Seance["Séances"] -.rattache des.-> Them
     Seance -.rattache des.-> Res
-    Parc["Parcours"] -.ordonne des étapes vers.-> Them
+    Classe["Classes"] -.suivent des.-> Cours
 ```
 
 - **Cours** — le plus haut niveau, un programme (ex: "Fiqh du jeûne"). Statut
@@ -32,8 +32,8 @@ flowchart TD
   cette plateforme.
 - **Quiz** — rattaché à une thématique comme les ressources, statut
   `draft`/`published`. Sert à valider la compréhension (voir
-  [Quiz](#quiz) plus bas) et à débloquer la suite d'un
-  [Parcours](#parcours) le cas échéant. Un quiz en brouillon n'est visible ni
+  [Quiz](#quiz) plus bas) et à terminer une étape de la
+  [feuille de route](#feuille-de-route). Un quiz en brouillon n'est visible ni
   sur le site ni soumissible (`submitQuizAttempt` le refuse), sinon la
   correction en révélerait les réponses.
 - **Séances** — un événement daté (cours en présentiel/live) qui référence
@@ -79,8 +79,8 @@ contrairement au pattern CRUD standard des autres entités — voir
   pourcentage. `getQuizScores()` (`lib/db/queries/quiz-tentatives.ts`) calcule
   le meilleur score obtenu par un utilisateur sur un quiz ; c'est ce meilleur
   score qui est comparé au seuil, aussi bien pour l'affichage
-  (`quiz-item.tsx`, badge vert si un score existe) que pour le déblocage d'un
-  [Parcours](#parcours).
+  (`quiz-item.tsx`, badge vert si un score existe) que pour terminer une étape de
+  la [feuille de route](#feuille-de-route).
 - **Historique (élève)** — `/compte` liste chaque quiz tenté (meilleur score,
   nombre de tentatives) et renvoie vers `/quiz/[id]/historique`, qui liste
   chronologiquement les tentatives (`getTentativesForQuiz`). Chaque tentative
@@ -101,37 +101,54 @@ contrairement au pattern CRUD standard des autres entités — voir
   tentative, via `QuizSubmissionsTable`) ; cliquer une ligne ouvre un modal
   listant toutes ses tentatives.
 
-## Parcours
+## Feuille de route
 
-Un parcours (`parcours`) est un chemin pédagogique imposé : une séquence
-ordonnée d'étapes (`parcours_etapes`), chaque étape référençant une
-thématique **déjà existante** ailleurs dans le catalogue (elle ne la possède
-pas — même logique que les séances, voir plus haut). Public :
-`/parcours` (liste) et `/parcours/[slug]` (déroulé d'un parcours,
-`parcours-track.tsx`).
+L'accueil d'un étudiant est sa **feuille de route**, générée
+automatiquement à partir de ses classes (`getStudentRoadmap` dans
+`lib/db/queries/roadmap.ts`, rendue par `roadmap-track.tsx`) : les cours de
+ses classes, dans l'ordre choisi sur la page de la classe (glisser-déposer,
+`class_cours.order_index`), puis les thématiques de chaque cours dans l'ordre
+du dashboard. Rien n'est saisi à la main : ajouter une thématique à un cours
+l'ajoute à la feuille de route de toutes les classes qui le suivent. Un cours
+suivi par deux classes de l'étudiant n'apparaît qu'une fois.
 
-- **Progression séquentielle et gated** — `getParcoursProgress()`
-  (`lib/db/queries/parcours.ts`) calcule pour chaque étape un état
-  `locked` / `active` / `completed` :
-  - la première étape est `active` par défaut (ou `completed` si déjà
-    validée) ;
-  - une étape est `completed` quand **tous** les quiz publiés de sa
-    thématique ont été réussis (meilleur score ≥ `passingScore` du quiz) —
-    sans quiz, l'étape est automatiquement `completed` dès qu'elle devient
-    accessible ;
-  - une étape est `locked` tant que l'étape précédente n'est pas
-    `completed` — on ne peut pas sauter une étape.
-  - un visiteur non connecté n'a par définition rien de `completed` (pas de
-    tentative de quiz à son nom).
-- **Progression des ressources dans l'étape active** — en plus du quiz,
-  l'étape `active` affiche la progression sur les ressources publiées de sa
-  thématique (comptage via `getCompletedRessourceIds`, même mécanisme que la
-  progression de cours classique, voir plus bas) — mais ce n'est **pas** ce
-  qui débloque l'étape suivante, seul le quiz le fait.
-- **Dashboard** — `/dashboard/parcours` gère la liste des thématiques
-  incluses (`addEtapes`/`removeEtape`/`reorderEtapes` dans
-  `lib/actions/parcours.ts`), avec un slug généré automatiquement à partir du
-  titre (`slugify`, collision → erreur "existe déjà").
+Chaque étape (une thématique) a un état :
+
+- `upcoming` (« À venir », sablier, sans lien) : rien n'y est encore débloqué
+  pour sa classe ;
+- `completed` (« Terminé ») : tout son contenu publié est débloqué, toutes
+  ses leçons sont lues et tous ses quiz réussis (meilleur score ≥
+  `passingScore`) ;
+- `active` sinon, avec la barre « x/y leçons » qui compte **toutes** les
+  leçons publiées de l'étape, débloquées ou non : l'étudiant voit ce qui lui
+  reste.
+
+En haut de la page, une liste dépliable **« À faire »** (`todo-list.tsx`,
+élément `<details>` natif) récapitule tout ce que l'étudiant a à faire.
+Fermée, elle tient en une ligne : « À faire · 3 leçons et 1 quiz », avec le
+nombre de nouveautés. Elle est ouverte d'office quand il y a du nouveau.
+Ouverte, elle liste, groupés par cours (plusieurs cours peuvent avancer en
+parallèle) et dans l'ordre de la feuille de route :
+
+- chaque leçon débloquée et pas encore lue ;
+- chaque quiz débloqué et pas encore réussi (« Quiz : … »), mais seulement
+  une fois toutes les leçons ouvertes de sa thématique lues.
+
+Si tout ce qui est ouvert est fait, la ligne affiche « Tu es à jour ».
+
+Un élément débloqué depuis moins de 7 jours (`NEW_FOR_DAYS`) et pas encore
+fait est signalé **« Nouveau »**, sur sa ligne « À faire » et sur son
+étape. La date retenue est celle du plus ancien déblocage pour les classes
+de l'étudiant (`getUnlockDates`), et le badge disparaît dès que la leçon
+est lue ou le quiz réussi.
+
+Le seul verrou est le déblocage par l'enseignant : il n'y a plus de
+verrouillage d'une étape par le quiz de la précédente. Le staff, qui
+n'appartient à aucune classe, voit à la place la liste des cours.
+
+Cette feuille de route remplace les anciens **parcours** (chemins saisis à
+la main dans le dashboard), supprimés avec leurs tables par
+`0028_class_roadmap_drop_parcours.sql`.
 
 ## Recherche
 
@@ -149,7 +166,7 @@ normalise pas l'arabe.
 
 ## Lecteur du Coran
 
-Accessible en public sur `/coran`, indépendant du reste du contenu (pas de
+Accessible à tous (même sans compte) sur `/coran`, indépendant du reste du contenu (pas de
 lien avec `cours`/`thematiques` en base — c'est un module autonome branché
 sur l'API externe Quran Foundation).
 
@@ -249,6 +266,107 @@ lignes pour le seul composant `quran-reader.tsx`) — à isoler mentalement du
 reste pour la partie lecture/audio : elle ne touche ni Drizzle ni Supabase,
 seulement l'API Quran Foundation. Seule la mémorisation (statuts par verset,
 et sa révision espacée) passe par la base applicative.
+
+## Classes
+
+Une classe (`classes`) regroupe des étudiants du programme (`class_members`)
+et suit des cours (`class_cours`) dont l'enseignant débloque les ressources
+et les quiz au fil des semaines (`class_ressource_unlocks`,
+`class_quiz_unlocks`). Elle ne possède aucun contenu : elle
+pointe vers des cours du catalogue, comme une séance. C'est
+elle qui détermine ce qu'un étudiant voit, voir
+[Accès au contenu](#accès-au-contenu).
+
+- **Gestion réservée aux admins** — `/dashboard/classes` (lien de la sidebar
+  visible des seuls admins, pages en `notFound()` sinon) et
+  `lib/actions/classes.ts` (`requireAdmin()` partout). Les contributeurs
+  gèrent le contenu, pas les listes d'étudiants.
+- **Ajout manuel** — `addClassMember` cherche un profil par e-mail
+  (insensible à la casse). L'étudiant doit donc s'être connecté au moins une
+  fois ; sinon l'action renvoie une erreur qui l'oriente vers le code
+  d'invitation. Ajouter un ancien élève le réintègre.
+- **Départ d'un étudiant** — deux façons, aucune ne supprime son compte ni
+  sa progression :
+  - **Retirer** (`removeClassMember`) supprime l'inscription : l'étudiant
+    perd tout le contenu de la classe.
+  - **Terminer** (`finishClassMember`) renseigne `left_at` : l'étudiant
+    devient **ancien élève** et garde ce qui était débloqué avant cette
+    date (déblocages datés par `unlocked_at`), sans les déblocages
+    suivants. Il apparaît dans « Anciens élèves » sur la page de la classe,
+    ne compte plus dans l'effectif, et peut être réintégré
+    (`reinstateClassMember`). Refermer un élément après son départ le lui
+    retire aussi.
+- **Code d'invitation** — chaque classe reçoit à sa création un code de 8
+  caractères (`lib/class-invite.ts`, alphabet sans 0/O ni 1/I/L pour pouvoir
+  le dicter). Depuis la page de la classe, l'admin copie le lien
+  `/rejoindre/[code]`, génère un nouveau code (l'ancien cesse de
+  fonctionner) ou ferme les inscriptions (`invite_enabled`).
+- **Cours et déblocage** — sur la page de la classe, l'admin ajoute des cours
+  (`addClassCours`), puis débloque leur contenu **ressource par ressource**
+  (et quiz par quiz) : une thématique peut s'étaler sur plusieurs mois, on
+  ouvre en général une ressource par semaine. Pour chaque thématique :
+  « Débloquer la suivante » (`unlockNextRessource`, la première ressource
+  verrouillée dans l'ordre du dashboard), « Tout débloquer »
+  (`unlockAllInThematique`, ressources et quiz), ou le cadenas d'un élément
+  (`setRessourceUnlocked`, `setQuizUnlocked`) pour ouvrir ou refermer.
+  - Seuls les éléments **publiés** d'un cours suivi par la classe se
+    débloquent ; un brouillon publié plus tard arrive verrouillé.
+  - Une thématique sera visible pour la classe dès qu'un de ses éléments est
+    débloqué ; ses **hadiths** suivent la thématique, sans déblocage propre.
+  - Les déblocages sont propres à chaque classe : un même cours peut être
+    suivi par plusieurs classes à des rythmes différents.
+  - Retirer un cours (`removeClassCours`) efface ses déblocages pour cette
+    classe : le remettre repart d'un cours entièrement verrouillé.
+- **Rejoindre** — `/rejoindre` (saisie du code) et `/rejoindre/[code]`. Le
+  code est normalisé (majuscules, sans espaces ni tirets). Un visiteur non
+  connecté est envoyé vers `/login?next=/rejoindre/CODE` et revient sur la
+  page après connexion (et après l'onboarding du nom pour un nouveau
+  compte). L'inscription se fait par un bouton (`joinClass`,
+  `lib/actions/class-join.ts`), jamais au simple chargement de la page ; elle
+  est ouverte à tout utilisateur connecté et idempotente ; un ancien élève
+  qui la rejoint de nouveau redevient membre actif (fermer les inscriptions
+  l'en empêche).
+
+## Accès au contenu
+
+Le catalogue est **réservé aux étudiants du programme Bayān**. Seuls l'accueil
+(vitrine), `/coran`, `/login` et `/rejoindre` sont ouverts sans compte.
+
+- **Staff** (`admin`, `contributor`) : voit tout, comme avant.
+- **Étudiant** (`viewer`) : ne voit que ce qui est débloqué pour l'une de ses
+  classes (`lib/auth/content-access.ts` → `getContentAccess()`, calculé une
+  fois par requête). Concrètement :
+  - les **cours** suivis par ses classes, même si rien n'y est encore
+    débloqué (« Le contenu de ce cours sera débloqué au fil des séances ») ;
+  - les **ressources** et **quiz** publiés et débloqués ;
+  - une **thématique** dès qu'un de ses éléments est débloqué, avec ses
+    **hadiths** ;
+  - une **séance** si elle référence au moins une thématique ou ressource
+    visible, réduite à ce qui l'est ;
+  - sa **feuille de route** sur l'accueil, avec les étapes pas encore
+    débloquées en « À venir », voir [Feuille de route](#feuille-de-route) ;
+  - pour une classe **terminée** (ancien élève), seulement ce qui était
+    débloqué avant son départ : ses cours n'apparaissent que s'il y garde
+    au moins un élément, et la feuille de route n'en montre que les étapes
+    débloquées, sans « À venir ».
+- **Visiteur** : rien. `proxy.ts` le renvoie vers `/login?next=...`.
+- **Étudiant sans classe** (ou seulement ancien élève, sans contenu
+  conservé) : l'accueil l'invite à saisir un code d'invitation. Inscrit dans une classe qui ne suit encore aucun cours, il
+  voit « Ta classe n'a pas encore de cours » (`access.inAnyClass`).
+
+Tout ce qui n'est pas visible répond **404** (« Page introuvable »), titre
+d'onglet et image Open Graph compris : on ne révèle pas qu'un contenu existe.
+La navigation d'une ressource (« chapitre suivant », examen, sommaire du
+cours) ne propose que des éléments débloqués. La recherche (`/recherche` et
+⌘K) filtre en SQL selon le même accès. Les Server Actions des étudiants le
+vérifient aussi : `markRessourceCompleted` refuse une ressource verrouillée,
+`submitQuizAttempt` un quiz verrouillé. `/compte` calcule la progression sur
+les seules ressources visibles.
+
+Les helpers de filtrage sont des fonctions pures dans `lib/content-access.ts`
+(`canSeeCours`, `canSeeThematique`, `canSeeRessource`, `canSeeQuiz`,
+`canSeeSeance`, `visibleItems`), testées dans `content-access.test.ts`. Toute
+nouvelle page ou requête qui affiche du contenu doit passer par eux.
 
 ## Utilisateurs et rôles
 

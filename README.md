@@ -1,9 +1,11 @@
 # طالب (Taalib) — DeenShare
 
-Plateforme d'apprentissage islamique : un site public (cours, parcours guidés,
-quiz, hadiths, ressources, séances, lecteur du Coran avec suivi de
-mémorisation) et un tableau de bord d'administration pour créer et organiser
-ce contenu.
+Plateforme de cours du programme **Bayān** ([bayanun.com](https://bayanun.com)) : un espace étudiants
+(feuille de route, cours, quiz, hadiths, ressources, séances), où chaque classe
+n'accède qu'aux ressources que l'enseignant a débloquées ; un lecteur du Coran
+ouvert à tous, avec suivi de mémorisation pour les connectés ; et un tableau de
+bord d'administration pour créer le contenu, gérer les classes et débloquer
+les ressources au fil des semaines.
 
 Stack : **Next.js 16** (App Router) · **Supabase** (Auth + Postgres) · **Drizzle
 ORM** · **Tailwind CSS v4** · **Vitest** · déployé sur **Vercel** (CI GitHub

@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 
+import { getContentAccess } from "@/lib/auth/content-access";
+import { canSeeSeance } from "@/lib/content-access";
 import { getSeanceBySlug } from "@/lib/db/queries/seances";
 
 export const size = { width: 1200, height: 630 };
@@ -11,7 +13,16 @@ export default async function Image({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const s = await getSeanceBySlug(slug);
+  const [found, access] = await Promise.all([getSeanceBySlug(slug), getContentAccess()]);
+  // Même règle que la page : rien ne s'affiche de ce qui n'est pas visible.
+  const s =
+    found &&
+    canSeeSeance(access, {
+      thematiqueIds: found.seanceThematiques.map((t) => t.thematique.id),
+      ressourceIds: found.seanceRessources.map((r) => r.ressource.id),
+    })
+      ? found
+      : null;
   const date = s?.sessionDate
     ? new Date(s.sessionDate).toLocaleDateString("fr-FR", {
         day: "numeric",
