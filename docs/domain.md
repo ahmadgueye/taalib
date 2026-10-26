@@ -10,7 +10,7 @@ flowchart TD
     Them --> Qz["Quiz\n(qcm | vrai_faux, passing_score)"]
     Seance["Séances"] -.rattache des.-> Them
     Seance -.rattache des.-> Res
-    Parc["Parcours"] -.ordonne des étapes vers.-> Them
+    Classe["Classes"] -.suivent des.-> Cours
 ```
 
 - **Cours** — le plus haut niveau, un programme (ex: "Fiqh du jeûne"). Statut
@@ -32,8 +32,8 @@ flowchart TD
   cette plateforme.
 - **Quiz** — rattaché à une thématique comme les ressources, statut
   `draft`/`published`. Sert à valider la compréhension (voir
-  [Quiz](#quiz) plus bas) et à débloquer la suite d'un
-  [Parcours](#parcours) le cas échéant. Un quiz en brouillon n'est visible ni
+  [Quiz](#quiz) plus bas) et à terminer une étape de la
+  [feuille de route](#feuille-de-route). Un quiz en brouillon n'est visible ni
   sur le site ni soumissible (`submitQuizAttempt` le refuse), sinon la
   correction en révélerait les réponses.
 - **Séances** — un événement daté (cours en présentiel/live) qui référence
@@ -79,8 +79,8 @@ contrairement au pattern CRUD standard des autres entités — voir
   pourcentage. `getQuizScores()` (`lib/db/queries/quiz-tentatives.ts`) calcule
   le meilleur score obtenu par un utilisateur sur un quiz ; c'est ce meilleur
   score qui est comparé au seuil, aussi bien pour l'affichage
-  (`quiz-item.tsx`, badge vert si un score existe) que pour le déblocage d'un
-  [Parcours](#parcours).
+  (`quiz-item.tsx`, badge vert si un score existe) que pour terminer une étape de
+  la [feuille de route](#feuille-de-route).
 - **Historique (élève)** — `/compte` liste chaque quiz tenté (meilleur score,
   nombre de tentatives) et renvoie vers `/quiz/[id]/historique`, qui liste
   chronologiquement les tentatives (`getTentativesForQuiz`). Chaque tentative
@@ -101,37 +101,35 @@ contrairement au pattern CRUD standard des autres entités — voir
   tentative, via `QuizSubmissionsTable`) ; cliquer une ligne ouvre un modal
   listant toutes ses tentatives.
 
-## Parcours
+## Feuille de route
 
-Un parcours (`parcours`) est un chemin pédagogique imposé : une séquence
-ordonnée d'étapes (`parcours_etapes`), chaque étape référençant une
-thématique **déjà existante** ailleurs dans le catalogue (elle ne la possède
-pas — même logique que les séances, voir plus haut). Il n'a plus de page
-publique dédiée : le premier parcours sert de **feuille de route sur
-l'accueil** (`parcours-track.tsx`), voir [Accès au contenu](#accès-au-contenu).
+L'accueil d'un étudiant est sa **feuille de route**, générée
+automatiquement à partir de ses classes (`getStudentRoadmap` dans
+`lib/db/queries/roadmap.ts`, rendue par `roadmap-track.tsx`) : les cours de
+ses classes, dans l'ordre choisi sur la page de la classe (glisser-déposer,
+`class_cours.order_index`), puis les thématiques de chaque cours dans l'ordre
+du dashboard. Rien n'est saisi à la main : ajouter une thématique à un cours
+l'ajoute à la feuille de route de toutes les classes qui le suivent. Un cours
+suivi par deux classes de l'étudiant n'apparaît qu'une fois.
 
-- **Progression séquentielle et gated** — `getParcoursProgress()`
-  (`lib/db/queries/parcours.ts`) calcule pour chaque étape un état
-  `locked` / `active` / `completed` :
-  - la première étape est `active` par défaut (ou `completed` si déjà
-    validée) ;
-  - une étape est `completed` quand **tous** les quiz publiés de sa
-    thématique ont été réussis (meilleur score ≥ `passingScore` du quiz) —
-    sans quiz, l'étape est automatiquement `completed` dès qu'elle devient
-    accessible ;
-  - une étape est `locked` tant que l'étape précédente n'est pas
-    `completed` — on ne peut pas sauter une étape.
-  - un visiteur non connecté n'a par définition rien de `completed` (pas de
-    tentative de quiz à son nom).
-- **Progression des ressources dans l'étape active** — en plus du quiz,
-  l'étape `active` affiche la progression sur les ressources publiées de sa
-  thématique (comptage via `getCompletedRessourceIds`, même mécanisme que la
-  progression de cours classique, voir plus bas) — mais ce n'est **pas** ce
-  qui débloque l'étape suivante, seul le quiz le fait.
-- **Dashboard** — `/dashboard/parcours` gère la liste des thématiques
-  incluses (`addEtapes`/`removeEtape`/`reorderEtapes` dans
-  `lib/actions/parcours.ts`), avec un slug généré automatiquement à partir du
-  titre (`slugify`, collision → erreur "existe déjà").
+Chaque étape (une thématique) a un état :
+
+- `upcoming` (« À venir », sablier, sans lien) : rien n'y est encore débloqué
+  pour sa classe ;
+- `completed` (« Terminé ») : tout son contenu publié est débloqué, toutes
+  ses leçons sont lues et tous ses quiz réussis (meilleur score ≥
+  `passingScore`) ;
+- `active` sinon, avec la barre « x/y leçons » qui compte **toutes** les
+  leçons publiées de l'étape, débloquées ou non : l'étudiant voit ce qui lui
+  reste.
+
+Le seul verrou est le déblocage par l'enseignant : il n'y a plus de
+verrouillage d'une étape par le quiz de la précédente. Le staff, qui
+n'appartient à aucune classe, voit à la place la liste des cours.
+
+Cette feuille de route remplace les anciens **parcours** (chemins saisis à
+la main dans le dashboard), supprimés avec leurs tables par
+`0028_class_roadmap_drop_parcours.sql`.
 
 ## Recherche
 
@@ -256,7 +254,7 @@ Une classe (`classes`) regroupe des étudiants de l'institut (`class_members`)
 et suit des cours (`class_cours`) dont l'enseignant débloque les ressources
 et les quiz au fil des semaines (`class_ressource_unlocks`,
 `class_quiz_unlocks`). Elle ne possède aucun contenu : elle
-pointe vers des cours du catalogue, comme une séance ou un parcours. C'est
+pointe vers des cours du catalogue, comme une séance. C'est
 elle qui détermine ce qu'un étudiant voit, voir
 [Accès au contenu](#accès-au-contenu).
 
@@ -314,12 +312,8 @@ Le catalogue est **réservé aux étudiants de l'institut**. Seuls l'accueil
     **hadiths** ;
   - une **séance** si elle référence au moins une thématique ou ressource
     visible, réduite à ce qui l'est ;
-  - un **parcours** comme feuille de route : ses étapes des cours de ses
-    classes, **y compris celles pas encore débloquées**, affichées « À venir »
-    (sablier, sans lien) pour qu'il voie ce qui l'attend. Les étapes d'autres
-    cours sont retirées. La barre « x/y leçons » compte toutes les leçons de
-    l'étape, et une étape dont le quiz n'est pas encore débloqué reste en
-    cours (`parcoursForAccess`, état `upcoming` de `getParcoursProgress`).
+  - sa **feuille de route** sur l'accueil, avec les étapes pas encore
+    débloquées en « À venir », voir [Feuille de route](#feuille-de-route).
 - **Visiteur** : rien. `proxy.ts` le renvoie vers `/login?next=...`.
 - **Étudiant sans classe** : l'accueil l'invite à saisir un code
   d'invitation. Inscrit dans une classe qui ne suit encore aucun cours, il

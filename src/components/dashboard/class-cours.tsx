@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 
 import { DeleteButton } from "@/components/dashboard/delete-button";
+import { SortableReorderList } from "@/components/dashboard/sortable-reorder-list";
 import { SubmitButton } from "@/components/dashboard/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 import {
   addClassCours,
   removeClassCours,
+  reorderClassCours,
   setQuizUnlocked,
   setRessourceUnlocked,
   unlockAllInThematique,
@@ -51,6 +53,22 @@ export function ClassCours({
         </p>
       ) : (
         cours.map((c) => <CoursBlock key={c.id} classId={classId} cours={c} />)
+      )}
+      {cours.length > 1 && (
+        <div>
+          <p className="text-sm font-medium">Ordre de la feuille de route</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Glisse-dépose pour choisir dans quel ordre les étudiants voient
+            les cours sur leur accueil.
+          </p>
+          <div className="mt-3">
+            <SortableReorderList
+              key={cours.map((c) => c.id).join(",")}
+              items={cours.map((c) => ({ id: c.id, label: c.title }))}
+              onReorder={reorderClassCours.bind(null, classId)}
+            />
+          </div>
+        </div>
       )}
       <AddCoursForm
         key={availableCours.map((c) => c.id).join(",")}

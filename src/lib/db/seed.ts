@@ -1,14 +1,16 @@
 import { db } from "./index";
 import {
+  classCours,
+  classRessourceUnlocks,
+  classes,
   cours,
-  parcours,
-  parcoursEtapes,
   ressources,
   seanceRessources,
   seanceThematiques,
   seances,
   thematiques,
 } from "./schema";
+import { generateInviteCode } from "@/lib/class-invite";
 import { slugify } from "@/lib/utils";
 
 // Garde-fou : ce script écrit des données de démo. Il refuse de tourner contre
@@ -47,7 +49,7 @@ async function main() {
     ])
     .returning();
 
-  const [tawhid, piliersFoi, priere, jeune, naissanceProphete] = await db
+  const [tawhid, piliersFoi, priere, jeune] = await db
     .insert(thematiques)
     .values([
       {
@@ -158,32 +160,33 @@ async function main() {
     { seanceId: seanceRevision2.id, ressourceId: priereLien.id },
   ]);
 
-  const [parcoursFondamental] = await db
-    .insert(parcours)
+  // Une classe de démo : la croyance puis la pratique, avec la première
+  // ressource déjà débloquée. Un compte qui la rejoint (code affiché
+  // ci-dessous) voit sa feuille de route sur l'accueil.
+  const [classeDemo] = await db
+    .insert(classes)
     .values({
-      slug: slugify("Parcours fondamental"),
-      title: "Parcours fondamental",
-      description:
-        "Une progression imposée à travers les fondamentaux : la croyance, puis la pratique, puis la biographie prophétique.",
+      name: "Classe de démo",
+      description: "Les fondamentaux : la croyance, puis la pratique.",
+      inviteCode: generateInviteCode(),
     })
     .returning();
 
-  await db.insert(parcoursEtapes).values([
-    { parcoursId: parcoursFondamental.id, thematiqueId: tawhid.id, orderIndex: 0 },
-    { parcoursId: parcoursFondamental.id, thematiqueId: priere.id, orderIndex: 1 },
-    {
-      parcoursId: parcoursFondamental.id,
-      thematiqueId: naissanceProphete.id,
-      orderIndex: 2,
-    },
+  await db.insert(classCours).values([
+    { classId: classeDemo.id, coursId: aqida.id, orderIndex: 0 },
+    { classId: classeDemo.id, coursId: fiqh.id, orderIndex: 1 },
   ]);
+
+  await db
+    .insert(classRessourceUnlocks)
+    .values({ classId: classeDemo.id, ressourceId: tawhidVideo.id });
 
   console.log("Seed ok:", {
     cours: [aqida.title, fiqh.title, sira.title],
     thematiques: 5,
     ressources: 5,
     seances: 2,
-    parcours: parcoursFondamental.title,
+    classe: `${classeDemo.name} (code ${classeDemo.inviteCode})`,
   });
 }
 

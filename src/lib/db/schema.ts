@@ -9,7 +9,6 @@ import {
   primaryKey,
   text,
   timestamp,
-  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -254,38 +253,6 @@ export const seanceRessources = pgTable(
   (table) => [primaryKey({ columns: [table.seanceId, table.ressourceId] })]
 );
 
-export const parcours = pgTable("parcours", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  slug: text("slug").notNull().unique(),
-  title: text("title").notNull(),
-  description: text("description"),
-  createdBy: uuid("created_by").references(() => profiles.id),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
-
-export const parcoursEtapes = pgTable(
-  "parcours_etapes",
-  {
-    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-    parcoursId: uuid("parcours_id")
-      .notNull()
-      .references(() => parcours.id, { onDelete: "cascade" }),
-    thematiqueId: uuid("thematique_id")
-      .notNull()
-      .references(() => thematiques.id, { onDelete: "cascade" }),
-    orderIndex: integer("order_index").notNull().default(0),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [unique().on(table.parcoursId, table.thematiqueId)]
-);
-
 export const quranMemorization = pgTable(
   "quran_memorization",
   {
@@ -364,6 +331,8 @@ export const classCours = pgTable(
     coursId: uuid("cours_id")
       .notNull()
       .references(() => cours.id, { onDelete: "cascade" }),
+    // Ordre des cours dans la feuille de route de la classe.
+    orderIndex: integer("order_index").notNull().default(0),
     addedAt: timestamp("added_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -540,24 +509,6 @@ export const seanceRessourcesRelations = relations(
     ressource: one(ressources, {
       fields: [seanceRessources.ressourceId],
       references: [ressources.id],
-    }),
-  })
-);
-
-export const parcoursRelations = relations(parcours, ({ many }) => ({
-  etapes: many(parcoursEtapes),
-}));
-
-export const parcoursEtapesRelations = relations(
-  parcoursEtapes,
-  ({ one }) => ({
-    parcours: one(parcours, {
-      fields: [parcoursEtapes.parcoursId],
-      references: [parcours.id],
-    }),
-    thematique: one(thematiques, {
-      fields: [parcoursEtapes.thematiqueId],
-      references: [thematiques.id],
     }),
   })
 );

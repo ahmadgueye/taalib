@@ -129,8 +129,8 @@ Règles implicites à connaître :
   `memorization-progress-bar.tsx` = frise verset par verset, voir
   [`domain.md`](./domain.md#lecteur-du-coran)),
   `quiz-attempt.tsx` / `quiz-item.tsx` (passage de quiz),
-  `parcours-track.tsx` (déroulé d'un parcours gated, voir
-  [`domain.md`](./domain.md#parcours)), recherche (`search-command.tsx`),
+  `roadmap-track.tsx` (feuille de route de l'accueil, voir
+  [`domain.md`](./domain.md#feuille-de-route)), recherche (`search-command.tsx`),
   suivi de progression (`next-chapter-button.tsx`, `progress-ring.tsx`).
 - **`components/layout/`** — header/footer/nav partagés entre pages publiques,
   thème (dark/light via `next-themes`).
@@ -182,5 +182,5 @@ Vitest (`npm test`), exécuté aussi par la CI. Les tests vivent à côté du co
 `next/cache` sont simulés avec `vi.mock`. Ils couvrent la correction des quiz,
 les gardes de rôle (dont un test qui vérifie que **chaque** Server Action du
 dashboard refuse un utilisateur non autorisé avant de toucher la base), la
-progression, la mémorisation et la logique des parcours. Voir
+progression, la mémorisation, l'accès au contenu et la feuille de route. Voir
 [`development.md`](./development.md#tests).

@@ -17,7 +17,9 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
 
 ## 1. Visiteur non connecté
 - [ ] Accueil : vitrine avec « Se connecter », « Rejoindre une classe »,
-      « Lire le Coran » ; aucun cours, parcours ni thématique affiché
+      « Lire le Coran », lien vers bayanun.com ; aucun cours ni thématique
+      affiché ; l'en-tête n'a que Quran et Connexion (pas de Cours, Hadith ni
+      recherche), la barre mobile que Accueil et Quran
 - [ ] `/cours`, `/thematiques/...`, `/ressources/...`, `/quiz/...`,
       `/hadiths`, `/seances`, `/recherche` redirigent vers
       `/login?next=...`, et on revient sur la page après connexion
@@ -47,9 +49,11 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
 - [ ] Sans classe : l'accueil propose de rejoindre une classe, `/cours` est vide
 - [ ] Dans une classe qui ne suit aucun cours : « Ta classe n'a pas encore de
       cours », sans bouton « Rejoindre »
-- [ ] Accueil : feuille de route du parcours avec les étapes des cours de la
-      classe ; une étape pas encore débloquée est « À venir » (sablier, pas de
-      lien) ; aucune étape d'un autre cours
+- [ ] Accueil « Ma feuille de route » : les cours de la classe dans l'ordre
+      choisi sur la page de la classe, chacun avec ses thématiques ; une
+      thématique sans rien de débloqué est « À venir » (sablier, pas de
+      lien) ; « x/y leçons » compte toutes les leçons ; une étape tout lue,
+      tout débloquée et quiz réussi passe « Terminé »
 - [ ] Avec classe : `/cours` ne montre que les cours de la classe ; un cours
       sans rien de débloqué affiche « sera débloqué au fil des séances »
 - [ ] Une thématique n'apparaît que si un de ses éléments est débloqué, avec
@@ -80,8 +84,6 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
 - [ ] `/quiz/[id]/historique` : liste chronologique des tentatives (date,
       score) ; cliquer une tentative ouvre son détail avec la correction
       complète
-- [ ] Parcours : réussir le quiz de l'étape 1 débloque l'étape 2 ; une étape
-      sans quiz se débloque automatiquement
 - [ ] Mémorisation : toucher un verset → statut (en cours / à renforcer /
       maîtrisé) et retour à « aucun »
 - [ ] `/memorisation` : tableau de bord et progression par sourate ; définir
@@ -107,7 +109,8 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Quiz : créer, ajouter questions QCM et vrai/faux, plusieurs bonnes
       réponses, brouillon invisible et non soumissible côté public
 - [ ] Séances : créer avec thématiques et ressources rattachées
-- [ ] Parcours : créer, ajouter/retirer/réordonner des étapes
+- [ ] Classes : avec deux cours, glisser-déposer « Ordre de la feuille de
+      route » → l'ordre change sur l'accueil des étudiants
 - [ ] Utilisateurs (admin) : changer un rôle ; impossible de retirer le
       dernier admin
 - [ ] Quiz → icône « Soumissions » : stats (tentatives, étudiants, score

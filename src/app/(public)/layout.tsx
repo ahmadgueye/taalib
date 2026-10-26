@@ -18,8 +18,8 @@ export default async function PublicLayout({
         {children}
       </main>
       <SiteFooter />
-      <SearchCommand />
-      <MobileTabBar />
+      {profile && <SearchCommand />}
+      <MobileTabBar signedIn={Boolean(profile)} />
     </div>
   );
 }

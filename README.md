@@ -1,7 +1,7 @@
 # طالب (Taalib) — DeenShare
 
-Plateforme d'apprentissage islamique d'un institut : un espace étudiants
-(cours, parcours guidés, quiz, hadiths, ressources, séances), où chaque classe
+Plateforme de cours de l'institut **Bayān** ([bayanun.com](https://bayanun.com)) : un espace étudiants
+(feuille de route, cours, quiz, hadiths, ressources, séances), où chaque classe
 n'accède qu'aux ressources que l'enseignant a débloquées ; un lecteur du Coran
 ouvert à tous, avec suivi de mémorisation pour les connectés ; et un tableau de
 bord d'administration pour créer le contenu, gérer les classes et débloquer

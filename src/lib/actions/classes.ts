@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, eq, inArray, notExists, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, inArray, max, notExists, sql, type SQL } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -176,12 +176,41 @@ export async function addClassCours(
     return { error: parsed.error.issues[0].message };
   }
 
+  // Un cours ajouté se place en fin de feuille de route.
+  const [{ last }] = await db
+    .select({ last: max(classCours.orderIndex) })
+    .from(classCours)
+    .where(eq(classCours.classId, classId));
   await db
     .insert(classCours)
-    .values({ classId, coursId: parsed.data.coursId })
+    .values({
+      classId,
+      coursId: parsed.data.coursId,
+      orderIndex: (last ?? -1) + 1,
+    })
     .onConflictDoNothing();
 
   revalidatePath(`/dashboard/classes/${classId}`);
+  return undefined;
+}
+
+export async function reorderClassCours(
+  classId: string,
+  orderedCoursIds: string[]
+): Promise<{ error?: string } | undefined> {
+  await requireAdmin();
+  await Promise.all(
+    orderedCoursIds.map((coursId, index) =>
+      db
+        .update(classCours)
+        .set({ orderIndex: index })
+        .where(
+          and(eq(classCours.classId, classId), eq(classCours.coursId, coursId))
+        )
+    )
+  );
+  revalidatePath(`/dashboard/classes/${classId}`);
+  revalidatePath("/");
   return undefined;
 }
 

@@ -76,6 +76,7 @@ export async function getClassCoursOutline(classId: string) {
   const [rows, ressourceUnlocks, quizUnlocks] = await Promise.all([
     db.query.classCours.findMany({
       where: eq(classCours.classId, classId),
+      orderBy: [asc(classCours.orderIndex), asc(classCours.addedAt)],
       with: {
         cours: {
           with: {
@@ -136,8 +137,7 @@ export async function getClassCoursOutline(classId: string) {
           unlockedAt: quizUnlockedAt.get(q.id) ?? null,
         })),
       })),
-    }))
-    .sort((a, b) => a.title.localeCompare(b.title));
+    }));
 }
 
 export type ClassCoursOutline = Awaited<

@@ -18,7 +18,6 @@ erDiagram
     profiles ||--o{ ressources : adds
     profiles ||--o{ hadiths : adds
     profiles ||--o{ seances : creates
-    profiles ||--o{ parcours : creates
     profiles ||--o{ quiz : adds
     profiles ||--o{ ressource_progress : tracks
     profiles ||--o{ quiz_tentatives : attempts
@@ -37,12 +36,10 @@ erDiagram
     thematiques ||--o{ hadiths : contains
     thematiques ||--o{ quiz : contains
     thematiques ||--o{ seance_thematiques : "linked via"
-    thematiques ||--o{ parcours_etapes : "linked via"
     ressources ||--o{ seance_ressources : "linked via"
     ressources ||--o{ ressource_progress : "completed by"
     seances ||--o{ seance_thematiques : covers
     seances ||--o{ seance_ressources : covers
-    parcours ||--o{ parcours_etapes : orders
     quiz ||--o{ quiz_questions : contains
     quiz_questions ||--o{ quiz_choix : contains
     quiz ||--o{ quiz_tentatives : "attempted via"
@@ -109,18 +106,6 @@ erDiagram
         uuid ressource_id FK
         timestamp completed_at
     }
-    parcours {
-        uuid id PK
-        text slug UK
-        text title
-        text description
-    }
-    parcours_etapes {
-        uuid id PK
-        uuid parcours_id FK
-        uuid thematique_id FK
-        int order_index
-    }
     quiz {
         uuid id PK
         uuid thematique_id FK
@@ -181,6 +166,7 @@ erDiagram
     class_cours {
         uuid class_id FK
         uuid cours_id FK
+        int order_index "ordre dans la feuille de route"
         timestamptz added_at
     }
     class_ressource_unlocks {
@@ -207,9 +193,7 @@ Points notables :
   (clé primaire composite, pas d'`id` propre) : une séance regroupe des
   thématiques et/ou des ressources ponctuelles déjà existantes, elle ne les
   possède pas (`onDelete: "cascade"` va dans le sens table de jointure →
-  séance/ressource supprimée, pas l'inverse). `parcours_etapes` suit le même
-  principe : elle référence une thématique existante (unique par couple
-  `(parcours_id, thematique_id)`), elle ne la possède pas.
+  séance/ressource supprimée, pas l'inverse).
 - `ressource_progress` a une clé primaire composite `(user_id, ressource_id)` :
   un utilisateur ne peut "compléter" une ressource qu'une fois.
 - `quran_memorization` a une clé primaire composite `(user_id, verse_key)` —
@@ -234,7 +218,7 @@ Points notables :
   `score`/`total_questions` sont dénormalisés au moment de la soumission,
   `quiz_reponses` détaille les choix cochés par question pour permettre
   d'afficher la correction après coup.
-- Toutes les FK vers `cours`/`thematiques`/`quiz`/`parcours` sont en
+- Toutes les FK vers `cours`/`thematiques`/`quiz` sont en
   `onDelete: "cascade"` : supprimer un cours supprime en cascade ses
   thématiques, ressources, hadiths et quiz. Pas de confirmation
   supplémentaire côté DB — c'est `components/dashboard/delete-button.tsx` qui
@@ -247,12 +231,12 @@ RLS est la **vraie** barrière de sécurité, pas les vérifications
 défense en profondeur qui donne des messages d'erreur propres). Résumé (détail
 dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 `0006_hadiths_rls.sql`, `0013_flat_lifeguard.sql`,
-`0019_quran_memorization_rls.sql`, `0020_parcours_rls.sql`, `0023_classes.sql`, `0024_class_cours_unlocks.sql`,
+`0019_quran_memorization_rls.sql`, `0023_classes.sql`, `0024_class_cours_unlocks.sql`,
 `0025_class_item_unlocks.sql`, `0027_private_content_rls.sql`) :
 
 | Table | Lecture | Écriture |
 |---|---|---|
-| `cours`, `thematiques`, `ressources`, `hadiths`, `seances`, `seance_*`, `parcours`, `parcours_etapes`, `quiz`, `quiz_questions`, `quiz_choix` | `admin` ou `contributor` uniquement (plus de lecture publique depuis `0027` : le contenu est réservé aux étudiants, et les étudiants le lisent via l'app, voir [`auth.md`](./auth.md#les-trois-couches-de-vérification)) | `admin` ou `contributor` (fonction SQL `is_contributor()`) |
+| `cours`, `thematiques`, `ressources`, `hadiths`, `seances`, `seance_*`, `quiz`, `quiz_questions`, `quiz_choix` | `admin` ou `contributor` uniquement (plus de lecture publique depuis `0027` : le contenu est réservé aux étudiants, et les étudiants le lisent via l'app, voir [`auth.md`](./auth.md#les-trois-couches-de-vérification)) | `admin` ou `contributor` (fonction SQL `is_contributor()`) |
 | `profiles` | son propre profil ; tous pour `admin`/`contributor` (depuis `0027`) | `admin` uniquement (`is_admin()`), et seulement en `UPDATE` |
 | `ressource_progress`, `quran_memorization` | l'utilisateur lui-même (`auth.uid() = user_id`) | l'utilisateur lui-même, sur ses propres lignes uniquement |
 | `quiz_tentatives`, `quiz_reponses` | l'utilisateur lui-même (ses propres tentatives) | l'utilisateur lui-même, en `INSERT` seulement (pas d'édition d'une tentative passée) |

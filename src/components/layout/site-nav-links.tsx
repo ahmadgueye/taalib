@@ -5,13 +5,21 @@ import { usePathname } from "next/navigation";
 
 import { cn, isNavActive } from "@/lib/utils";
 
+// membersOnly : réservé aux connectés, inutile de le montrer à un visiteur
+// (le proxy le renverrait vers /login).
 const links = [
-  { href: "/cours", label: "Cours" },
-  { href: "/coran", label: "Quran" },
-  { href: "/hadiths", label: "Hadith" },
+  { href: "/cours", label: "Cours", membersOnly: true },
+  { href: "/coran", label: "Quran", membersOnly: false },
+  { href: "/hadiths", label: "Hadith", membersOnly: true },
 ];
 
-export function SiteNavLinks({ className }: { className?: string }) {
+export function SiteNavLinks({
+  signedIn,
+  className,
+}: {
+  signedIn: boolean;
+  className?: string;
+}) {
   const pathname = usePathname();
 
   return (
@@ -21,18 +29,20 @@ export function SiteNavLinks({ className }: { className?: string }) {
         className,
       )}
     >
-      {links.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className={cn(
-            "hover:text-foreground",
-            isNavActive(pathname, link.href) && "font-medium text-foreground",
-          )}
-        >
-          {link.label}
-        </Link>
-      ))}
+      {links
+        .filter((link) => signedIn || !link.membersOnly)
+        .map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={cn(
+              "hover:text-foreground",
+              isNavActive(pathname, link.href) && "font-medium text-foreground",
+            )}
+          >
+            {link.label}
+          </Link>
+        ))}
     </nav>
   );
 }

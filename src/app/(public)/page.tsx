@@ -1,20 +1,14 @@
 import Link from "next/link";
 
 import { EntityCard } from "@/components/public/entity-card";
-import { ParcoursTrack } from "@/components/public/parcours-track";
+import { RoadmapTrack } from "@/components/public/roadmap-track";
 import { WelcomeToast } from "@/components/public/welcome-toast";
 import { Button } from "@/components/ui/button";
 import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
-import { canSeeCours, canSeeThematique } from "@/lib/content-access";
 import { coursStatusConfig } from "@/lib/cours-status";
 import { getAllCours } from "@/lib/db/queries/cours";
-import {
-  getFirstParcours,
-  getParcoursProgress,
-  getThematiquesHorsParcours,
-  parcoursForAccess,
-} from "@/lib/db/queries/parcours";
+import { getStudentRoadmap } from "@/lib/db/queries/roadmap";
 
 type Props = {
   searchParams: Promise<{ welcome?: string }>;
@@ -25,135 +19,92 @@ export default async function Home({ searchParams }: Props) {
   const showWelcome = welcome === "1";
   const profile = await getCurrentProfile();
 
-  // Le contenu est réservé aux étudiants de l'institut : un visiteur ne voit
+  // Le contenu est réservé aux étudiants de Bayān : un visiteur ne voit
   // qu'une vitrine.
   if (!profile) return <Vitrine />;
 
   const access = await getContentAccess();
-  if (!access.all && access.coursIds.size === 0) {
+
+  // Le staff n'appartient à aucune classe : il voit le catalogue complet.
+  if (access.all) {
+    const coursList = await getAllCours();
+    return (
+      <div className="flex flex-col gap-10 animate-in fade-in duration-300">
+        <WelcomeToast show={showWelcome} />
+        <section className="max-w-2xl">
+          <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
+            Cours
+          </h1>
+          <p className="mt-4 text-muted-foreground">
+            Les étudiants voient ici leur feuille de route, générée à partir des
+            cours de leur classe.
+          </p>
+        </section>
+        {coursList.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Aucun cours pour le moment.
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {coursList.map((c) => (
+              <EntityCard
+                key={c.id}
+                href={`/cours/${c.slug}`}
+                title={c.title}
+                description={c.description}
+                badge={
+                  c.status === "coming_soon"
+                    ? coursStatusConfig.coming_soon
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const roadmap = await getStudentRoadmap(profile.id, access);
+  if (roadmap.length === 0) {
     return (
       <SansClasse showWelcome={showWelcome} inAnyClass={access.inAnyClass} />
     );
   }
 
-  const firstParcours = await getFirstParcours();
-  const parcours = firstParcours && parcoursForAccess(access, firstParcours);
-
-  if (!parcours || parcours.etapes.length === 0) {
-    const coursList = (await getAllCours()).filter((c) =>
-      canSeeCours(access, c.id)
-    );
-    return (
-      <div className="flex flex-col gap-16 animate-in fade-in duration-300">
-        <WelcomeToast show={showWelcome} />
-        <section className="max-w-2xl">
-          <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
-            Des ressources authentiques pour apprendre l&apos;Islam, toujours
-            à leur place.
-          </h1>
-          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-            Basée sur le Qur&apos;an et la Sunnah. Accessible à tous,
-            facilement.
-          </p>
-        </section>
-
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-heading text-xl font-semibold">Cours</h2>
-            <Link
-              href="/cours"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Voir tout →
-            </Link>
-          </div>
-          {coursList.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Aucun cours pour le moment.
-            </p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-3">
-              {coursList.map((c) => (
-                <EntityCard
-                  key={c.id}
-                  href={`/cours/${c.slug}`}
-                  title={c.title}
-                  description={c.description}
-                  badge={
-                    c.status === "coming_soon"
-                      ? coursStatusConfig.coming_soon
-                      : undefined
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-    );
-  }
-
-  const [steps, allThematiquesLibres] = await Promise.all([
-    getParcoursProgress(parcours, profile.id, access),
-    getThematiquesHorsParcours(parcours.id),
-  ]);
-  const thematiquesLibres = allThematiquesLibres.filter((t) =>
-    canSeeThematique(access, t.id)
-  );
-
   return (
-    <div className="flex flex-col gap-16 animate-in fade-in duration-300">
+    <div className="flex flex-col gap-12 animate-in fade-in duration-300">
       <WelcomeToast show={showWelcome} />
-      <section>
-        <div className="max-w-2xl">
-          <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
-            {parcours.title}
-          </h1>
-          {parcours.description && (
-            <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-              {parcours.description}
-            </p>
-          )}
-        </div>
-
-        <div className="mt-8">
-          <ParcoursTrack steps={steps} />
-        </div>
+      <section className="max-w-2xl">
+        <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
+          Ma feuille de route
+        </h1>
+        <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+          Ce que tu as appris, où tu en es, et ce qui t&apos;attend. Les
+          étapes s&apos;ouvrent au fil des cours.
+        </p>
       </section>
 
-      {thematiquesLibres.length > 0 && (
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-heading text-xl font-semibold">
-              Hors parcours
-            </h2>
+      {roadmap.map((c) => (
+        <section key={c.id}>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="font-heading text-xl font-semibold">{c.title}</h2>
             <Link
-              href="/cours"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              href={`/cours/${c.slug}`}
+              className="shrink-0 text-sm text-muted-foreground hover:text-foreground"
             >
-              Voir tout →
+              Voir le cours →
             </Link>
           </div>
-          <p className="mb-4 -mt-2 text-sm text-muted-foreground">
-            Ces thématiques restent accessibles librement, sans ordre imposé.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {thematiquesLibres.map((t) => (
-              <EntityCard
-                key={t.id}
-                href={`/thematiques/${t.slug}`}
-                title={t.title}
-                description={t.description}
-                badge={
-                  t.cours.status === "coming_soon"
-                    ? coursStatusConfig.coming_soon
-                    : { label: t.cours.title, variant: "outline" }
-                }
-              />
-            ))}
-          </div>
+          {c.steps.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Le contenu de ce cours arrive bientôt.
+            </p>
+          ) : (
+            <RoadmapTrack steps={c.steps} />
+          )}
         </section>
-      )}
+      ))}
     </div>
   );
 }
@@ -163,12 +114,16 @@ function Vitrine() {
     <div className="flex flex-col gap-10 animate-in fade-in duration-300">
       <section className="max-w-2xl">
         <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
-          Des ressources authentiques pour apprendre l&apos;Islam, toujours
-          à leur place.
+          Taalib
         </h1>
+        <p className="mt-2 text-lg sm:text-xl">
+          La plateforme de cours de l&apos;institut{" "}
+          <span className="font-semibold">Bayān</span>.
+        </p>
         <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-          Basée sur le Qur&apos;an et la Sunnah. Les cours sont réservés aux
-          étudiants de l&apos;institut ; le Coran reste ouvert à tous.
+          Les cours, ressources et quiz sont réservés aux étudiants de
+          l&apos;institut, au rythme de leur classe. Le Coran reste ouvert à
+          tous.
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <Button render={<Link href="/login" />} nativeButton={false}>
@@ -189,6 +144,14 @@ function Vitrine() {
             Lire le Coran →
           </Button>
         </div>
+        <a
+          href="https://bayanun.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-8 inline-block text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        >
+          Découvrir l&apos;institut Bayān → bayanun.com
+        </a>
       </section>
     </div>
   );
