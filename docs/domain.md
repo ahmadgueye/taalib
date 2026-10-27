@@ -391,7 +391,7 @@ Le catalogue est **réservé aux étudiants du programme Bayān**. Seuls l'accue
   voit « Ta classe n'a pas encore de cours » (`access.inAnyClass`).
 
 Tout ce qui n'est pas visible répond **404** (« Page introuvable »), titre
-d'onglet et image Open Graph compris. Seul le programme d'un cours suivi en
+d'onglet compris. Seul le programme d'un cours suivi en
 révèle les titres, comme décrit plus haut.
 La navigation d'une ressource (« chapitre suivant », examen, sommaire du
 cours) ne propose que des éléments débloqués. La recherche (`/recherche` et

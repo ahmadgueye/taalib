@@ -161,12 +161,16 @@ sourates tenant sur une seule page.
 ## Metadata / SEO
 
 `lib/metadata.ts` centralise la génération des `<meta>` (titre, description,
-Open Graph). Chaque route de détail public (`cours/[slug]`, `hadiths/[slug]`,
-`seances/[slug]`, `thematiques/[slug]`) a un `opengraph-image.tsx` généré
-dynamiquement (API `ImageResponse` de Next) : c'est l'aperçu qui s'affiche
-quand on colle un lien dans WhatsApp, par exemple. Comme ces pages exigent un
-compte, l'aperçu ne s'affiche plus pour un lien partagé publiquement ; les
-images appliquent le même filtre d'accès que la page.
+Open Graph). Le site n'a qu'**une** image de partage, `src/app/opengraph-image.tsx`
+(API `ImageResponse` de Next) : le logo « طالب » en brun sur fond crème et la
+description par défaut, « La plateforme de cours du programme Bayān. ». C'est
+l'aperçu qui s'affiche quand on colle un lien dans WhatsApp, par exemple. Le
+logo y est un tracé SVG (`lib/logo-path.ts`), pas du texte : le moteur
+d'`ImageResponse` lierait mal les lettres arabes.
+
+Les pages réservées (cours, thématiques, hadiths, séances…) n'ont pas d'image
+propre : un visiteur non connecté, donc aussi le robot d'un réseau social, est
+renvoyé vers `/login`, et c'est l'aperçu de la page de connexion qui s'affiche.
 
 - `src/app/sitemap.ts` — ne liste que les pages ouvertes à tous (accueil,
   `/coran`) : le catalogue est réservé aux étudiants. Il ne lit plus la base.

@@ -8,7 +8,7 @@ export const siteOpenGraph = {
 };
 
 export const defaultDescription =
-  "Catalogue des ressources et séances de révision.";
+  "La plateforme de cours du programme Bayān.";
 
 // Light strip of Markdown syntax for use in plain-text contexts (OG/meta
 // descriptions) — doesn't need to be exhaustive, just avoid raw **/- noise.
