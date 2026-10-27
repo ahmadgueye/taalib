@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
 
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { NotificationBell } from "@/components/layout/notification-bell";
@@ -60,19 +59,6 @@ export async function SiteHeader({
             <StaffModeSwitch current="site" />
           )}
           <ThemeToggle />
-          {profile && (
-            // Sur mobile, la recherche est déjà dans la barre du bas.
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden sm:inline-flex"
-              title="Recherche (⌘K)"
-              render={<Link href="/recherche" />}
-              nativeButton={false}
-            >
-              <Search className="size-4" />
-            </Button>
-          )}
           {profile && <NotificationBell initialSummary={dueSummary} />}
           {profile ? (
             <DropdownMenu>
