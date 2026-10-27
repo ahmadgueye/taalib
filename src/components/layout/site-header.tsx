@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, UserRound } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { NotificationBell } from "@/components/layout/notification-bell";
@@ -16,6 +16,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { getCurrentProfile } from "@/lib/auth/get-session";
 import { getDueReviewsSummary } from "@/lib/db/queries/quran-memorization";
+
+// « Ahmad Test » → « AT » ; un seul mot → sa première lettre ; sans nom, la
+// première lettre de l'e-mail.
+function initialsOf(fullName: string | null, email: string) {
+  const words = (fullName ?? "").trim().split(/\s+/).filter(Boolean);
+  const letters =
+    words.length > 0
+      ? [words[0], words.at(-1)!]
+          .slice(0, words.length > 1 ? 2 : 1)
+          .map((w) => Array.from(w)[0])
+      : [Array.from(email)[0]];
+  return letters.join("").toLocaleUpperCase("fr");
+}
 
 export async function SiteHeader({
   profile,
@@ -61,8 +74,15 @@ export async function SiteHeader({
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={<Button variant="ghost" size="icon" />}
+                aria-label="Mon compte"
+                title={profile.fullName ?? profile.email}
               >
-                <UserRound className="size-4" />
+                <span
+                  className="flex size-7 items-center justify-center bg-primary text-[11px] font-semibold tracking-wide text-primary-foreground"
+                  aria-hidden
+                >
+                  {initialsOf(profile.fullName, profile.email)}
+                </span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuGroup>
