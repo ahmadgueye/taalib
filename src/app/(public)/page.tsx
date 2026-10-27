@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CourseProgress } from "@/components/public/course-progress";
 import { EntityCard } from "@/components/public/entity-card";
 import { RoadmapTrack } from "@/components/public/roadmap-track";
 import { TodoList } from "@/components/public/todo-list";
@@ -101,6 +102,7 @@ export default async function Home({ searchParams }: Props) {
               Voir le cours →
             </Link>
           </div>
+          <CourseProgress steps={c.steps} />
           {c.steps.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Le contenu de ce cours arrive bientôt.

@@ -94,6 +94,8 @@ function TodoRow({ item }: { item: RoadmapTodo }) {
         href={item.kind === "quiz" ? `/quiz/${item.id}` : `/ressources/${item.id}`}
         className="group flex items-center gap-3 py-2.5 text-sm"
       >
+        {/* Emplacement réservé : les icônes restent alignées d'une ligne à l'autre. */}
+        {item.isNew ? <NewDot /> : <span className="size-2 shrink-0" aria-hidden />}
         <Icon className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
         <span className="min-w-0 flex-1 truncate">
           <span className="font-medium group-hover:underline group-hover:underline-offset-4">
@@ -102,9 +104,23 @@ function TodoRow({ item }: { item: RoadmapTodo }) {
           </span>
           <span className="text-muted-foreground"> · {item.thematiqueTitle}</span>
         </span>
-        {item.isNew && <Badge className="h-4 px-1.5 text-[10px]">Nouveau</Badge>}
         <MoveRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
       </Link>
     </li>
+  );
+}
+
+// Le résumé dit déjà « x nouveaux » : sur la ligne, une pastille suffit. Elle
+// pulse trois fois à l'arrivée, comme le carré de la feuille de route.
+function NewDot() {
+  return (
+    <span className="relative flex size-2 shrink-0" title="Nouveau">
+      <span
+        className="absolute inset-0 bg-primary/60 motion-safe:animate-[ping_1.5s_cubic-bezier(0,0,0.2,1)_3]"
+        aria-hidden
+      />
+      <span className="relative size-2 bg-primary" aria-hidden />
+      <span className="sr-only">Nouveau</span>
+    </span>
   );
 }

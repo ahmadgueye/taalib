@@ -11,8 +11,8 @@ type RessourceListItem = {
   title: string;
   type: "video" | "pdf" | "lien" | "texte";
   url: string | null;
-  content: string | null;
   description: string | null;
+  locked?: boolean;
 };
 
 type HadithListItem = {
@@ -29,6 +29,7 @@ type QuizListItem = {
   description: string | null;
   passingScore: number;
   questions: unknown[];
+  locked?: boolean;
 };
 
 export function RessourcesHadithsTabs({
@@ -70,9 +71,9 @@ export function RessourcesHadithsTabs({
                 title={r.title}
                 type={r.type}
                 url={r.url}
-                content={r.content}
                 description={r.description}
                 completed={completedIds?.has(r.id)}
+                locked={r.locked}
               />
             ))}
           </div>
@@ -116,6 +117,7 @@ export function RessourcesHadithsTabs({
                   questionCount={q.questions.length}
                   passingScore={q.passingScore}
                   score={quizScores?.get(q.id)}
+                  locked={q.locked}
                 />
               ))}
             </div>

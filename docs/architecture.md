@@ -161,12 +161,16 @@ sourates tenant sur une seule page.
 ## Metadata / SEO
 
 `lib/metadata.ts` centralise la génération des `<meta>` (titre, description,
-Open Graph). Chaque route de détail public (`cours/[slug]`, `hadiths/[slug]`,
-`seances/[slug]`, `thematiques/[slug]`) a un `opengraph-image.tsx` généré
-dynamiquement (API `ImageResponse` de Next) : c'est l'aperçu qui s'affiche
-quand on colle un lien dans WhatsApp, par exemple. Comme ces pages exigent un
-compte, l'aperçu ne s'affiche plus pour un lien partagé publiquement ; les
-images appliquent le même filtre d'accès que la page.
+Open Graph). Le site n'a qu'**une** image de partage, `src/app/opengraph-image.tsx`
+(API `ImageResponse` de Next) : le logo « طالب » en brun sur fond crème et la
+description par défaut, « La plateforme de cours du programme Bayān. ». C'est
+l'aperçu qui s'affiche quand on colle un lien dans WhatsApp, par exemple. Le
+logo y est un tracé SVG (`lib/logo-path.ts`), pas du texte : le moteur
+d'`ImageResponse` lierait mal les lettres arabes.
+
+Les pages réservées (cours, thématiques, hadiths, séances…) n'ont pas d'image
+propre : un visiteur non connecté, donc aussi le robot d'un réseau social, est
+renvoyé vers `/login`, et c'est l'aperçu de la page de connexion qui s'affiche.
 
 - `src/app/sitemap.ts` — ne liste que les pages ouvertes à tous (accueil,
   `/coran`) : le catalogue est réservé aux étudiants. Il ne lit plus la base.
@@ -174,6 +178,26 @@ images appliquent le même filtre d'accès que la page.
   `/login`, `/auth` et `/api`, et référence le sitemap.
 - Les deux et les Open Graph utilisent `NEXT_PUBLIC_SITE_URL` : si elle n'est
   pas définie sur Vercel, les liens pointent vers `localhost`.
+
+### Icônes et PWA
+
+Les icônes sont des fichiers fixes, pas générés au rendu : le moteur
+d'`ImageResponse` lie mal les lettres arabes. Toutes reprennent le logo en
+crème (`#f5f5ed`) sur brun (`#21140f`) :
+
+- `src/app/icon.svg` et `src/app/favicon.ico` (16, 32 et 48 px) : le seul
+  « ط », lisible dans un onglet ;
+- `src/app/apple-icon.png` (180 px) et `public/icon-192.png`,
+  `public/icon-512.png` : le mot « طالب » ;
+- `public/icon-maskable-512.png` : le même avec plus de marge, déclaré
+  `purpose: "maskable"` dans `src/app/manifest.ts`, car Android rogne jusqu'à
+  un cercle de 80 %.
+
+Pour les refaire, le texte est mis en forme avec HarfBuzz (`hb-shape`, qui
+choisit les formes liées des lettres), les contours des glyphes de
+Scheherazade New Bold (la police du logo) sont convertis en tracés SVG avec
+fontTools, puis rendus en PNG avec `sharp`. Le manifeste utilise la même
+palette : écran de démarrage crème, barre de l'app brune.
 
 ## Tests
 

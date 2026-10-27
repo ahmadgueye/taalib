@@ -22,7 +22,7 @@ export function GoogleLoginButton({ next }: { next?: string }) {
   }
 
   return (
-    <Button onClick={handleClick} disabled={loading} className="w-full">
+    <Button onClick={handleClick} loading={loading} className="w-full">
       {loading ? "Redirection…" : "Continuer avec Google"}
       {!loading && <GoogleLogo className="size-4" />}
     </Button>

@@ -28,9 +28,9 @@ export function NextChapterButton({
   }
 
   return (
-    <Button type="button" disabled={isPending} onClick={handleClick}>
+    <Button type="button" loading={isPending} onClick={handleClick}>
       {label}
-      <ChevronRight />
+      {!isPending && <ChevronRight />}
     </Button>
   );
 }

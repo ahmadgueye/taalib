@@ -53,11 +53,21 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
       choisi sur la page de la classe, chacun avec ses thématiques ; une
       thématique sans rien de débloqué est « À venir » (sablier, pas de
       lien) ; « x/y leçons » compte toutes les leçons ; une étape tout lue,
-      tout débloquée et quiz réussi passe « Terminé »
+      tout débloquée et quiz réussi passe « Terminé » ; sous chaque cours,
+      barre « x/y leçons · a/b étapes terminées », et « Cours terminé » quand
+      toutes les étapes le sont
 - [ ] Avec classe : `/cours` ne montre que les cours de la classe ; un cours
       sans rien de débloqué affiche « sera débloqué au fil des séances »
-- [ ] Une thématique n'apparaît que si un de ses éléments est débloqué, avec
-      uniquement les ressources/quiz débloqués et ses hadiths
+- [ ] Page d'un cours : toutes ses thématiques, celles sans rien de débloqué
+      en « À venir » (pointillés, sablier, pas de lien) ; pourcentages sur
+      toutes les leçons
+- [ ] Page d'une thématique : toutes ses leçons et quiz publiés, les
+      verrouillés en « À venir » sans lien (vérifier dans le code de la page
+      que leur contenu n'y est pas) ; « x % » sur toutes les leçons, comme la
+      feuille de route ; aucune carte de leçon n'affiche d'aperçu du texte
+- [ ] Ancien élève (inscription terminée dans le dashboard) : plus aucun
+      « À venir » sur les pages cours et thématique, seulement ce qui lui
+      avait été ouvert, pourcentages compris
 - [ ] Ouvrir l'URL d'une ressource, d'un quiz ou d'un cours non débloqué →
       « Page introuvable », titre d'onglet générique
 - [ ] Sur la dernière ressource débloquée : pas de « chapitre suivant » vers
@@ -73,9 +83,19 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
 - [ ] Terminer une ressource : on la marque comme terminée **en cliquant sur le
       bouton « suivant » en bas de la page** (pas de décochage)
 - [ ] Progression d'un cours / d'une thématique (anneau, compteur) mise à jour
-- [ ] `/compte` : progression globale cohérente
+- [ ] `/compte` : progression globale cohérente ; onglets « Progression » et
+      « Paramètres » (l'URL suit, `?onglet=parametres` rouvre le bon onglet) ;
+      carte Coran au même pourcentage que `/memorisation`, bouton « Réviser »
+      s'il y a des révisions dues ; nom modifiable, puis retour sur
+      « Paramètres »
 - [ ] Quiz : répondre faux → score et corrections (bonnes réponses révélées
       seulement après envoi)
+- [ ] Quiz : compteur « n/N répondues » et barre ; « Valider » avec une
+      question sans réponse → elle est surlignée, scroll dessus, rien n'est
+      envoyé ; vrai/faux = un seul choix (boutons), QCM = cases à cocher
+- [ ] `/cours/[slug]` : progression globale, bouton « Commencer »/« Reprendre »
+      vers la prochaine leçon ou le prochain quiz ; « Tu es à jour » si tout
+      est fait
 - [ ] Quiz : répondre juste ≥ seuil → badge de réussite
 - [ ] Quiz : question à choix multiples (partiellement juste = faux)
 - [ ] Rejouer un quiz : le meilleur score est conservé

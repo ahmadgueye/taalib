@@ -23,8 +23,11 @@ function RevisionRow({
   onDone: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  // Le bouton cliqué porte le spinner, l'autre est seulement désactivé.
+  const [choice, setChoice] = useState<boolean | null>(null);
 
   function confirm(remembered: boolean) {
+    setChoice(remembered);
     startTransition(async () => {
       const result = await confirmVerseReview(
         item.chapterId,
@@ -58,6 +61,7 @@ function RevisionRow({
           variant="outline"
           size="sm"
           disabled={isPending}
+          loading={isPending && choice === false}
           onClick={() => confirm(false)}
         >
           J&apos;ai oublié
@@ -65,6 +69,7 @@ function RevisionRow({
         <Button
           size="sm"
           disabled={isPending}
+          loading={isPending && choice === true}
           className="bg-emerald-600 text-white hover:bg-emerald-600/90 dark:bg-emerald-500"
           onClick={() => confirm(true)}
         >

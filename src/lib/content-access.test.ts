@@ -7,6 +7,7 @@ import {
   canSeeSeance,
   canSeeThematique,
   noAccess,
+  showsUpcoming,
   visibleItems,
   type ContentAccess,
 } from "@/lib/content-access";
@@ -18,6 +19,7 @@ const studentA: ContentAccess = {
   all: false,
   inAnyClass: true,
   coursIds: new Set(["cours-a"]),
+  activeCoursIds: new Set(["cours-a"]),
   thematiqueIds: new Set(["them-a1"]),
   ressourceIds: new Set(["res-a1-1"]),
   quizIds: new Set(["quiz-a1"]),
@@ -61,6 +63,14 @@ describe("content access", () => {
       quiz: [{ id: "quiz-a1" }],
     });
     expect(visibleItems({ all: true }, thematique)).toBe(thematique);
+  });
+
+  it("shows what is still to come only in courses of active classes", () => {
+    expect(showsUpcoming(studentA, "cours-a")).toBe(true);
+    // Ancien élève : il garde le cours A, mais sa classe est terminée.
+    const alumnus: ContentAccess = { ...studentA, activeCoursIds: new Set() };
+    expect(showsUpcoming(alumnus, "cours-a")).toBe(false);
+    expect(showsUpcoming({ all: true }, "cours-a")).toBe(false);
   });
 
   it("shows a seance only if it references something visible", () => {
