@@ -109,6 +109,7 @@ describe("getStudentRoadmap", () => {
     const aqida = roadmap.find((c) => c.id === "aqida")!;
     expect(aqida.steps.map((s) => s.state)).toEqual(["active", "upcoming"]);
     expect(aqida.steps[0].ressourceProgress).toEqual({ completed: 0, total: 2 });
+    expect(aqida.steps[0].quizCount).toBe(1);
   });
 
   it("completes a step only once everything is unlocked, read and passed", async () => {

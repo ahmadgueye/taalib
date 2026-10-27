@@ -36,6 +36,7 @@ export function CoursForm({
   cours?: {
     id: string;
     title: string;
+    arabicTitle: string | null;
     description: string | null;
     status: "published" | "coming_soon";
   };
@@ -57,6 +58,20 @@ export function CoursForm({
             defaultValue={cours?.title}
             required
           />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="arabicTitle">Nom en arabe</FieldLabel>
+          <Input
+            id="arabicTitle"
+            name="arabicTitle"
+            dir="rtl"
+            lang="ar"
+            placeholder="العقيدة"
+            defaultValue={cours?.arabicTitle ?? ""}
+          />
+          <FieldDescription>
+            Facultatif. Affiché en calligraphie sur la carte du cours.
+          </FieldDescription>
         </Field>
         <Field>
           <FieldLabel htmlFor="status">Statut</FieldLabel>

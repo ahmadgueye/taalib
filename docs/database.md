@@ -57,6 +57,7 @@ erDiagram
         uuid id PK
         text slug UK
         text title
+        text arabic_title "nom en arabe, facultatif"
         cours_status status "published | coming_soon"
         uuid created_by FK
     }

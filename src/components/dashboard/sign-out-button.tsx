@@ -24,14 +24,14 @@ export function SignOutButton({ className }: { className?: string }) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Se déconnecter ?</AlertDialogTitle>
+          <AlertDialogTitle>Tu pars déjà ?</AlertDialogTitle>
           <AlertDialogDescription>
-            Tu devras te reconnecter avec Google pour accéder au tableau de
-            bord.
+            Tu pourras te reconnecter à tout moment et reprendre là où tu en
+            étais.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogCancel>Rester</AlertDialogCancel>
           <form action={signOutAction}>
             <AlertDialogAction type="submit">
               Se déconnecter

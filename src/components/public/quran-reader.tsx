@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -61,6 +62,9 @@ type ViewMode = "arabic" | "arabic-fr";
 
 const FONT_SIZE_STORAGE_KEY = "deenshare:quran-font-size-rem";
 const FONT_SIZE_DEFAULT = 2.25;
+// Sur un téléphone, une ligne de mushaf à 2.25rem dépasse l'écran : on part
+// plus petit tant que l'utilisateur n'a rien choisi.
+const FONT_SIZE_DEFAULT_MOBILE = 1.5;
 // Lower than desktop really needs, but mobile screens are narrow enough
 // that 1.5rem could still force a page's widest mushaf lines wider than the
 // viewport — going smaller gives those users the same "always fits" option.
@@ -74,6 +78,9 @@ function createPersistedState<T>(
   key: string,
   defaultValue: T,
   parse: (raw: string) => T | undefined,
+  // Valeur par défaut côté navigateur, si elle dépend de l'appareil ; le
+  // rendu serveur garde defaultValue.
+  clientDefault?: () => T,
 ) {
   const listeners = new Set<() => void>();
   function subscribe(callback: () => void) {
@@ -81,10 +88,11 @@ function createPersistedState<T>(
     return () => listeners.delete(callback);
   }
   function getSnapshot(): T {
+    const fallback = clientDefault ? clientDefault() : defaultValue;
     const raw = window.localStorage.getItem(key);
-    if (raw === null) return defaultValue;
+    if (raw === null) return fallback;
     const parsed = parse(raw);
-    return parsed === undefined ? defaultValue : parsed;
+    return parsed === undefined ? fallback : parsed;
   }
   function getServerSnapshot(): T {
     return defaultValue;
@@ -121,6 +129,10 @@ const fontSizeStore = createPersistedState<number>(
     const n = Number(raw);
     return n >= FONT_SIZE_MIN && n <= FONT_SIZE_MAX ? n : undefined;
   },
+  () =>
+    window.matchMedia("(max-width: 639px)").matches
+      ? FONT_SIZE_DEFAULT_MOBILE
+      : FONT_SIZE_DEFAULT,
 );
 
 const LAST_POSITION_STORAGE_KEY = "deenshare:quran-last-position";
@@ -289,6 +301,54 @@ function useQcfFontsReady(pages: number[], mushafId: MushafId): boolean {
   );
 }
 
+// Taille effective des lignes du mushaf : celle choisie par l'utilisateur,
+// réduite juste assez pour que la ligne la plus large tienne dans la
+// colonne. Une ligne de mushaf ne passe jamais à la ligne ; sans ce
+// plafond, elle déborderait de l'écran d'un téléphone. Les mots et leurs
+// espaces (en em) suivent la taille de police, donc une seule mesure suffit
+// à converger.
+function useFitToWidth(
+  wrapperRef: React.RefObject<HTMLDivElement | null>,
+  preferredRem: number,
+  ready: boolean,
+  lineCount: number,
+) {
+  const [fitRem, setFitRem] = useState<number | null>(null);
+  const effectiveRem = Math.min(preferredRem, fitRem ?? preferredRem);
+
+  useLayoutEffect(() => {
+    const wrapper = wrapperRef.current;
+    const column = wrapper?.parentElement;
+    if (!wrapper || !column || !ready) return;
+
+    function measure() {
+      const available = column!.clientWidth;
+      const lines = wrapper!.querySelectorAll<HTMLElement>("[data-mushaf-line]");
+      let natural = 0;
+      lines.forEach((line) => {
+        natural = Math.max(natural, line.scrollWidth);
+      });
+      if (!available || !natural) return;
+      // Taille réellement affichée, lue dans le DOM (en rem).
+      const renderedRem =
+        parseFloat(getComputedStyle(lines[0]).fontSize) /
+        parseFloat(getComputedStyle(document.documentElement).fontSize);
+      // 2 % de marge : les arrondis de rendu ne doivent pas faire déborder.
+      const next = (renderedRem * available * 0.98) / natural;
+      setFitRem((prev) =>
+        prev !== null && Math.abs(prev - next) < 0.01 ? prev : next,
+      );
+    }
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(column);
+    return () => observer.disconnect();
+  }, [wrapperRef, ready, lineCount, preferredRem]);
+
+  return effectiveRem;
+}
+
 function MushafLines({
   verses,
   fontSizeRem,
@@ -326,6 +386,13 @@ function MushafLines({
   // used by the words on screen — never the whole 604-font set at once.
   const neededPages = useNeededGlyphPages(lines);
   const fontsReady = useQcfFontsReady(neededPages, mushafId);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const lineFontRem = useFitToWidth(
+    wrapperRef,
+    fontSizeRem,
+    fontsReady,
+    lines.size,
+  );
 
   // The outer wrapper sizes itself to the page's own widest line (w-max),
   // capped by the reader column (max-w-full) — every other line then
@@ -336,7 +403,7 @@ function MushafLines({
   // whose lines are naturally short no longer gets force-stretched to an
   // arbitrarily wider column just because the column has room to spare.
   return (
-    <div dir="rtl" className="mx-auto w-max max-w-full space-y-2">
+    <div ref={wrapperRef} dir="rtl" className="mx-auto w-max max-w-full space-y-2">
       {Array.from(lines.entries())
         .sort(([a], [b]) => a - b)
         .map(([lineNumber, words]) => (
@@ -344,8 +411,9 @@ function MushafLines({
             {!fontsReady && <Skeleton className="absolute inset-0" />}
             <div
               dir="rtl"
+              data-mushaf-line
               style={{
-                fontSize: `${fontSizeRem}rem`,
+                fontSize: `${lineFontRem}rem`,
                 visibility: fontsReady ? "visible" : "hidden",
                 // em, not a fixed rem/px gap: relative to this element's own
                 // font-size, so the space between words scales together with

@@ -33,6 +33,8 @@ export type RoadmapStep = {
   // Toutes les leçons publiées de la thématique, débloquées ou non :
   // l'étudiant voit ce qu'il a fait et ce qui lui reste.
   ressourceProgress: { completed: number; total: number };
+  // Quiz publiés de la thématique, débloqués ou non.
+  quizCount: number;
   // Leçons et quiz récemment débloqués et pas encore faits.
   newCount: number;
 };
@@ -159,6 +161,7 @@ export async function getStudentRoadmap(
       },
       state,
       ressourceProgress: { completed, total: t.ressources.length },
+      quizCount: t.quiz.length,
       newCount,
     };
   }

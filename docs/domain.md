@@ -54,6 +54,24 @@ la volée en comparant le nombre de ressources publiées d'un cours au nombre
 complétées par l'utilisateur (`components/public/progress-ring.tsx`,
 `lib/db/queries/progress.ts`). Visible sur `/compte`.
 
+## Page Cours
+
+`/cours` présente chaque cours dans une grande carte (`course-card.tsx`) :
+un bandeau avec son **nom en arabe** (`cours.arabic_title`, saisi dans le
+dashboard, facultatif) en calligraphie ruq'a (Aref Ruqaa gras, `font-ruqaa`,
+non préchargée), ou sa première lettre à défaut ; puis le titre, la
+description et un statut (« Pas commencé », « En cours », « Terminé »,
+« Bientôt disponible », avec le nombre de nouveautés).
+
+Pour un étudiant, la page s'intitule « Tes cours » et suit sa feuille de
+route : mêmes cours, même ordre (celui du programme de la classe), même
+décompte des leçons. Chaque carte indique le nombre de thématiques, de
+leçons et de quiz, la progression et un bouton « Commencer » / « Reprendre »
+vers la prochaine leçon ou le prochain quiz. Le staff, sans feuille de
+route, voit tout le catalogue avec les mêmes cartes, sans progression mais
+avec le nombre de thématiques, de leçons et de quiz publiés
+(`getAllCoursWithCounts`), sur `/cours` comme sur son accueil.
+
 ## Page compte
 
 `/compte` a deux onglets (`account-tabs.tsx`), reflétés dans l'URL
@@ -208,6 +226,14 @@ sur l'API externe Quran Foundation).
   page de mushaf authentique (pagination fixe façon Coran papier, pas un flux
   continu), avec la police QCF officielle (`lib/quran/qcf-font.ts`) pour un
   rendu du texte arabe fidèle glyphe par glyphe.
+- **Taille du texte** — réglée avec les boutons − / + et retenue dans le
+  `localStorage` (`deenshare:quran-font-size-rem`). Sans choix enregistré,
+  elle part de 2.25rem sur ordinateur et de 1.5rem sur mobile (moins de
+  640 px). Une ligne de mushaf ne passe jamais à la ligne : en mode Lecture,
+  `useFitToWidth` mesure la ligne la plus large une fois les polices
+  chargées et réduit la taille juste assez pour qu'elle tienne dans la
+  colonne (la taille choisie devient un maximum). La mesure est refaite si
+  la largeur change, par exemple en tournant le téléphone.
 - **Tajweed** — coloration des règles de tajweed directement dans le texte
   rendu, avec une légende (`tajweed-legend.tsx`) expliquant chaque couleur.
 - **Audio** — lecture de récitation par chapitre (`quran-audio-player.tsx`,
@@ -412,3 +438,8 @@ Voir [`auth.md`](./auth.md) pour le détail — en résumé côté modèle : cha
 utilisateur authentifié a une ligne `profiles` (créée automatiquement) avec un
 `role` (`admin`/`contributor`/`viewer`) qui conditionne l'accès en écriture,
 et une liste de `ressource_progress` qui trace sa lecture.
+
+Le staff (`admin` et `contributor`) passe du site au dashboard par une
+bascule « Aperçu | Dashboard » (`staff-mode-switch.tsx`), dans le header du
+site et en haut de la barre latérale du dashboard. Le rôle est vérifié côté
+serveur : un étudiant ne la reçoit jamais.

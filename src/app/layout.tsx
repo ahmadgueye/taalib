@@ -5,6 +5,7 @@ import {
   Noto_Naskh_Arabic,
   Scheherazade_New,
   Amiri,
+  Aref_Ruqaa,
 } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -70,6 +71,16 @@ const scheherazadeNew = Scheherazade_New({
   weight: ["700"],
 });
 
+// Calligraphie ruq'a du nom arabe des cours (cartes de la page Cours). Pas
+// de préchargement : seule cette page l'affiche, le navigateur ne la
+// télécharge que là.
+const arefRuqaa = Aref_Ruqaa({
+  variable: "--font-ruqaa",
+  subsets: ["arabic"],
+  weight: ["700"],
+  preload: false,
+});
+
 const amiri = Amiri({
   variable: "--font-calligraphy",
   subsets: ["arabic"],
@@ -108,7 +119,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${manrope.variable} ${bluuNext.variable} ${geistMono.variable} ${notoNaskhArabic.variable} ${scheherazadeNew.variable} ${amiri.variable} h-full antialiased`}
+      className={`${manrope.variable} ${bluuNext.variable} ${geistMono.variable} ${notoNaskhArabic.variable} ${scheherazadeNew.variable} ${amiri.variable} ${arefRuqaa.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
