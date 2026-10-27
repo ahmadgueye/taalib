@@ -114,6 +114,7 @@ export async function getStudentAccess(userId: string): Promise<ContentAccess> {
       ...ressourceRows.map((r) => r.thematiqueId),
       ...quizRows.map((q) => q.thematiqueId),
     ]),
+    activeCoursIds: new Set(coursRows.map((r) => r.id)),
     ressourceIds: new Set(ressourceRows.map((r) => r.id)),
     quizIds: new Set(quizRows.map((q) => q.id)),
   };

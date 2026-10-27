@@ -367,6 +367,16 @@ Le catalogue est **réservé aux étudiants du programme Bayān**. Seuls l'accue
   - les **ressources** et **quiz** publiés et débloqués ;
   - une **thématique** dès qu'un de ses éléments est débloqué, avec ses
     **hadiths** ;
+  - le **programme complet** de ses cours, pour voir ce qui lui reste : la
+    page d'un cours liste toutes ses thématiques (celles où rien n'est
+    débloqué en « À venir », sans lien), et la page d'une thématique toutes
+    ses leçons et quiz publiés (les verrouillés en « À venir », sans lien).
+    D'un élément verrouillé, seuls le **titre** et le **type** partent vers
+    le navigateur, jamais son contenu. Les cartes de leçon n'affichent
+    d'ailleurs plus d'aperçu du texte. Le « À venir » n'apparaît que pour un
+    cours d'une **classe active** (`showsUpcoming`, via
+    `access.activeCoursIds`) : un ancien élève ne voit que ce qui lui avait
+    été ouvert, et les pourcentages ne comptent que cela ;
   - une **séance** si elle référence au moins une thématique ou ressource
     visible, réduite à ce qui l'est ;
   - sa **feuille de route** sur l'accueil, avec les étapes pas encore
@@ -381,13 +391,15 @@ Le catalogue est **réservé aux étudiants du programme Bayān**. Seuls l'accue
   voit « Ta classe n'a pas encore de cours » (`access.inAnyClass`).
 
 Tout ce qui n'est pas visible répond **404** (« Page introuvable »), titre
-d'onglet et image Open Graph compris : on ne révèle pas qu'un contenu existe.
+d'onglet et image Open Graph compris. Seul le programme d'un cours suivi en
+révèle les titres, comme décrit plus haut.
 La navigation d'une ressource (« chapitre suivant », examen, sommaire du
 cours) ne propose que des éléments débloqués. La recherche (`/recherche` et
 ⌘K) filtre en SQL selon le même accès. Les Server Actions des étudiants le
 vérifient aussi : `markRessourceCompleted` refuse une ressource verrouillée,
-`submitQuizAttempt` un quiz verrouillé. La progression (feuille de route,
-`/compte`) compte **toutes** les leçons publiées, débloquées ou non.
+`submitQuizAttempt` un quiz verrouillé. La progression (feuille de route, pages
+cours et thématique, `/compte`) compte **toutes** les leçons publiées,
+débloquées ou non.
 
 Les helpers de filtrage sont des fonctions pures dans `lib/content-access.ts`
 (`canSeeCours`, `canSeeThematique`, `canSeeRessource`, `canSeeQuiz`,

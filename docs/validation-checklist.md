@@ -58,8 +58,16 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
       toutes les étapes le sont
 - [ ] Avec classe : `/cours` ne montre que les cours de la classe ; un cours
       sans rien de débloqué affiche « sera débloqué au fil des séances »
-- [ ] Une thématique n'apparaît que si un de ses éléments est débloqué, avec
-      uniquement les ressources/quiz débloqués et ses hadiths
+- [ ] Page d'un cours : toutes ses thématiques, celles sans rien de débloqué
+      en « À venir » (pointillés, sablier, pas de lien) ; pourcentages sur
+      toutes les leçons
+- [ ] Page d'une thématique : toutes ses leçons et quiz publiés, les
+      verrouillés en « À venir » sans lien (vérifier dans le code de la page
+      que leur contenu n'y est pas) ; « x % » sur toutes les leçons, comme la
+      feuille de route ; aucune carte de leçon n'affiche d'aperçu du texte
+- [ ] Ancien élève (inscription terminée dans le dashboard) : plus aucun
+      « À venir » sur les pages cours et thématique, seulement ce qui lui
+      avait été ouvert, pourcentages compris
 - [ ] Ouvrir l'URL d'une ressource, d'un quiz ou d'un cours non débloqué →
       « Page introuvable », titre d'onglet générique
 - [ ] Sur la dernière ressource débloquée : pas de « chapitre suivant » vers

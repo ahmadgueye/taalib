@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { Hourglass } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { ressourceTypeConfig } from "@/lib/ressource-types";
-import { stripMarkdown } from "@/lib/metadata";
 import type { RessourceType } from "@/lib/db/queries/search";
 
 const ctaLabelByType: Record<RessourceType, string> = {
@@ -16,19 +16,38 @@ export function RessourceItem({
   id,
   title,
   type,
-  content,
   description,
   completed,
+  locked = false,
 }: {
   id: string;
   title: string;
   type: RessourceType;
   url: string | null;
-  content?: string | null;
   description?: string | null;
   completed?: boolean;
+  // Pas encore débloquée : titre et type seulement, sans lien ni aperçu.
+  locked?: boolean;
 }) {
   const { label, icon: Icon } = ressourceTypeConfig[type];
+
+  if (locked) {
+    return (
+      <div className="border border-dashed bg-muted p-4">
+        <span className="inline-flex items-center gap-1.5">
+          <Icon className="size-3.5 text-locked-foreground" />
+          <Badge variant="outline" className="text-locked-foreground">
+            {label}
+          </Badge>
+        </span>
+        <div className="mt-1 font-medium text-locked-foreground">{title}</div>
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-locked-foreground">
+          <Hourglass className="size-3.5 shrink-0" />
+          À venir : ton enseignant l&apos;ouvrira au fil des cours
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative border p-4 transition-colors hover:bg-muted">
@@ -50,11 +69,6 @@ export function RessourceItem({
           </Badge>
         )}
       </div>
-      {type === "texte" && content && (
-        <p className="mt-2 text-sm text-muted-foreground">
-          {stripMarkdown(content, 240)}
-        </p>
-      )}
       {type !== "texte" && description && (
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       )}

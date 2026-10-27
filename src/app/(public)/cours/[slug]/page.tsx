@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Hourglass } from "lucide-react";
 
 import { BackButton } from "@/components/public/back-button";
 import { EntityCard } from "@/components/public/entity-card";
@@ -12,8 +12,9 @@ import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import {
   canSeeCours,
+  canSeeRessource,
   canSeeThematique,
-  visibleItems,
+  showsUpcoming,
 } from "@/lib/content-access";
 import { getCoursBySlug, getCoursOutline } from "@/lib/db/queries/cours";
 import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
@@ -51,19 +52,30 @@ export default async function CoursDetailPage({ params }: Props) {
 
   if (!found || !canSeeCours(access, found.id)) notFound();
 
+  // Toutes les thématiques sont listées, comme sur la feuille de route : une
+  // thématique où rien n'est encore débloqué apparaît « À venir », sans lien
+  // (sa page répondrait 404). Un ancien élève ne voit que ce qui lui avait
+  // été ouvert.
+  const upcoming = showsUpcoming(access, found.id);
   const c = {
     ...found,
-    thematiques: found.thematiques.filter((t) =>
-      canSeeThematique(access, t.id)
-    ),
+    thematiques: found.thematiques
+      .map((t) => ({ ...t, locked: !canSeeThematique(access, t.id) }))
+      .filter((t) => upcoming || !t.locked),
   };
   const profile = await getCurrentProfile();
+  // Toutes les leçons publiées, débloquées ou non : même décompte que la
+  // feuille de route et la page thématique (seulement les ouvertes pour un
+  // ancien élève).
   const fullOutline = profile ? await getCoursOutline(c.id) : null;
   const outline = fullOutline && {
     ...fullOutline,
-    thematiques: fullOutline.thematiques.map((t) =>
-      visibleItems(access, { ...t, quiz: [] })
-    ),
+    thematiques: fullOutline.thematiques.map((t) => ({
+      ...t,
+      ressources: t.ressources.filter(
+        (r) => upcoming || canSeeRessource(access, r.id)
+      ),
+    })),
   };
   const completedIds = profile
     ? await getCompletedRessourceIds(
@@ -177,15 +189,36 @@ export default async function CoursDetailPage({ params }: Props) {
             </p>
           ) : (
             <div className="mt-4 grid gap-3">
-              {c.thematiques.map((t) => (
-                <EntityCard
-                  key={t.id}
-                  href={`/thematiques/${t.slug}`}
-                  title={t.title}
-                  description={t.description}
-                  progress={progressFor(t.id)}
-                />
-              ))}
+              {c.thematiques.map((t) =>
+                t.locked ? (
+                  <div
+                    key={t.id}
+                    className="rounded-xl border border-dashed bg-muted p-4"
+                  >
+                    <div className="font-heading font-medium text-locked-foreground">
+                      {t.title}
+                    </div>
+                    {t.description && (
+                      <p className="mt-1 text-sm text-locked-foreground">
+                        {t.description}
+                      </p>
+                    )}
+                    <p className="mt-3 flex items-center gap-1.5 text-xs text-locked-foreground">
+                      <Hourglass className="size-3.5 shrink-0" />
+                      À venir : ton enseignant ouvrira cette thématique au fil
+                      des cours
+                    </p>
+                  </div>
+                ) : (
+                  <EntityCard
+                    key={t.id}
+                    href={`/thematiques/${t.slug}`}
+                    title={t.title}
+                    description={t.description}
+                    progress={progressFor(t.id)}
+                  />
+                )
+              )}
             </div>
           )}
         </>

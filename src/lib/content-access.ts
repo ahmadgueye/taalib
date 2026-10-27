@@ -14,6 +14,9 @@ export type ContentAccess =
       // Cours des classes actives de l'étudiant, même si rien n'y est encore
       // débloqué, plus ceux où il garde du contenu d'une classe terminée.
       coursIds: Set<string>;
+      // Les seuls cours des classes actives : ceux où la suite peut encore
+      // s'ouvrir.
+      activeCoursIds: Set<string>;
       // Thématiques ayant au moins une ressource ou un quiz débloqué.
       thematiqueIds: Set<string>;
       ressourceIds: Set<string>;
@@ -24,6 +27,7 @@ export const noAccess: ContentAccess = {
   all: false,
   inAnyClass: false,
   coursIds: new Set(),
+  activeCoursIds: new Set(),
   thematiqueIds: new Set(),
   ressourceIds: new Set(),
   quizIds: new Set(),
@@ -31,6 +35,13 @@ export const noAccess: ContentAccess = {
 
 export function canSeeCours(access: ContentAccess, id: string) {
   return access.all || access.coursIds.has(id);
+}
+
+// Le programme d'un cours (éléments « À venir » compris) ne se montre que si
+// une classe active de l'étudiant le suit : pour un ancien élève, la suite ne
+// s'ouvrira jamais. Le staff n'a rien de verrouillé.
+export function showsUpcoming(access: ContentAccess, coursId: string) {
+  return !access.all && access.activeCoursIds.has(coursId);
 }
 
 // Les hadiths n'ont pas de déblocage propre : ils suivent leur thématique.

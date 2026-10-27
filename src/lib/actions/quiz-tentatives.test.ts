@@ -182,6 +182,7 @@ describe("submitQuizAttempt access", () => {
       all: false,
       inAnyClass: true,
       coursIds: new Set(),
+      activeCoursIds: new Set(),
       thematiqueIds: new Set(),
       ressourceIds: new Set(),
       quizIds: new Set(),
