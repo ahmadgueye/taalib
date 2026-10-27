@@ -75,7 +75,11 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
 - [ ] Terminer une ressource : on la marque comme terminée **en cliquant sur le
       bouton « suivant » en bas de la page** (pas de décochage)
 - [ ] Progression d'un cours / d'une thématique (anneau, compteur) mise à jour
-- [ ] `/compte` : progression globale cohérente
+- [ ] `/compte` : progression globale cohérente ; onglets « Progression » et
+      « Paramètres » (l'URL suit, `?onglet=parametres` rouvre le bon onglet) ;
+      carte Coran au même pourcentage que `/memorisation`, bouton « Réviser »
+      s'il y a des révisions dues ; nom modifiable, puis retour sur
+      « Paramètres »
 - [ ] Quiz : répondre faux → score et corrections (bonnes réponses révélées
       seulement après envoi)
 - [ ] Quiz : compteur « n/N répondues » et barre ; « Valider » avec une

@@ -54,6 +54,23 @@ la volée en comparant le nombre de ressources publiées d'un cours au nombre
 complétées par l'utilisateur (`components/public/progress-ring.tsx`,
 `lib/db/queries/progress.ts`). Visible sur `/compte`.
 
+## Page compte
+
+`/compte` a deux onglets (`account-tabs.tsx`), reflétés dans l'URL
+(`?onglet=parametres`) :
+
+- **Progression** (par défaut) : les cours suivis (« x/y leçons lues »), tirés
+  de la feuille de route pour un étudiant (tous les cours de ses classes,
+  même ordre et même décompte que l'accueil ; le staff, sans feuille de
+  route, voit les cours où il a lu quelque chose), un
+  résumé de la mémorisation du Coran (`quran-progress-card.tsx` : même
+  pourcentage que `/memorisation`, versets maîtrisés / en cours / à
+  renforcer, révisions dues avec un bouton « Réviser ») et les quiz tentés
+  (score en vert si réussi, neutre sinon).
+- **Paramètres** : le nom, modifiable à tout moment, l'e-mail, le thème et la
+  déconnexion. Un compte sans nom (onboarding) arrive directement sur cet
+  onglet.
+
 ## Quiz
 
 Un quiz (`quiz`) appartient à une thématique et contient des questions
@@ -369,8 +386,8 @@ La navigation d'une ressource (« chapitre suivant », examen, sommaire du
 cours) ne propose que des éléments débloqués. La recherche (`/recherche` et
 ⌘K) filtre en SQL selon le même accès. Les Server Actions des étudiants le
 vérifient aussi : `markRessourceCompleted` refuse une ressource verrouillée,
-`submitQuizAttempt` un quiz verrouillé. `/compte` calcule la progression sur
-les seules ressources visibles.
+`submitQuizAttempt` un quiz verrouillé. La progression (feuille de route,
+`/compte`) compte **toutes** les leçons publiées, débloquées ou non.
 
 Les helpers de filtrage sont des fonctions pures dans `lib/content-access.ts`
 (`canSeeCours`, `canSeeThematique`, `canSeeRessource`, `canSeeQuiz`,
