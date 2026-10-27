@@ -42,6 +42,7 @@
   --font-quran: "UthmanicHafs", var(--font-arabic);
   --font-logo-arabic: var(--font-logo-arabic);
   --font-calligraphy: var(--font-calligraphy);
+  --font-ruqaa: var(--font-ruqaa);
   --font-surah-name: "SurahNames";
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);

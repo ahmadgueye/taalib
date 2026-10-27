@@ -56,8 +56,12 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
       tout débloquée et quiz réussi passe « Terminé » ; sous chaque cours,
       barre « x/y leçons · a/b étapes terminées », et « Cours terminé » quand
       toutes les étapes le sont
-- [ ] Avec classe : `/cours` ne montre que les cours de la classe ; un cours
-      sans rien de débloqué affiche « sera débloqué au fil des séances »
+- [ ] Avec classe : `/cours` (« Tes cours ») ne montre que les cours de la
+      classe, dans l'ordre du programme ; chaque carte a son bandeau (nom
+      arabe en ruq'a, ou première lettre), statut et nouveautés, contenu
+      (thématiques, leçons, quiz), progression identique à l'accueil et
+      bouton « Commencer » / « Reprendre » ; un cours sans leçon affiche « Le
+      contenu s'ouvrira au fil des séances »
 - [ ] Page d'un cours : toutes ses thématiques, celles sans rien de débloqué
       en « À venir » (pointillés, sablier, pas de lien) ; pourcentages sur
       toutes les leçons
@@ -121,7 +125,8 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
 Passer le compte en `contributor` puis `admin` dans Studio
 (`public.profiles` → `role`).
 - [ ] `/dashboard` : accessible, statistiques cohérentes
-- [ ] Cours : créer, modifier, supprimer ; statut `coming_soon` ↔ `published`
+- [ ] Cours : créer, modifier, supprimer ; statut `coming_soon` ↔ `published` ;
+      champ « Nom en arabe » (facultatif) affiché en ruq'a sur `/cours`
 - [ ] Thématiques : créer, glisser-déposer pour réordonner, supprimer
 - [ ] Ressources : créer chaque type (vidéo, PDF upload, lien, texte
       markdown), brouillon invisible côté public, réordonner

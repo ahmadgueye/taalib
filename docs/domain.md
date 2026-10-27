@@ -54,6 +54,24 @@ la volée en comparant le nombre de ressources publiées d'un cours au nombre
 complétées par l'utilisateur (`components/public/progress-ring.tsx`,
 `lib/db/queries/progress.ts`). Visible sur `/compte`.
 
+## Page Cours
+
+`/cours` présente chaque cours dans une grande carte (`course-card.tsx`) :
+un bandeau avec son **nom en arabe** (`cours.arabic_title`, saisi dans le
+dashboard, facultatif) en calligraphie ruq'a (Aref Ruqaa gras, `font-ruqaa`,
+non préchargée), ou sa première lettre à défaut ; puis le titre, la
+description et un statut (« Pas commencé », « En cours », « Terminé »,
+« Bientôt disponible », avec le nombre de nouveautés).
+
+Pour un étudiant, la page s'intitule « Tes cours » et suit sa feuille de
+route : mêmes cours, même ordre (celui du programme de la classe), même
+décompte des leçons. Chaque carte indique le nombre de thématiques, de
+leçons et de quiz, la progression et un bouton « Commencer » / « Reprendre »
+vers la prochaine leçon ou le prochain quiz. Le staff, sans feuille de
+route, voit tout le catalogue avec les mêmes cartes, sans progression mais
+avec le nombre de thématiques, de leçons et de quiz publiés
+(`getAllCoursWithCounts`), sur `/cours` comme sur son accueil.
+
 ## Page compte
 
 `/compte` a deux onglets (`account-tabs.tsx`), reflétés dans l'URL
