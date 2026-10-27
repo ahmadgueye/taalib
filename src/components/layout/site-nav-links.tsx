@@ -8,9 +8,9 @@ import { cn, isNavActive } from "@/lib/utils";
 // membersOnly : réservé aux connectés, inutile de le montrer à un visiteur
 // (le proxy le renverrait vers /login).
 const links = [
-  { href: "/cours", label: "Mes Cours", membersOnly: true },
-  { href: "/coran", label: "Quran", membersOnly: false },
-  { href: "/hadiths", label: "Hadith", membersOnly: true },
+  { href: "/cours", label: "Cours", membersOnly: true },
+  { href: "/coran", label: "Coran", membersOnly: false },
+  { href: "/hadiths", label: "Hadiths", membersOnly: true },
 ];
 
 export function SiteNavLinks({

@@ -10,9 +10,9 @@ import { cn, isNavActive } from "@/lib/utils";
 // lui est ouvert.
 const tabs = [
   { href: "/", label: "Accueil", icon: Home, exact: true, membersOnly: false },
-  { href: "/cours", label: "Mes Cours", icon: BookOpen, membersOnly: true },
-  { href: "/coran", label: "Quran", icon: BookMarked, membersOnly: false },
-  { href: "/hadiths", label: "Hadith", icon: ScrollText, membersOnly: true },
+  { href: "/cours", label: "Cours", icon: BookOpen, membersOnly: true },
+  { href: "/coran", label: "Coran", icon: BookMarked, membersOnly: false },
+  { href: "/hadiths", label: "Hadiths", icon: ScrollText, membersOnly: true },
   { href: "/recherche", label: "Recherche", icon: Search, membersOnly: true },
 ];
 
@@ -29,12 +29,13 @@ export function MobileTabBar({ signedIn }: { signedIn: boolean }) {
             <Link
               key={href}
               href={href}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex flex-1 flex-col items-center gap-1 py-2 text-xs text-muted-foreground",
                 active && "text-foreground",
               )}
             >
-              <Icon className="size-5" />
+              <Icon className="size-5" aria-hidden />
               {label}
             </Link>
           );

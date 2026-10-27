@@ -54,6 +54,23 @@ la volée en comparant le nombre de ressources publiées d'un cours au nombre
 complétées par l'utilisateur (`components/public/progress-ring.tsx`,
 `lib/db/queries/progress.ts`). Visible sur `/compte`.
 
+## Page compte
+
+`/compte` a deux onglets (`account-tabs.tsx`), reflétés dans l'URL
+(`?onglet=parametres`) :
+
+- **Progression** (par défaut) : les cours suivis (« x/y leçons lues »), tirés
+  de la feuille de route pour un étudiant (tous les cours de ses classes,
+  même ordre et même décompte que l'accueil ; le staff, sans feuille de
+  route, voit les cours où il a lu quelque chose), un
+  résumé de la mémorisation du Coran (`quran-progress-card.tsx` : même
+  pourcentage que `/memorisation`, versets maîtrisés / en cours / à
+  renforcer, révisions dues avec un bouton « Réviser ») et les quiz tentés
+  (score en vert si réussi, neutre sinon).
+- **Paramètres** : le nom, modifiable à tout moment, l'e-mail, le thème et la
+  déconnexion. Un compte sans nom (onboarding) arrive directement sur cet
+  onglet.
+
 ## Quiz
 
 Un quiz (`quiz`) appartient à une thématique et contient des questions
@@ -119,9 +136,14 @@ Chaque étape (une thématique) a un état :
 - `completed` (« Terminé ») : tout son contenu publié est débloqué, toutes
   ses leçons sont lues et tous ses quiz réussis (meilleur score ≥
   `passingScore`) ;
-- `active` sinon, avec la barre « x/y leçons » qui compte **toutes** les
-  leçons publiées de l'étape, débloquées ou non : l'étudiant voit ce qui lui
-  reste.
+- `active` sinon, avec un anneau de progression et « x/y leçons » qui
+  comptent **toutes** les leçons publiées de l'étape, débloquées ou non :
+  l'étudiant voit ce qui lui reste.
+
+Sous le titre de chaque cours, `course-progress.tsx` résume l'avancement :
+barre de progression sur toutes les leçons du cours, « x/y leçons · a/b
+étapes terminées » et, quand toutes les étapes sont terminées, le badge
+« Cours terminé ».
 
 En haut de la page, une liste dépliable **« À faire »** (`todo-list.tsx`,
 élément `<details>` natif) récapitule tout ce que l'étudiant a à faire.
@@ -137,10 +159,14 @@ parallèle) et dans l'ordre de la feuille de route :
 Si tout ce qui est ouvert est fait, la ligne affiche « Tu es à jour ».
 
 Un élément débloqué depuis moins de 7 jours (`NEW_FOR_DAYS`) et pas encore
-fait est signalé **« Nouveau »**, sur sa ligne « À faire » et sur son
-étape. La date retenue est celle du plus ancien déblocage pour les classes
-de l'étudiant (`getUnlockDates`), et le badge disparaît dès que la leçon
-est lue ou le quiz réussi.
+fait est signalé **« Nouveau »**. Le résumé « À faire » compte les
+nouveautés en toutes lettres, et chaque ligne concernée porte une petite
+pastille carrée qui pulse trois fois. Sur la feuille de route, le carré
+numéroté de son étape passe à la couleur principale et un halo pulse trois
+fois à l'arrivée (rien si l'étudiant a demandé moins d'animations). La date
+retenue est celle du plus ancien déblocage pour les classes de l'étudiant
+(`getUnlockDates`), et le signal disparaît dès que la leçon est lue ou le
+quiz réussi.
 
 Le seul verrou est le déblocage par l'enseignant : il n'y a plus de
 verrouillage d'une étape par le quiz de la précédente. Le staff, qui
@@ -341,6 +367,16 @@ Le catalogue est **réservé aux étudiants du programme Bayān**. Seuls l'accue
   - les **ressources** et **quiz** publiés et débloqués ;
   - une **thématique** dès qu'un de ses éléments est débloqué, avec ses
     **hadiths** ;
+  - le **programme complet** de ses cours, pour voir ce qui lui reste : la
+    page d'un cours liste toutes ses thématiques (celles où rien n'est
+    débloqué en « À venir », sans lien), et la page d'une thématique toutes
+    ses leçons et quiz publiés (les verrouillés en « À venir », sans lien).
+    D'un élément verrouillé, seuls le **titre** et le **type** partent vers
+    le navigateur, jamais son contenu. Les cartes de leçon n'affichent
+    d'ailleurs plus d'aperçu du texte. Le « À venir » n'apparaît que pour un
+    cours d'une **classe active** (`showsUpcoming`, via
+    `access.activeCoursIds`) : un ancien élève ne voit que ce qui lui avait
+    été ouvert, et les pourcentages ne comptent que cela ;
   - une **séance** si elle référence au moins une thématique ou ressource
     visible, réduite à ce qui l'est ;
   - sa **feuille de route** sur l'accueil, avec les étapes pas encore
@@ -355,13 +391,15 @@ Le catalogue est **réservé aux étudiants du programme Bayān**. Seuls l'accue
   voit « Ta classe n'a pas encore de cours » (`access.inAnyClass`).
 
 Tout ce qui n'est pas visible répond **404** (« Page introuvable »), titre
-d'onglet et image Open Graph compris : on ne révèle pas qu'un contenu existe.
+d'onglet compris. Seul le programme d'un cours suivi en
+révèle les titres, comme décrit plus haut.
 La navigation d'une ressource (« chapitre suivant », examen, sommaire du
 cours) ne propose que des éléments débloqués. La recherche (`/recherche` et
 ⌘K) filtre en SQL selon le même accès. Les Server Actions des étudiants le
 vérifient aussi : `markRessourceCompleted` refuse une ressource verrouillée,
-`submitQuizAttempt` un quiz verrouillé. `/compte` calcule la progression sur
-les seules ressources visibles.
+`submitQuizAttempt` un quiz verrouillé. La progression (feuille de route, pages
+cours et thématique, `/compte`) compte **toutes** les leçons publiées,
+débloquées ou non.
 
 Les helpers de filtrage sont des fonctions pures dans `lib/content-access.ts`
 (`canSeeCours`, `canSeeThematique`, `canSeeRessource`, `canSeeQuiz`,

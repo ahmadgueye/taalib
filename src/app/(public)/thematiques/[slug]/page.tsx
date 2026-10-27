@@ -7,7 +7,12 @@ import { ProgressIndicator } from "@/components/public/progress-indicator";
 import { RessourcesHadithsTabs } from "@/components/public/ressources-hadiths-tabs";
 import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
-import { canSeeThematique, visibleItems } from "@/lib/content-access";
+import {
+  canSeeQuiz,
+  canSeeRessource,
+  canSeeThematique,
+  showsUpcoming,
+} from "@/lib/content-access";
 import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
 import { getQuizScores } from "@/lib/db/queries/quiz-tentatives";
 import { getThematiqueBySlug } from "@/lib/db/queries/thematiques";
@@ -42,7 +47,49 @@ export default async function ThematiqueDetailPage({ params }: Props) {
 
   if (!found || !canSeeThematique(access, found.id)) notFound();
 
-  const t = visibleItems(access, found);
+  // Tout le programme de la thématique est listé, débloqué ou non, pour que
+  // l'étudiant voie ce qui lui reste. Côté verrouillé, seuls le titre et le
+  // type partent vers le navigateur : jamais le contenu ni son aperçu. Un
+  // ancien élève ne voit que ce qui lui avait été ouvert.
+  const upcoming = showsUpcoming(access, found.cours.id);
+  const t = {
+    ...found,
+    ressources: found.ressources
+      .filter((r) => upcoming || canSeeRessource(access, r.id))
+      .map((r) =>
+        canSeeRessource(access, r.id)
+          ? {
+              id: r.id,
+              title: r.title,
+              type: r.type,
+              url: r.url,
+              description: r.description,
+              locked: false,
+            }
+          : {
+              id: r.id,
+              title: r.title,
+              type: r.type,
+              url: null,
+              description: null,
+              locked: true,
+            }
+      ),
+    quiz: found.quiz
+      .filter((q) => upcoming || canSeeQuiz(access, q.id))
+      .map((q) =>
+        canSeeQuiz(access, q.id)
+          ? { ...q, locked: false }
+          : {
+              id: q.id,
+              title: q.title,
+              description: null,
+              passingScore: q.passingScore,
+              questions: [],
+              locked: true,
+            }
+      ),
+  };
 
   const profile = await getCurrentProfile();
   const completedIds = profile

@@ -12,7 +12,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { updateFullNameAction, type ActionState } from "@/lib/actions/auth";
 
-export function FullNameForm({ next }: { next?: string }) {
+export function FullNameForm({
+  next,
+  defaultValue,
+}: {
+  next?: string;
+  defaultValue?: string;
+}) {
   const [state, formAction] = useActionState<ActionState, FormData>(
     updateFullNameAction,
     undefined,
@@ -23,11 +29,17 @@ export function FullNameForm({ next }: { next?: string }) {
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="fullName">Ton nom complet</FieldLabel>
-          <Input id="fullName" name="fullName" autoComplete="name" required />
+          <Input
+            id="fullName"
+            name="fullName"
+            autoComplete="name"
+            defaultValue={defaultValue}
+            required
+          />
         </Field>
         {next && <input type="hidden" name="next" value={next} />}
         {state?.error && <FieldError>{state.error}</FieldError>}
-        <SubmitButton>Enregistrer</SubmitButton>
+        <SubmitButton className="w-fit">Enregistrer</SubmitButton>
       </FieldGroup>
     </form>
   );

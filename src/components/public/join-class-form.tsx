@@ -14,7 +14,7 @@ export function JoinClassForm({ code }: { code: string }) {
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
-      <Button type="submit" disabled={isPending}>
+      <Button type="submit" loading={isPending}>
         {isPending ? "Inscription…" : "Rejoindre la classe"}
       </Button>
       {state?.error && <FieldError>{state.error}</FieldError>}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Hourglass } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ export function QuizItem({
   questionCount,
   passingScore,
   score,
+  locked = false,
 }: {
   id: string;
   title: string;
@@ -24,7 +25,24 @@ export function QuizItem({
     bestTotal: number;
     attemptsCount: number;
   };
+  // Pas encore débloqué : titre seulement, sans lien.
+  locked?: boolean;
 }) {
+  if (locked) {
+    return (
+      <div className="border border-dashed bg-muted p-4">
+        <span className="inline-flex items-center gap-1.5 font-medium text-locked-foreground">
+          <HelpCircle className="size-3.5" />
+          {title}
+        </span>
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-locked-foreground">
+          <Hourglass className="size-3.5 shrink-0" />
+          À venir : ton enseignant l&apos;ouvrira au fil des cours
+        </p>
+      </div>
+    );
+  }
+
   const passed = score
     ? (score.bestScore / score.bestTotal) * 100 >= passingScore
     : false;

@@ -61,7 +61,7 @@ export function MagicLinkForm({ next }: { next?: string }) {
       <Button
         type="submit"
         variant="outline"
-        disabled={loading}
+        loading={loading}
         className="w-full"
       >
         {loading ? "Envoi…" : "Recevoir un lien de connexion"}

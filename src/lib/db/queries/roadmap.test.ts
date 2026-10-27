@@ -54,6 +54,7 @@ function access(overrides: Partial<Extract<ContentAccess, { all: false }>>) {
     all: false,
     inAnyClass: true,
     coursIds: new Set(["aqida", "fiqh"]),
+    activeCoursIds: new Set(["aqida", "fiqh"]),
     thematiqueIds: new Set<string>(),
     ressourceIds: new Set<string>(),
     quizIds: new Set<string>(),

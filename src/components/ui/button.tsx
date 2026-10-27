@@ -1,5 +1,6 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -44,14 +45,33 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  loading = false,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    // Action en cours : spinner devant le contenu, bouton désactivé.
+    loading?: boolean
+  }) {
+  const classes = cn(buttonVariants({ variant, size, className }))
+
+  // Sans `loading`, les props passent telles quelles : `render` fusionne ainsi
+  // les enfants (ex. le déclencheur d'un menu) comme avant.
+  if (!loading) {
+    return <ButtonPrimitive data-slot="button" className={classes} {...props} />
+  }
+
+  const { children, ...rest } = props
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
+      className={classes}
+      {...rest}
+      disabled
+      aria-busy
+    >
+      <Loader2 className="animate-spin" aria-hidden />
+      {children}
+    </ButtonPrimitive>
   )
 }
 

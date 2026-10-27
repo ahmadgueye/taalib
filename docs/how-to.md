@@ -65,9 +65,9 @@ Fichiers à créer/modifier, dans l'ordre :
 
 8. **Page(s) publique(s)**, si l'entité doit être visible côté site vitrine —
    suivre le pattern de `src/app/(public)/cours/page.tsx` et
-   `src/app/(public)/cours/[slug]/page.tsx` (+ `opengraph-image.tsx` si
-   l'entité a une page de détail dédiée, voir
-   `src/app/(public)/cours/[slug]/opengraph-image.tsx`).
+   `src/app/(public)/cours/[slug]/page.tsx`. Pas d'`opengraph-image.tsx` par
+   page : une page réservée n'est jamais vue par un réseau social (voir
+   « Metadata / SEO » dans `architecture.md`).
 
 ## Ajouter un champ à un formulaire existant
 
