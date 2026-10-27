@@ -226,6 +226,14 @@ sur l'API externe Quran Foundation).
   page de mushaf authentique (pagination fixe façon Coran papier, pas un flux
   continu), avec la police QCF officielle (`lib/quran/qcf-font.ts`) pour un
   rendu du texte arabe fidèle glyphe par glyphe.
+- **Taille du texte** — réglée avec les boutons − / + et retenue dans le
+  `localStorage` (`deenshare:quran-font-size-rem`). Sans choix enregistré,
+  elle part de 2.25rem sur ordinateur et de 1.5rem sur mobile (moins de
+  640 px). Une ligne de mushaf ne passe jamais à la ligne : en mode Lecture,
+  `useFitToWidth` mesure la ligne la plus large une fois les polices
+  chargées et réduit la taille juste assez pour qu'elle tienne dans la
+  colonne (la taille choisie devient un maximum). La mesure est refaite si
+  la largeur change, par exemple en tournant le téléphone.
 - **Tajweed** — coloration des règles de tajweed directement dans le texte
   rendu, avec une légende (`tajweed-legend.tsx`) expliquant chaque couleur.
 - **Audio** — lecture de récitation par chapitre (`quran-audio-player.tsx`,
