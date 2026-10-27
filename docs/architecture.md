@@ -175,6 +175,26 @@ images appliquent le même filtre d'accès que la page.
 - Les deux et les Open Graph utilisent `NEXT_PUBLIC_SITE_URL` : si elle n'est
   pas définie sur Vercel, les liens pointent vers `localhost`.
 
+### Icônes et PWA
+
+Les icônes sont des fichiers fixes, pas générés au rendu : le moteur
+d'`ImageResponse` lie mal les lettres arabes. Toutes reprennent le logo en
+crème (`#f5f5ed`) sur brun (`#21140f`) :
+
+- `src/app/icon.svg` et `src/app/favicon.ico` (16, 32 et 48 px) : le seul
+  « ط », lisible dans un onglet ;
+- `src/app/apple-icon.png` (180 px) et `public/icon-192.png`,
+  `public/icon-512.png` : le mot « طالب » ;
+- `public/icon-maskable-512.png` : le même avec plus de marge, déclaré
+  `purpose: "maskable"` dans `src/app/manifest.ts`, car Android rogne jusqu'à
+  un cercle de 80 %.
+
+Pour les refaire, le texte est mis en forme avec HarfBuzz (`hb-shape`, qui
+choisit les formes liées des lettres), les contours des glyphes de
+Scheherazade New Bold (la police du logo) sont convertis en tracés SVG avec
+fontTools, puis rendus en PNG avec `sharp`. Le manifeste utilise la même
+palette : écran de démarrage crème, barre de l'app brune.
+
 ## Tests
 
 Vitest (`npm test`), exécuté aussi par la CI. Les tests vivent à côté du code
