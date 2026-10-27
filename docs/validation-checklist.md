@@ -125,6 +125,9 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
 Passer le compte en `contributor` puis `admin` dans Studio
 (`public.profiles` → `role`).
 - [ ] `/dashboard` : accessible, statistiques cohérentes
+- [ ] Bascule « Aperçu | Dashboard » : dans le header du site (icônes seules
+      sur mobile) et en haut de la barre latérale du dashboard, pour admin et
+      contributeur ; absente pour un étudiant
 - [ ] Cours : créer, modifier, supprimer ; statut `coming_soon` ↔ `published` ;
       champ « Nom en arabe » (facultatif) affiché en ruq'a sur `/cours`
 - [ ] Thématiques : créer, glisser-déposer pour réordonner, supprimer

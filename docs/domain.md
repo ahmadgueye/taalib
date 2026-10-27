@@ -430,3 +430,8 @@ Voir [`auth.md`](./auth.md) pour le détail — en résumé côté modèle : cha
 utilisateur authentifié a une ligne `profiles` (créée automatiquement) avec un
 `role` (`admin`/`contributor`/`viewer`) qui conditionne l'accès en écriture,
 et une liste de `ressource_progress` qui trace sa lecture.
+
+Le staff (`admin` et `contributor`) passe du site au dashboard par une
+bascule « Aperçu | Dashboard » (`staff-mode-switch.tsx`), dans le header du
+site et en haut de la barre latérale du dashboard. Le rôle est vérifié côté
+serveur : un étudiant ne la reçoit jamais.

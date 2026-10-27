@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { StaffModeSwitch } from "@/components/layout/staff-mode-switch";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { cn, isNavActive } from "@/lib/utils";
@@ -41,6 +42,7 @@ export function DashboardSidebar({ isAdmin }: { isAdmin: boolean }) {
         >
           طالب
         </Link>
+        <StaffModeSwitch current="dashboard" className="mb-6" />
         <nav className="flex flex-col gap-1 text-sm">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link
