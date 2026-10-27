@@ -11,6 +11,7 @@ const links = [
   { href: "/cours", label: "Cours", membersOnly: true },
   { href: "/coran", label: "Coran", membersOnly: false },
   { href: "/hadiths", label: "Hadiths", membersOnly: true },
+  { href: "/recherche", label: "Recherche", membersOnly: true },
 ];
 
 export function SiteNavLinks({

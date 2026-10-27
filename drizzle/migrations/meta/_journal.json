@@ -211,6 +211,13 @@
       "when": 1793039268944,
       "tag": "0029_class_members_left_at",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793094244546,
+      "tag": "0030_cours_arabic_title",
+      "breakpoints": true
     }
   ]
 }

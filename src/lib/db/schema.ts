@@ -54,6 +54,9 @@ export const cours = pgTable("cours", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
+  // Nom du cours en arabe (ex. « العقيدة »), affiché en calligraphie ruq'a
+  // sur la carte du cours. Facultatif.
+  arabicTitle: text("arabic_title"),
   description: text("description"),
   status: coursStatusEnum("status").notNull().default("published"),
   createdBy: uuid("created_by").references(() => profiles.id),

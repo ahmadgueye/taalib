@@ -1,15 +1,14 @@
 import Link from "next/link";
 
+import { CourseCard } from "@/components/public/course-card";
 import { CourseProgress } from "@/components/public/course-progress";
-import { EntityCard } from "@/components/public/entity-card";
 import { RoadmapTrack } from "@/components/public/roadmap-track";
 import { TodoList } from "@/components/public/todo-list";
 import { WelcomeToast } from "@/components/public/welcome-toast";
 import { Button } from "@/components/ui/button";
 import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
-import { coursStatusConfig } from "@/lib/cours-status";
-import { getAllCours } from "@/lib/db/queries/cours";
+import { getAllCoursWithCounts } from "@/lib/db/queries/cours";
 import { getStudentRoadmap } from "@/lib/db/queries/roadmap";
 
 type Props = {
@@ -29,7 +28,7 @@ export default async function Home({ searchParams }: Props) {
 
   // Le staff n'appartient à aucune classe : il voit le catalogue complet.
   if (access.all) {
-    const coursList = await getAllCours();
+    const coursList = await getAllCoursWithCounts();
     return (
       <div className="flex flex-col gap-10 animate-in fade-in duration-300">
         <WelcomeToast show={showWelcome} />
@@ -47,18 +46,16 @@ export default async function Home({ searchParams }: Props) {
             Aucun cours pour le moment.
           </p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="flex flex-col gap-4">
             {coursList.map((c) => (
-              <EntityCard
+              <CourseCard
                 key={c.id}
                 href={`/cours/${c.slug}`}
                 title={c.title}
+                arabicTitle={c.arabicTitle}
                 description={c.description}
-                badge={
-                  c.status === "coming_soon"
-                    ? coursStatusConfig.coming_soon
-                    : undefined
-                }
+                status={c.status === "coming_soon" ? "coming_soon" : undefined}
+                counts={c.counts}
               />
             ))}
           </div>

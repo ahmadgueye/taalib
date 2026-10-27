@@ -1,0 +1,1 @@
+ALTER TABLE "cours" ADD COLUMN "arabic_title" text;

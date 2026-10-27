@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
 
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { SiteNavLinks } from "@/components/layout/site-nav-links";
+import { StaffModeSwitch } from "@/components/layout/staff-mode-switch";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,20 +55,10 @@ export async function SiteHeader({
           <SiteNavLinks signedIn={Boolean(profile)} />
         </div>
         <div className="flex items-center justify-end gap-2">
-          <ThemeToggle />
-          {profile && (
-            // Sur mobile, la recherche est déjà dans la barre du bas.
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden sm:inline-flex"
-              title="Recherche (⌘K)"
-              render={<Link href="/recherche" />}
-              nativeButton={false}
-            >
-              <Search className="size-4" />
-            </Button>
+          {(profile?.role === "admin" || profile?.role === "contributor") && (
+            <StaffModeSwitch current="site" />
           )}
+          <ThemeToggle />
           {profile && <NotificationBell initialSummary={dueSummary} />}
           {profile ? (
             <DropdownMenu>
