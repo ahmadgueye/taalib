@@ -268,10 +268,6 @@ export const quranMemorization = pgTable(
     // reconstruire la clé à partir de chapterId+verseNumber.
     verseKey: text("verse_key").notNull(),
     status: memorizationStatusEnum("status").notNull(),
-    // Révision espacée (boîtes de Leitner), uniquement pour status = "maitrise" —
-    // null pour les autres statuts (rien à planifier). Voir lib/quran/memorization.ts.
-    reviewBox: integer("review_box"),
-    nextReviewAt: timestamp("next_review_at", { withTimezone: true }),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

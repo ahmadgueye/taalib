@@ -83,7 +83,7 @@ avec le nombre de thématiques, de leçons et de quiz publiés
   route, voit les cours où il a lu quelque chose), un
   résumé de la mémorisation du Coran (`quran-progress-card.tsx` : même
   pourcentage que `/memorisation`, versets maîtrisés / en cours / à
-  renforcer, révisions dues avec un bouton « Réviser ») et les quiz tentés
+  renforcer) et les quiz tentés
   (score en vert si réussi, neutre sinon).
 - **Paramètres** : le nom, modifiable à tout moment, l'e-mail, le thème et la
   déconnexion. Un compte sans nom (onboarding) arrive directement sur cet
@@ -281,43 +281,22 @@ concerne que le Coran et n'a aucun lien avec `cours`/`thematiques`.
   verset-par-verset (une cellule = un verset) réutilisée dans le lecteur et
   sur cette page.
 
-### Révision espacée
+### Pas de révision planifiée
 
-Les versets `maitrise` entrent dans un cycle de révision espacée (boîtes de
-Leitner, `lib/quran/memorization.ts` : `REVIEW_INTERVALS_DAYS = [1, 3, 7, 14,
-30]`), stocké sur `quran_memorization.review_box` / `next_review_at` (`null`
-pour `en_cours`/`a_renforcer` — ce dernier est toujours dû, pas besoin
-d'échéance).
-
-- Un passage manuel à `maitrise` (tap-to-cycle, comptage par sourate)
-  (ré)initialise à la boîte 1, échéance demain — sauf pour un verset déjà
-  `maitrise` recompté via `setChapterMemorizedCount` : sa progression de
-  révision existante est préservée (`coalesce` SQL), pour qu'une simple
-  augmentation du compteur ne remette pas tout à zéro.
-- **`confirmVerseReview`** (`lib/actions/memorization.ts`) : s'applique à un
-  verset `maitrise` **ou** `a_renforcer` dû (sinon erreur). Succès
-  (« Je me souviens ») → statut `maitrise`, boîte+1 et échéance repoussée
-  (`scheduleNextReview`) — un verset qui était `a_renforcer` repart de la
-  boîte 1 (son `review_box` est `null`, traité comme 0). Échec
-  (« J'ai oublié ») → statut `a_renforcer`, boîte/échéance effacées (no-op
-  si déjà `a_renforcer`).
-- **`getDueReviews`/`getDueReviewsSummary`** (`lib/db/queries/quran-memorization.ts`)
-  calculent ce qui est dû aujourd'hui : tout `a_renforcer`, plus tout
-  `maitrise` dont `next_review_at <= now()`.
-- **Page** `/memorisation/revision` (`revision-list.tsx`) : liste groupée
-  "à renforcer" / "échéance de révision", chaque ligne a un lien pour relire
-  le verset (`/coran?sourate=X&verset=Y`) et les deux boutons « Je me
-  souviens » / « J'ai oublié » décrits ci-dessus, pour les deux sections.
-- **Cloche du header** (`notification-bell.tsx`, dans `site-header.tsx`,
-  désormais un composant serveur `async`) : badge + aperçu du compte dû,
-  calculé à chaque chargement de page — pas de table de notifications ni de
-  lu/non-lu, juste un résumé live de `getDueReviewsSummary`.
+Il n'y a pas de rappel ni de révision planifiée par l'app : le statut
+`a_renforcer` est un simple repère que l'élève pose lui-même dans le lecteur,
+repris dans la liste « À renforcer » du tableau de bord de `/memorisation`.
+La révision espacée verset par verset (boîtes de Leitner, page
+`/memorisation/revision`, cloche du header) a été retirée : elle demandait à
+l'élève de déclarer chaque jour ce qu'il savait, ce qui était trop lourd. La
+révision se fait avec l'enseignant ; une révision pilotée par l'enseignant
+pourra venir plus tard si le besoin revient.
 
 C'est le module le plus complexe du repo en volume de code (plus de 1200
 lignes pour le seul composant `quran-reader.tsx`) — à isoler mentalement du
 reste pour la partie lecture/audio : elle ne touche ni Drizzle ni Supabase,
-seulement l'API Quran Foundation. Seule la mémorisation (statuts par verset,
-et sa révision espacée) passe par la base applicative.
+seulement l'API Quran Foundation. Seule la mémorisation (statuts par verset)
+passe par la base applicative.
 
 ## Classes
 

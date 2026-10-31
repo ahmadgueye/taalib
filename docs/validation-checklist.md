@@ -89,8 +89,8 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
 - [ ] Progression d'un cours / d'une thématique (anneau, compteur) mise à jour
 - [ ] `/compte` : progression globale cohérente ; onglets « Progression » et
       « Paramètres » (l'URL suit, `?onglet=parametres` rouvre le bon onglet) ;
-      carte Coran au même pourcentage que `/memorisation`, bouton « Réviser »
-      s'il y a des révisions dues ; nom modifiable, puis retour sur
+      carte Coran au même pourcentage que `/memorisation` ; nom modifiable,
+      puis retour sur
       « Paramètres »
 - [ ] Quiz : répondre faux → score et corrections (bonnes réponses révélées
       seulement après envoi)
@@ -112,13 +112,9 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
       maîtrisé) et retour à « aucun »
 - [ ] `/memorisation` : tableau de bord et progression par sourate ; définir
       « N versets mémorisés » sur une sourate, puis réduire le nombre
-- [ ] Marquer un verset « maîtrisé » → bandeau « à réviser » sur
-      `/memorisation` et cloche du header (badge + aperçu) s'allument
-- [ ] `/memorisation/revision` : le verset apparaît, « Relire ce verset »
-      ramène au bon endroit dans `/coran` ; dans les deux sections (« à
-      renforcer » et « échéance de révision »), « Je me souviens » passe/
-      repasse le verset en maîtrisé et le retire de la liste, « J'ai
-      oublié » le (re)passe en « à renforcer »
+- [ ] Marquer un verset « à renforcer » → sa sourate apparaît dans la liste
+      « À renforcer » de `/memorisation` ; plus de cloche dans le header ni de
+      page `/memorisation/revision` (404)
 - [ ] Rafraîchir la page : tout est conservé
 
 ## 4. Contributeur / administrateur
