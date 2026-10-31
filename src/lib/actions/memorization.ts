@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, gt, sql } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -8,22 +8,7 @@ import { getCurrentProfile } from "@/lib/auth/get-session";
 import { db } from "@/lib/db";
 import type { MemorizationStatus } from "@/lib/db/schema";
 import { quranMemorization } from "@/lib/db/schema";
-import {
-  getDueReviewsSummary,
-  type DueReviewsSummary,
-} from "@/lib/db/queries/quran-memorization";
-import { scheduleNextReview } from "@/lib/quran/memorization";
 import { getChapters } from "@/lib/quran/queries";
-
-// Called from the client (header bell) to get a fresh count on demand: the
-// header lives in the shared layout, which Next.js does not re-render on
-// client-side navigation between sibling pages, so a server-rendered prop
-// alone would go stale after a tap in the reader (which skips
-// revalidatePath on purpose — see setVerseMemorizationStatus below).
-export async function getDueReviewsSummaryAction(): Promise<DueReviewsSummary> {
-  const profile = await getCurrentProfile();
-  return getDueReviewsSummary(profile?.id ?? null);
-}
 
 const statusSchema = z.enum(["en_cours", "a_renforcer", "maitrise"]);
 
@@ -65,15 +50,6 @@ export async function setVerseMemorizationStatus(
     return {};
   }
 
-  // Un passage manuel (tap-to-cycle) à "maîtrisé" (re)démarre toujours la
-  // révision espacée à la boîte 1 ; tout autre statut en sort (pas de
-  // planification pour "en cours"/"à renforcer" — ce dernier est toujours dû
-  // par définition, voir getDueReviews).
-  const { box, nextReviewAt } =
-    parsed.data.status === "maitrise"
-      ? scheduleNextReview(null)
-      : { box: null, nextReviewAt: null };
-
   await db
     .insert(quranMemorization)
     .values({
@@ -82,15 +58,11 @@ export async function setVerseMemorizationStatus(
       verseNumber: parsed.data.verseNumber,
       verseKey,
       status: parsed.data.status,
-      reviewBox: box,
-      nextReviewAt,
     })
     .onConflictDoUpdate({
       target: [quranMemorization.userId, quranMemorization.verseKey],
       set: {
         status: parsed.data.status,
-        reviewBox: box,
-        nextReviewAt,
         updatedAt: new Date(),
       },
     });
@@ -134,8 +106,6 @@ export async function setChapterMemorizedCount(
   }
 
   const { chapterId: id, memorizedCount: count } = parsed.data;
-  const { box: freshBox, nextReviewAt: freshNextReviewAt } =
-    scheduleNextReview(null);
 
   await db.transaction(async (tx) => {
     if (count > 0) {
@@ -145,13 +115,7 @@ export async function setChapterMemorizedCount(
         verseNumber: i + 1,
         verseKey: `${id}:${i + 1}`,
         status: "maitrise" as const,
-        reviewBox: freshBox,
-        nextReviewAt: freshNextReviewAt,
       }));
-      // `coalesce` : un verset déjà "maîtrisé" garde sa progression de
-      // révision en cours plutôt que de la faire repartir de zéro à chaque
-      // nouvelle déclaration du compte (ex. 50 -> 55 versets mémorisés ne
-      // doit pas réinitialiser l'échéance des 50 premiers).
       await tx
         .insert(quranMemorization)
         .values(rows)
@@ -159,8 +123,6 @@ export async function setChapterMemorizedCount(
           target: [quranMemorization.userId, quranMemorization.verseKey],
           set: {
             status: "maitrise",
-            reviewBox: sql`coalesce(${quranMemorization.reviewBox}, ${freshBox})`,
-            nextReviewAt: sql`coalesce(${quranMemorization.nextReviewAt}, ${freshNextReviewAt})`,
             updatedAt: new Date(),
           },
         });
@@ -179,87 +141,5 @@ export async function setChapterMemorizedCount(
 
   revalidatePath("/memorisation");
   revalidatePath("/coran");
-  return {};
-}
-
-const confirmReviewSchema = z.object({
-  chapterId: z.number().int().min(1).max(114),
-  verseNumber: z.number().int().min(1),
-  remembered: z.boolean(),
-});
-
-// Appelée depuis la page "à réviser" (pas le tap-to-cycle du lecteur), pour
-// un verset "maîtrisé" dû à reconfirmer OU "à renforcer" : un succès avance
-// d'une boîte de Leitner (en repartant de la boîte 1 si le verset était
-// "à renforcer") et repousse l'échéance ; un échec repasse/maintient le
-// verset en "à renforcer", dû à nouveau dès demain.
-export async function confirmVerseReview(
-  chapterId: number,
-  verseNumber: number,
-  remembered: boolean
-): Promise<{ error?: string }> {
-  const profile = await getCurrentProfile();
-  if (!profile) {
-    return { error: "Connecte-toi pour réviser." };
-  }
-
-  const parsed = confirmReviewSchema.safeParse({
-    chapterId,
-    verseNumber,
-    remembered,
-  });
-  if (!parsed.success) {
-    return { error: "Verset invalide." };
-  }
-
-  const verseKey = `${parsed.data.chapterId}:${parsed.data.verseNumber}`;
-  const existing = await db.query.quranMemorization.findFirst({
-    where: and(
-      eq(quranMemorization.userId, profile.id),
-      eq(quranMemorization.verseKey, verseKey)
-    ),
-  });
-  if (
-    !existing ||
-    (existing.status !== "maitrise" && existing.status !== "a_renforcer")
-  ) {
-    return { error: "Ce verset n'est pas en cours de révision." };
-  }
-
-  if (parsed.data.remembered) {
-    const { box, nextReviewAt } = scheduleNextReview(existing.reviewBox);
-    await db
-      .update(quranMemorization)
-      .set({
-        status: "maitrise",
-        reviewBox: box,
-        nextReviewAt,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(quranMemorization.userId, profile.id),
-          eq(quranMemorization.verseKey, verseKey)
-        )
-      );
-  } else {
-    await db
-      .update(quranMemorization)
-      .set({
-        status: "a_renforcer",
-        reviewBox: null,
-        nextReviewAt: null,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(quranMemorization.userId, profile.id),
-          eq(quranMemorization.verseKey, verseKey)
-        )
-      );
-  }
-
-  revalidatePath("/memorisation/revision");
-  revalidatePath("/memorisation");
   return {};
 }

@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
-import { NotificationBell } from "@/components/layout/notification-bell";
 import { SiteNavLinks } from "@/components/layout/site-nav-links";
 import { StaffModeSwitch } from "@/components/layout/staff-mode-switch";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -15,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { getCurrentProfile } from "@/lib/auth/get-session";
-import { getDueReviewsSummary } from "@/lib/db/queries/quran-memorization";
 
 // « Ahmad Test » → « AT » ; un seul mot → sa première lettre ; sans nom, la
 // première lettre de l'e-mail.
@@ -35,10 +33,6 @@ export async function SiteHeader({
 }: {
   profile: Awaited<ReturnType<typeof getCurrentProfile>>;
 }) {
-  const dueSummary = profile
-    ? await getDueReviewsSummary(profile.id)
-    : { aRenforcerCount: 0, maitriseDueCount: 0, total: 0 };
-
   return (
     <header className="sticky top-0 z-30 border-b bg-background">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
@@ -59,7 +53,6 @@ export async function SiteHeader({
             <StaffModeSwitch current="site" />
           )}
           <ThemeToggle />
-          {profile && <NotificationBell initialSummary={dueSummary} />}
           {profile ? (
             <DropdownMenu>
               <DropdownMenuTrigger

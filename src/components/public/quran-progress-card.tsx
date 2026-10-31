@@ -20,11 +20,9 @@ function plural(n: number, singular: string, pluralForm: string) {
 export function QuranProgressCard({
   chapters,
   statusMap,
-  dueCount,
 }: {
   chapters: QuranChapter[];
   statusMap: Record<string, MemorizationStatus>;
-  dueCount: number;
 }) {
   const summaries = computeChapterMemorizationSummaries(chapters, statusMap);
   const breakdown = computeWordProgressBreakdown(summaries);
@@ -62,24 +60,10 @@ export function QuranProgressCard({
                   .join(" · ")
               : "Marque les versets que tu apprends depuis le lecteur du Coran."}
           </p>
-          {dueCount > 0 && (
-            <p className="mt-1 text-xs font-medium text-primary">
-              {plural(dueCount, "verset", "versets")} à réviser aujourd&apos;hui
-            </p>
-          )}
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
-        {dueCount > 0 && (
-          <Button
-            render={<Link href="/memorisation/revision" />}
-            nativeButton={false}
-          >
-            Réviser
-          </Button>
-        )}
         <Button
-          variant={dueCount > 0 ? "outline" : "default"}
           render={<Link href={started ? "/memorisation" : "/coran"} />}
           nativeButton={false}
         >

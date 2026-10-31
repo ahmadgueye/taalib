@@ -148,8 +148,6 @@ erDiagram
         int verse_number
         text verse_key UK "denormalisé, ex: 2:255"
         memorization_status status "en_cours | a_renforcer | maitrise"
-        int review_box "boîte Leitner, 1..5 ; null si pas maitrise"
-        timestamptz next_review_at "échéance de révision ; null si pas maitrise"
     }
     classes {
         uuid id PK
@@ -202,11 +200,10 @@ Points notables :
   `verse_key` (`"chapitre:verset"`) est dénormalisé pour permettre un lookup
   direct côté client sans reconstruire la clé à partir de `chapter_id` +
   `verse_number`. Un index `(user_id, chapter_id)` accélère le chargement
-  d'une sourate entière dans le lecteur. `review_box`/`next_review_at`
-  pilotent la révision espacée (voir [`domain.md`](./domain.md#révision-espacée)) ;
-  une migration de backfill (`0022_backfill_quran_memorization_review.sql`)
-  initialise ces colonnes pour les versets `maitrise` déjà en base avant
-  l'ajout de cette fonctionnalité.
+  d'une sourate entière dans le lecteur. Les colonnes de révision espacée
+  (`review_box`, `next_review_at`, migrations 0021–0022) ont été supprimées
+  par la migration 0031 avec la fonctionnalité (voir
+  [`domain.md`](./domain.md#pas-de-révision-planifiée)).
 - `class_members` a une clé primaire composite `(class_id, user_id)` (un
   étudiant n'est qu'une fois dans une classe, mais peut être dans plusieurs)
   et un index sur `user_id` pour retrouver les classes d'un étudiant.
