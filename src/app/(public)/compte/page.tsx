@@ -14,7 +14,6 @@ import { getCurrentProfile } from "@/lib/auth/get-session";
 import { type ContentAccess } from "@/lib/content-access";
 import { getSuiviCours } from "@/lib/db/queries/progress";
 import {
-  getDueReviewsSummary,
   getMemorizationStatus,
 } from "@/lib/db/queries/quran-memorization";
 import { getQuizAttemptsSummary } from "@/lib/db/queries/quiz-tentatives";
@@ -72,14 +71,12 @@ export default async function ComptePage({ searchParams }: Props) {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login?next=/compte");
 
-  const [suivi, quizAttempts, chapters, statusMap, dueSummary] =
-    await Promise.all([
-      getContentAccess().then((access) => getCoursSuivis(profile.id, access)),
-      getQuizAttemptsSummary(profile.id),
-      getChapters(),
-      getMemorizationStatus(profile.id),
-      getDueReviewsSummary(profile.id),
-    ]);
+  const [suivi, quizAttempts, chapters, statusMap] = await Promise.all([
+    getContentAccess().then((access) => getCoursSuivis(profile.id, access)),
+    getQuizAttemptsSummary(profile.id),
+    getChapters(),
+    getMemorizationStatus(profile.id),
+  ]);
 
   // Sans nom, l'étudiant arrive ici pour compléter son profil : on ouvre
   // directement les paramètres.
@@ -121,11 +118,7 @@ export default async function ComptePage({ searchParams }: Props) {
       <section>
         <h2 className="font-heading text-xl font-semibold">Coran</h2>
         <div className="mt-4">
-          <QuranProgressCard
-            chapters={chapters}
-            statusMap={statusMap}
-            dueCount={dueSummary.total}
-          />
+          <QuranProgressCard chapters={chapters} statusMap={statusMap} />
         </div>
       </section>
 
