@@ -8,6 +8,7 @@ import { MarkdownContent } from "@/components/public/markdown-content";
 import { getContentAccess } from "@/lib/auth/content-access";
 import { canSeeThematique } from "@/lib/content-access";
 import { getHadithBySlug } from "@/lib/db/queries/hadiths";
+import { formatNarrators } from "@/lib/narrators";
 import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 
 type Props = {
@@ -70,7 +71,7 @@ export default async function HadithDetailPage({ params }: Props) {
       </Link>
 
       <div className="mt-6 text-sm text-muted-foreground">
-        <p>Rapporteur(s) : {h.narrator}</p>
+        <p>Rapporteur(s) : {formatNarrators(h.hadithNarrators)}</p>
         {h.source && <p className="mt-1">Source : {h.source}</p>}
       </div>
 
@@ -104,7 +105,7 @@ export default async function HadithDetailPage({ params }: Props) {
         </>
       )}
       {/* <div className="mt-6 text-sm text-muted-foreground">
-        <p>Rapporteur(s) : {h.narrator}</p>
+        <p>Rapporteur(s) : {formatNarrators(h.hadithNarrators)}</p>
         {h.source && <p className="mt-1">Source : {h.source}</p>}
       </div> */}
     </div>

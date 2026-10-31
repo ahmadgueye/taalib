@@ -11,6 +11,7 @@ import {
   Link as LinkIcon,
   ListTree,
   Quote,
+  UserRound,
   Users,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/dashboard/thematiques", label: "Thématiques", icon: ListTree },
   { href: "/dashboard/ressources", label: "Ressources", icon: LinkIcon },
   { href: "/dashboard/hadiths", label: "Hadiths", icon: Quote },
+  { href: "/dashboard/rapporteurs", label: "Rapporteurs", icon: UserRound },
   { href: "/dashboard/quiz", label: "Quiz", icon: HelpCircle },
   { href: "/dashboard/seances", label: "Séances", icon: Calendar },
 ];

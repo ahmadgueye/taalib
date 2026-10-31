@@ -9,6 +9,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -204,7 +205,6 @@ export const hadiths = pgTable("hadiths", {
   arabicText: text("arabic_text").notNull(),
   translationFr: text("translation_fr").notNull(),
   translationWolof: text("translation_wolof"),
-  narrator: text("narrator").notNull(),
   source: text("source"),
   addedBy: uuid("added_by").references(() => profiles.id),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -214,6 +214,42 @@ export const hadiths = pgTable("hadiths", {
     .notNull()
     .defaultNow(),
 });
+
+// Rapporteurs saisis une seule fois puis réutilisés d'un hadith à l'autre.
+// Unicité insensible à la casse pour éviter "Muslim" / "muslim".
+export const narrators = pgTable(
+  "narrators",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    name: text("name").notNull(),
+    createdBy: uuid("created_by").references(() => profiles.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("narrators_name_lower_idx").on(sql`lower(${table.name})`),
+  ]
+);
+
+export const hadithNarrators = pgTable(
+  "hadith_narrators",
+  {
+    hadithId: uuid("hadith_id")
+      .notNull()
+      .references(() => hadiths.id, { onDelete: "cascade" }),
+    // restrict : un rapporteur encore cité par un hadith ne peut pas être
+    // supprimé.
+    narratorId: uuid("narrator_id")
+      .notNull()
+      .references(() => narrators.id, { onDelete: "restrict" }),
+    orderIndex: integer("order_index").notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.hadithId, table.narratorId] })]
+);
 
 export const seances = pgTable("seances", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -418,12 +454,31 @@ export const ressourceProgressRelations = relations(
   })
 );
 
-export const hadithsRelations = relations(hadiths, ({ one }) => ({
+export const hadithsRelations = relations(hadiths, ({ one, many }) => ({
   thematique: one(thematiques, {
     fields: [hadiths.thematiqueId],
     references: [thematiques.id],
   }),
+  hadithNarrators: many(hadithNarrators),
 }));
+
+export const narratorsRelations = relations(narrators, ({ many }) => ({
+  hadithNarrators: many(hadithNarrators),
+}));
+
+export const hadithNarratorsRelations = relations(
+  hadithNarrators,
+  ({ one }) => ({
+    hadith: one(hadiths, {
+      fields: [hadithNarrators.hadithId],
+      references: [hadiths.id],
+    }),
+    narrator: one(narrators, {
+      fields: [hadithNarrators.narratorId],
+      references: [narrators.id],
+    }),
+  })
+);
 
 export const quizRelations = relations(quiz, ({ one, many }) => ({
   thematique: one(thematiques, {

@@ -29,6 +29,7 @@ import {
 import { getRecentHadiths } from "@/lib/db/queries/hadiths";
 import { getRecentRessources } from "@/lib/db/queries/ressources";
 import { getRecentSeances } from "@/lib/db/queries/seances";
+import { formatNarrators } from "@/lib/narrators";
 
 const typeLabels = {
   video: "Vidéo",
@@ -229,7 +230,7 @@ export default async function DashboardHomePage() {
               >
                 <span className="min-w-0 flex-1 truncate">{h.title}</span>
                 <span className="shrink-0 truncate text-muted-foreground">
-                  {h.narrator}
+                  {formatNarrators(h.hadithNarrators)}
                 </span>
               </Link>
             ))}

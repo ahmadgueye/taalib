@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { HadithForm } from "@/components/dashboard/hadith-form";
 import { getHadithById } from "@/lib/db/queries/hadiths";
+import { getAllNarrators } from "@/lib/db/queries/narrators";
 import { getAllThematiques } from "@/lib/db/queries/thematiques";
 
 type Props = {
@@ -10,9 +11,10 @@ type Props = {
 
 export default async function EditHadithPage({ params }: Props) {
   const { id } = await params;
-  const [h, thematiques] = await Promise.all([
+  const [h, thematiques, narratorOptions] = await Promise.all([
     getHadithById(id),
     getAllThematiques(),
+    getAllNarrators(),
   ]);
 
   if (!h) notFound();
@@ -29,7 +31,11 @@ export default async function EditHadithPage({ params }: Props) {
         Modifier le hadith
       </h1>
       <div className="mt-6">
-        <HadithForm thematiqueOptions={thematiqueOptions} hadith={h} />
+        <HadithForm
+          thematiqueOptions={thematiqueOptions}
+          narratorOptions={narratorOptions}
+          hadith={h}
+        />
       </div>
     </div>
   );

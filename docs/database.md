@@ -34,6 +34,8 @@ erDiagram
     cours ||--o{ thematiques : contains
     thematiques ||--o{ ressources : contains
     thematiques ||--o{ hadiths : contains
+    hadiths ||--o{ hadith_narrators : "cited by"
+    narrators ||--o{ hadith_narrators : cites
     thematiques ||--o{ quiz : contains
     thematiques ||--o{ seance_thematiques : "linked via"
     ressources ||--o{ seance_ressources : "linked via"
@@ -84,8 +86,16 @@ erDiagram
         text arabic_text
         text translation_fr
         text translation_wolof
-        text narrator
         text source
+    }
+    narrators {
+        uuid id PK
+        text name UK "unique sur lower(name)"
+    }
+    hadith_narrators {
+        uuid hadith_id PK,FK
+        uuid narrator_id PK,FK
+        int order_index
     }
     seances {
         uuid id PK
@@ -233,11 +243,12 @@ défense en profondeur qui donne des messages d'erreur propres). Résumé (déta
 dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 `0006_hadiths_rls.sql`, `0013_flat_lifeguard.sql`,
 `0019_quran_memorization_rls.sql`, `0023_classes.sql`, `0024_class_cours_unlocks.sql`,
-`0025_class_item_unlocks.sql`, `0027_private_content_rls.sql`) :
+`0025_class_item_unlocks.sql`, `0027_private_content_rls.sql`,
+`0032_hadith_narrators.sql`) :
 
 | Table | Lecture | Écriture |
 |---|---|---|
-| `cours`, `thematiques`, `ressources`, `hadiths`, `seances`, `seance_*`, `quiz`, `quiz_questions`, `quiz_choix` | `admin` ou `contributor` uniquement (plus de lecture publique depuis `0027` : le contenu est réservé aux étudiants, et les étudiants le lisent via l'app, voir [`auth.md`](./auth.md#les-trois-couches-de-vérification)) | `admin` ou `contributor` (fonction SQL `is_contributor()`) |
+| `cours`, `thematiques`, `ressources`, `hadiths`, `narrators`, `hadith_narrators`, `seances`, `seance_*`, `quiz`, `quiz_questions`, `quiz_choix` | `admin` ou `contributor` uniquement (plus de lecture publique depuis `0027` : le contenu est réservé aux étudiants, et les étudiants le lisent via l'app, voir [`auth.md`](./auth.md#les-trois-couches-de-vérification)) | `admin` ou `contributor` (fonction SQL `is_contributor()`) |
 | `profiles` | son propre profil ; tous pour `admin`/`contributor` (depuis `0027`) | `admin` uniquement (`is_admin()`), et seulement en `UPDATE` |
 | `ressource_progress`, `quran_memorization` | l'utilisateur lui-même (`auth.uid() = user_id`) | l'utilisateur lui-même, sur ses propres lignes uniquement |
 | `quiz_tentatives`, `quiz_reponses` | l'utilisateur lui-même (ses propres tentatives) | l'utilisateur lui-même, en `INSERT` seulement (pas d'édition d'une tentative passée) |
