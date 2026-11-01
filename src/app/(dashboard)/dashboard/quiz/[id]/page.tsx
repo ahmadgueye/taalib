@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { getQuizWithQuestions } from "@/lib/db/queries/quiz";
 import { getAllThematiques } from "@/lib/db/queries/thematiques";
 import { toQuestionDrafts } from "@/lib/quiz-drafts";
+import { isQuizGenerationEnabled } from "@/lib/quiz-generation";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -64,6 +65,7 @@ export default async function QuizPage({ params, searchParams }: Props) {
           quiz={quiz}
           thematiqueOptions={thematiqueOptions}
           initialQuestions={toQuestionDrafts(quiz.questions)}
+          aiEnabled={isQuizGenerationEnabled()}
           initialTab={onglet}
         />
       </div>

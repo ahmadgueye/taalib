@@ -9,11 +9,16 @@ import {
   Eye,
   FileUp,
   Plus,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  GenerateDialog,
+  ImportedQuestionList,
+} from "@/components/dashboard/quiz-generate-dialog";
 import { SubmitButton } from "@/components/dashboard/submit-button";
 import { QuizAttempt } from "@/components/public/quiz-attempt";
 import { Badge } from "@/components/ui/badge";
@@ -151,6 +156,7 @@ export function QuizEditor({
   defaultThematiqueId,
   initialQuestions,
   initialTab,
+  aiEnabled = false,
 }: {
   quiz?: {
     id: string;
@@ -165,6 +171,8 @@ export function QuizEditor({
   defaultThematiqueId?: string;
   initialQuestions: QuestionDraft[];
   initialTab?: string;
+  // Génération par IA proposée seulement si la clé API est configurée.
+  aiEnabled?: boolean;
 }) {
   const [meta, setMeta] = useState<Meta>(() => ({
     title: quiz?.title ?? "",
@@ -202,6 +210,7 @@ export function QuizEditor({
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
   const dirty = snapshot(meta, questions) !== saved;
   useLeaveGuard(dirty);
 
@@ -234,7 +243,7 @@ export function QuizEditor({
     setQuestions((qs) => [...qs, emptyQuestion()]);
   }
 
-  // Les questions importées s'ajoutent à la suite, repliées, sans rien
+  // Les questions importées ou générées s'ajoutent à la suite, repliées, sans rien
   // enregistrer. Une question vide restée seule (nouveau quiz) est remplacée.
   function importQuestions(imported: ImportedQuestion[]) {
     const drafts: QuestionDraft[] = imported.map((q) => ({
@@ -253,6 +262,7 @@ export function QuizEditor({
     // Un nouveau quiz généré par une IA se relit avant d'être publié.
     if (!quiz) setMeta((m) => ({ ...m, status: "draft" }));
     setImportOpen(false);
+    setGenerateOpen(false);
     toast.success(
       `${drafts.length} question${drafts.length > 1 ? "s" : ""} ajoutée${
         drafts.length > 1 ? "s" : ""
@@ -437,6 +447,16 @@ export function QuizEditor({
                 <FileUp className="size-4" />
                 Importer
               </Button>
+              {aiEnabled && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setGenerateOpen(true)}
+                >
+                  <Sparkles className="size-4" />
+                  Générer avec l&apos;IA
+                </Button>
+              )}
             </div>
           </TabsContent>
           {/* Toujours monté : ses champs font partie du formulaire. */}
@@ -574,6 +594,14 @@ export function QuizEditor({
         onOpenChange={setImportOpen}
         onImport={importQuestions}
       />
+      {aiEnabled && (
+        <GenerateDialog
+          open={generateOpen}
+          onOpenChange={setGenerateOpen}
+          thematiqueId={meta.thematiqueId}
+          onImport={importQuestions}
+        />
+      )}
       {/* Hors du formulaire : l'aperçu contient son propre formulaire. */}
       <PreviewDialog
         open={previewOpen}
@@ -975,22 +1003,7 @@ function ImportDialog({
                 ))}
               </ul>
             )}
-            {count > 0 && (
-              <ol className="list-decimal pl-5 text-muted-foreground">
-                {questions.map((q, i) => (
-                  <li key={i} className="truncate">
-                    {q.prompt}{" "}
-                    <span className="text-xs">
-                      (
-                      {q.type === "vrai_faux"
-                        ? "Vrai / Faux"
-                        : `${q.choix.length} choix`}
-                      )
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            )}
+            {count > 0 && <ImportedQuestionList questions={questions} />}
           </div>
         )}
 

@@ -18,8 +18,8 @@ npm run db:local:start      # Postgres, Auth, Storage, Studio dans Docker
 
 La commande affiche l'URL de l'API, la clé anon et la `DATABASE_URL` locales.
 Créer `.env.development.local` avec ces valeurs (modèle dans `.env.example`,
-section « Local ») et y copier `CRON_SECRET`, `QURAN_CLIENT_ID` et
-`QURAN_CLIENT_SECRET` depuis `.env.local`. Ce fichier est ignoré par git.
+section « Local ») et y copier `CRON_SECRET`, `QURAN_CLIENT_ID`,
+`QURAN_CLIENT_SECRET` et, si besoin, `ANTHROPIC_API_KEY` depuis `.env.local`. Ce fichier est ignoré par git.
 
 ```bash
 npm run db:migrate:local    # applique les migrations Drizzle

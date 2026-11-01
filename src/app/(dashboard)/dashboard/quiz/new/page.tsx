@@ -4,6 +4,7 @@ import {
 } from "@/components/dashboard/breadcrumbs";
 import { QuizEditor } from "@/components/dashboard/quiz-editor";
 import { getAllThematiques } from "@/lib/db/queries/thematiques";
+import { isQuizGenerationEnabled } from "@/lib/quiz-generation";
 
 type Props = {
   searchParams: Promise<{ thematique?: string }>;
@@ -39,6 +40,7 @@ export default async function NewQuizPage({ searchParams }: Props) {
           thematiqueOptions={thematiqueOptions}
           defaultThematiqueId={parent?.id}
           initialQuestions={[]}
+          aiEnabled={isQuizGenerationEnabled()}
         />
       </div>
     </div>

@@ -150,6 +150,11 @@ Passer le compte en `contributor` puis `admin` dans Studio
       questions reconnues et les blocs ignorés ; « Ajouter » les place
       repliées dans l'éditeur, sans enregistrer ; un nouveau quiz passe en
       Brouillon
+- [ ] Quiz → « Générer avec l'IA » (visible seulement avec
+      `ANTHROPIC_API_KEY`) : liste les leçons écrites de la thématique ;
+      sans thématique ou sans leçon écrite, un message l'explique ;
+      « Générer » renvoie des questions fidèles aux leçons ; « Ajouter » les
+      place repliées dans l'éditeur, sans enregistrer
 - [ ] Quiz déjà tenté par un élève : corriger une faute dans un énoncé puis
       enregistrer → la correction détaillée de sa tentative
       (`/quiz/[id]/historique/...`) est toujours complète

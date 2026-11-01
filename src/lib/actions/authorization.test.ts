@@ -35,6 +35,7 @@ import * as classes from "@/lib/actions/classes";
 import * as cours from "@/lib/actions/cours";
 import * as hadiths from "@/lib/actions/hadiths";
 import * as quiz from "@/lib/actions/quiz";
+import * as quizGeneration from "@/lib/actions/quiz-generation";
 import * as ressources from "@/lib/actions/ressources";
 import * as seances from "@/lib/actions/seances";
 import * as thematiques from "@/lib/actions/thematiques";
@@ -45,6 +46,7 @@ const modules = {
   cours,
   hadiths,
   quiz,
+  quizGeneration,
   ressources,
   seances,
   thematiques,

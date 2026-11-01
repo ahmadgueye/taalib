@@ -143,6 +143,19 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   laissé de côté. Les questions s'ajoutent repliées à l'éditeur, sans être
   enregistrées ; dans un nouveau quiz, le statut passe en Brouillon, pour
   relire avant de publier.
+- **Génération par IA** — « Générer avec l'IA », à côté d'« Importer »,
+  demande à Claude (`claude-opus-5-5`) d'écrire des questions à partir des
+  leçons écrites (ressources de type `texte`) de la thématique du quiz
+  (`GenerateDialog` dans `quiz-generate-dialog.tsx`, actions dans
+  `lib/actions/quiz-generation.ts`, appel à l'API dans
+  `lib/quiz-generation.ts`). On choisit les leçons, le nombre de questions
+  (3 à 20) et une consigne facultative. La réponse est du JSON structuré,
+  filtré par les mêmes règles que l'éditeur ; les questions mal formées sont
+  écartées. Elles s'ajoutent comme à l'import : repliées, non enregistrées,
+  nouveau quiz en Brouillon. Le bouton n'apparaît que si `ANTHROPIC_API_KEY`
+  est configurée ; les vidéos et PDF restent couverts par l'import. Coût
+  indicatif : 0,10 à 0,15 $ par quiz de 10 questions. Le plafond de dépense
+  se règle dans la console Anthropic.
 - **Mise à jour en place** — chaque question et chaque choix garde son id
   d'un enregistrement à l'autre (`syncQuestions`) : corriger un énoncé ou un
   choix ne touche pas aux réponses déjà données par les élèves, et l'écran de
