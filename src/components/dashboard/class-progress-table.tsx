@@ -101,6 +101,11 @@ function ProgressRows({
                   moy. {Math.round(row.quiz.averageScore)} %
                 </p>
               )}
+              {row.quiz.blocked > 0 && (
+                <p className="text-xs text-rose-600">
+                  {row.quiz.blocked} bloqué{row.quiz.blocked > 1 ? "s" : ""}
+                </p>
+              )}
             </>
           ) : (
             <span className="text-muted-foreground">—</span>

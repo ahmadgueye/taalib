@@ -145,6 +145,7 @@ export async function getClassCoursOutline(classId: string) {
           id: q.id,
           title: q.title,
           passingScore: q.passingScore,
+          maxAttempts: q.maxAttempts,
           unlockedAt: quizUnlockedAt.get(q.id) ?? null,
         })),
       })),

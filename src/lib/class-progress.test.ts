@@ -68,14 +68,41 @@ describe("buildClassProgress", () => {
       })
     );
     // q1 : meilleur 90 % (réussi) ; q2 : 60 % ; q3 : pas tenté.
-    expect(row.quiz).toEqual({ passed: 1, total: 3, averageScore: 75 });
+    expect(row.quiz).toEqual({ passed: 1, total: 3, averageScore: 75, blocked: 0 });
   });
 
   it("has no average when no quiz was attempted", () => {
     const [row] = buildClassProgress(
       input({ quiz: [{ id: "q1", unlockedAt: day(1), passingScore: 80 }] })
     );
-    expect(row.quiz).toEqual({ passed: 0, total: 1, averageScore: null });
+    expect(row.quiz).toEqual({ passed: 0, total: 1, averageScore: null, blocked: 0 });
+  });
+
+  it("flags failed quizzes with no attempt left, minus granted attempts", () => {
+    const [row] = buildClassProgress(
+      input({
+        quiz: [
+          { id: "q1", unlockedAt: day(1), passingScore: 80, maxAttempts: 2 },
+          { id: "q2", unlockedAt: day(1), passingScore: 80, maxAttempts: 2 },
+          { id: "q3", unlockedAt: day(1), passingScore: 80, maxAttempts: 1 },
+          { id: "q4", unlockedAt: day(1), passingScore: 80, maxAttempts: null },
+        ],
+        attempts: [
+          // q1 : 2 échecs, plus de tentative → bloqué.
+          { userId: "u1", quizId: "q1", score: 1, totalQuestions: 10, completedAt: day(2) },
+          { userId: "u1", quizId: "q1", score: 2, totalQuestions: 10, completedAt: day(2) },
+          // q2 : 2 échecs mais une tentative accordée.
+          { userId: "u1", quizId: "q2", score: 1, totalQuestions: 10, completedAt: day(2) },
+          { userId: "u1", quizId: "q2", score: 1, totalQuestions: 10, completedAt: day(2) },
+          // q3 : réussi à la seule tentative.
+          { userId: "u1", quizId: "q3", score: 9, totalQuestions: 10, completedAt: day(2) },
+          // q4 : illimité.
+          { userId: "u1", quizId: "q4", score: 0, totalQuestions: 10, completedAt: day(2) },
+        ],
+        extraAttempts: [{ userId: "u1", quizId: "q2", extra: 1 }],
+      })
+    );
+    expect(row.quiz.blocked).toBe(1);
   });
 
   it("judges a former student only on what was unlocked before they left", () => {

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Check, TriangleAlert } from "lucide-react";
 
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
+import { GrantAttemptButton } from "@/components/dashboard/grant-attempt-button";
 import { MemorizationDashboard } from "@/components/public/memorization-dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,11 @@ import {
   getMemorizationStatus,
   getRecentChapterActivity,
 } from "@/lib/db/queries/quran-memorization";
-import { getQuizScores } from "@/lib/db/queries/quiz-tentatives";
+import {
+  getExtraAttemptsForUser,
+  getQuizScores,
+} from "@/lib/db/queries/quiz-tentatives";
+import { attemptsLeft } from "@/lib/quiz-attempts";
 import { computeChapterMemorizationSummaries } from "@/lib/quran/memorization";
 import { getChapters } from "@/lib/quran/queries";
 import { cn } from "@/lib/utils";
@@ -67,10 +72,11 @@ export default async function ClassStudentPage({ params }: Props) {
   const quizIds = cours.flatMap((c) =>
     c.thematiques.flatMap((t) => t.quiz.map((q) => q.id))
   );
-  const [completions, scores, chapters, statusMap, recentActivity] =
+  const [completions, scores, extras, chapters, statusMap, recentActivity] =
     await Promise.all([
       getRessourceCompletionDates(userId, ressourceIds),
       getQuizScores(userId, quizIds),
+      getExtraAttemptsForUser(userId, quizIds),
       getChapters(),
       getMemorizationStatus(userId),
       getRecentChapterActivity(userId),
@@ -203,15 +209,27 @@ export default async function ClassStudentPage({ params }: Props) {
                           : null;
                         const passed =
                           percent !== null && percent >= q.passingScore;
+                        const used = score?.attemptsCount ?? 0;
+                        const left = attemptsLeft(
+                          q.maxAttempts,
+                          extras.get(q.id) ?? 0,
+                          used
+                        );
                         return (
-                          <li key={q.id} className="flex items-center justify-between gap-3">
+                          <li key={q.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                             <span className={cn(!score && "text-muted-foreground")}>
                               Quiz · {q.title}
                             </span>
                             {score ? (
                               <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                                {score.attemptsCount} tentative
-                                {score.attemptsCount > 1 ? "s" : ""}
+                                {left !== null && left === 0 && !passed && (
+                                  <GrantAttemptButton quizId={q.id} userId={userId} />
+                                )}
+                                <span className={cn(left === 0 && !passed && "text-rose-600")}>
+                                  {score.attemptsCount}
+                                  {left !== null && `/${used + left}`} tentative
+                                  {score.attemptsCount > 1 ? "s" : ""}
+                                </span>
                                 <Badge
                                   className={cn(
                                     passed

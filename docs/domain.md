@@ -477,7 +477,9 @@ elle qui détermine ce qu'un étudiant voit, voir
   - **Leçons** : ressources lues parmi celles débloquées pour la classe
     (publiées, d'un cours encore suivi), pas sur tout le cours ;
   - **Quiz** : quiz réussis (meilleure tentative ≥ seuil du quiz) parmi ceux
-    débloqués, et moyenne des meilleurs scores des quiz tentés ;
+    débloqués, moyenne des meilleurs scores des quiz tentés, et « N bloqués »
+    en rouge pour les quiz pas réussis dont l'étudiant a épuisé les
+    tentatives ;
   - **Coran** : pourcentage mémorisé, même calcul que `/memorisation` (au
     prorata des mots), et versets à renforcer ; c'est la mémorisation
     globale de l'étudiant, pas propre à la classe ;
@@ -492,7 +494,10 @@ elle qui détermine ce qu'un étudiant voit, voir
     n'est pas membre de la classe, actif ou ancien) : les mêmes chiffres en
     cartes, puis chaque cours avec ce que l'étudiant voit de la classe
     (leçons lues avec leur date ou « à lire », quiz avec le meilleur score et
-    le nombre de tentatives ou « pas tenté »), et sa mémorisation : le
+    le nombre de tentatives ou « pas tenté » ; pour un quiz limité, « 2/2
+    tentatives », en rouge avec « Accorder une tentative »
+    (`grant-attempt-button.tsx`) s'il est raté et sans tentative restante),
+    et sa mémorisation : le
     tableau de bord de `/memorisation` (`memorization-dashboard.tsx`) et une
     barre par sourate suivie (maîtrisés / à renforcer).
 - **Rejoindre** — `/rejoindre` (saisie du code) et `/rejoindre/[code]`. Le

@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Plus } from "lucide-react";
-import { toast } from "sonner";
+import { useState } from "react";
 
+import { GrantAttemptButton } from "@/components/dashboard/grant-attempt-button";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { grantQuizAttempt } from "@/lib/actions/quiz";
 import { attemptsLeft } from "@/lib/quiz-attempts";
 import { cn } from "@/lib/utils";
 
@@ -79,18 +76,9 @@ export function QuizSubmissionsTable({
   extras: Record<string, number>;
 }) {
   const [selected, setSelected] = useState<StudentRow | null>(null);
-  const [granting, startGranting] = useTransition();
 
   function allowed(s: StudentRow) {
     return maxAttempts === null ? null : maxAttempts + (extras[s.user.id] ?? 0);
-  }
-
-  function grant(s: StudentRow) {
-    startGranting(async () => {
-      const result = await grantQuizAttempt(quizId, s.user.id);
-      if (result?.error) toast.error(result.error);
-      else toast.success("Tentative accordée.");
-    });
   }
 
   const selectedAllowed = selected ? allowed(selected) : null;
@@ -157,16 +145,7 @@ export function QuizSubmissionsTable({
                 {selectedAllowed > 1 ? "s" : ""}
                 {selectedLeft === 0 ? " · plus de tentative" : ""}
               </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                loading={granting}
-                onClick={() => grant(selected)}
-              >
-                <Plus className="size-4" />
-                Accorder une tentative
-              </Button>
+              <GrantAttemptButton quizId={quizId} userId={selected.user.id} />
             </div>
           )}
           <div className="flex flex-col gap-2">

@@ -228,6 +228,18 @@ export async function getQuizSubmissionStats(quizId: string) {
   };
 }
 
+// Tentatives accordées en plus de la limite à un étudiant, par quiz.
+export async function getExtraAttemptsForUser(userId: string, quizIds: string[]) {
+  if (quizIds.length === 0) return new Map<string, number>();
+  const rows = await db.query.quizExtraAttempts.findMany({
+    where: and(
+      eq(quizExtraAttempts.userId, userId),
+      inArray(quizExtraAttempts.quizId, quizIds)
+    ),
+  });
+  return new Map(rows.map((r) => [r.quizId, r.extra]));
+}
+
 // Tentatives accordées en plus de la limite, par étudiant.
 export async function getExtraAttempts(quizId: string) {
   const rows = await db.query.quizExtraAttempts.findMany({

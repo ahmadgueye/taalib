@@ -9,6 +9,7 @@ import {
   classRessourceUnlocks,
   profiles,
   quiz,
+  quizExtraAttempts,
   quizTentatives,
   quranMemorization,
   ressourceProgress,
@@ -35,7 +36,15 @@ export async function getClassProgress(classId: string) {
   const userIds = members.map((m) => m.userId);
   // Seuls les éléments publiés des cours encore suivis par la classe
   // comptent, comme pour ce que voit l'étudiant.
-  const [unlockedRessources, unlockedQuiz, completions, attempts, memorization, chapters] =
+  const [
+    unlockedRessources,
+    unlockedQuiz,
+    completions,
+    attempts,
+    memorization,
+    chapters,
+    extraAttempts,
+  ] =
     await Promise.all([
       db
         .select({
@@ -63,6 +72,7 @@ export async function getClassProgress(classId: string) {
           id: classQuizUnlocks.quizId,
           unlockedAt: classQuizUnlocks.unlockedAt,
           passingScore: quiz.passingScore,
+          maxAttempts: quiz.maxAttempts,
         })
         .from(classQuizUnlocks)
         .innerJoin(quiz, eq(quiz.id, classQuizUnlocks.quizId))
@@ -111,6 +121,14 @@ export async function getClassProgress(classId: string) {
           quranMemorization.status
         ),
       getChapters(),
+      db
+        .select({
+          userId: quizExtraAttempts.userId,
+          quizId: quizExtraAttempts.quizId,
+          extra: quizExtraAttempts.extra,
+        })
+        .from(quizExtraAttempts)
+        .where(inArray(quizExtraAttempts.userId, userIds)),
     ]);
 
   return buildClassProgress({
@@ -119,6 +137,7 @@ export async function getClassProgress(classId: string) {
     quiz: unlockedQuiz,
     completions,
     attempts,
+    extraAttempts,
     memorization: memorization.map((m) => ({
       ...m,
       lastUpdatedAt: new Date(m.lastUpdatedAt ?? 0),
