@@ -130,7 +130,9 @@ renvoie vers l'accueil (`dashboard/layout.tsx`).
   l'équipe ».
 
 Toutes ces actions sont dans `lib/actions/users.ts` ; les requêtes dans
-`lib/db/queries/users.ts`.
+`lib/db/queries/users.ts`. Le bouton « Qui peut faire quoi ? » ouvre un
+tableau des droits par rôle (`roles-help-dialog.tsx`) : il est écrit à la
+main, à mettre à jour si une permission change.
 
 ## Ajouter un rôle ou changer une permission
 
@@ -145,7 +147,8 @@ Si un jour il faut un rôle intermédiaire ou une permission plus fine :
 4. Mettre à jour l'UI qui branche sur le rôle : `dashboard/layout.tsx`
    (redirection des `viewer`), `dashboard-sidebar.tsx` (`isAdmin`),
    `dashboard/utilisateurs/page.tsx`, `team-section.tsx` et
-   `user-role-select.tsx` (`teamRoleLabels`), `lib/actions/users.ts`.
+   `user-role-select.tsx` (`teamRoleLabels`), `roles-help-dialog.tsx`,
+   `lib/actions/users.ts`.
 
 Oublier une de ces quatre étapes est la source d'incohérence la plus probable
 (ex : RLS autorise mais l'UI cache le bouton, ou l'inverse). Penser aussi à

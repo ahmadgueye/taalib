@@ -148,6 +148,8 @@ Passer le compte en `contributor` puis `admin` dans Studio
       un rôle ; impossible de retirer le dernier admin ; « Retirer l'accès »
       absent sur sa propre ligne, et sur une autre le compte repasse dans
       « Comptes »
+- [ ] Utilisateurs : « Qui peut faire quoi ? » ouvre le tableau des droits
+      (Compte, Éditeur, Admin)
 - [ ] Utilisateurs : section « Comptes » en lecture seule, recherche par nom
       ou e-mail, liens vers la fiche de l'élève dans chacune de ses classes
 - [ ] Accueil du dashboard : plus de ligne « en attente d'autorisation »

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { AccountsTable } from "@/components/dashboard/accounts-table";
+import { RolesHelpDialog } from "@/components/dashboard/roles-help-dialog";
 import { TeamSection } from "@/components/dashboard/team-section";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { getAccounts, getTeam } from "@/lib/db/queries/users";
@@ -20,9 +21,12 @@ export default async function DashboardUtilisateursPage() {
       </h1>
 
       <section className="mt-6">
-        <h2 className="font-heading text-lg font-semibold tracking-tight">
-          Équipe ({team.length})
-        </h2>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="font-heading text-lg font-semibold tracking-tight">
+            Équipe ({team.length})
+          </h2>
+          <RolesHelpDialog />
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Les personnes qui ont accès au dashboard. Pour en ajouter une, saisis
           l&apos;e-mail de son compte : elle doit s&apos;être connectée au moins
