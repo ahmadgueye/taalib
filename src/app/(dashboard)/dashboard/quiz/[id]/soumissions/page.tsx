@@ -63,7 +63,7 @@ export default async function QuizSoumissionsPage({ params }: Props) {
           ...thematiqueCrumbs(quiz.thematique),
           {
             label: quiz.title,
-            href: `/dashboard/quiz/${quiz.id}/questions`,
+            href: `/dashboard/quiz/${quiz.id}`,
           },
           { label: "Soumissions" },
         ]}

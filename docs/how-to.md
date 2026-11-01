@@ -64,9 +64,9 @@ Fichiers à créer/modifier, dans l'ordre :
      `src/components/dashboard/dashboard-sidebar.tsx` (Enseignement,
      Hadiths, ou Gestion pour ce qui est réservé à l'admin).
    - Si l'entité a des sous-éléments imbriqués (ex : les questions d'un quiz),
-     ajouter une page dédiée `dashboard/foo/[id]/sous-element/page.tsx` plutôt
-     que de tout gérer dans le formulaire d'édition — voir
-     `dashboard/quiz/[id]/questions/page.tsx` comme référence.
+     les éditer dans le même formulaire que l'entité et les mettre à jour en
+     place en gardant leurs ids, pour ne pas casser ce qui s'y rattache —
+     voir `quiz-editor.tsx` et `syncQuestions` dans `lib/actions/quiz.ts`.
 
 7. **Tests** — ajouter l'entité à la liste de `modules` de
    `src/lib/actions/authorization.test.ts` : le test vérifie que chaque action

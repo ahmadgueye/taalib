@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLink, ListChecks, Pencil, Plus } from "lucide-react";
+import { ExternalLink, Pencil, Plus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -188,7 +188,7 @@ export default async function ThematiquePage({ params }: Props) {
                 <li key={q.id} className={rowClass}>
                   <div className="min-w-0 flex-1">
                     <Link
-                      href={`/dashboard/quiz/${q.id}/questions`}
+                      href={`/dashboard/quiz/${q.id}`}
                       className="block truncate font-medium hover:underline hover:underline-offset-4"
                     >
                       {q.title}
@@ -201,16 +201,7 @@ export default async function ThematiquePage({ params }: Props) {
                   {q.status === "draft" && (
                     <Badge variant="outline">Brouillon</Badge>
                   )}
-                  <Button
-                    render={<Link href={`/dashboard/quiz/${q.id}/questions`} />}
-                    nativeButton={false}
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={`Questions de « ${q.title} »`}
-                  >
-                    <ListChecks className="size-4" />
-                  </Button>
-                  <EditButton href={`/dashboard/quiz/${q.id}/edit`} label={q.title} />
+                  <EditButton href={`/dashboard/quiz/${q.id}`} label={q.title} />
                   <DeleteButton
                     action={deleteQuiz.bind(null, q.id)}
                     itemLabel={q.title}

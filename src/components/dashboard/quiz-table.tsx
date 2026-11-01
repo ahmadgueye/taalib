@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BarChart3, HelpCircle, Pencil } from "lucide-react";
+import { BarChart3, Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -162,7 +162,7 @@ export function QuizTable({
                   title={quiz.title}
                 >
                   <Link
-                    href={`/dashboard/quiz/${quiz.id}/questions`}
+                    href={`/dashboard/quiz/${quiz.id}`}
                     className="hover:underline hover:underline-offset-4"
                   >
                     {quiz.title}
@@ -191,18 +191,6 @@ export function QuizTable({
                 <TableCell className="flex justify-end gap-1">
                   <Button
                     render={
-                      <Link href={`/dashboard/quiz/${quiz.id}/questions`} />
-                    }
-                    nativeButton={false}
-                    variant="ghost"
-                    size="icon-sm"
-                    title="Questions"
-                    aria-label={`Questions de « ${quiz.title} »`}
-                  >
-                    <HelpCircle className="size-4" />
-                  </Button>
-                  <Button
-                    render={
                       <Link href={`/dashboard/quiz/${quiz.id}/soumissions`} />
                     }
                     nativeButton={false}
@@ -214,7 +202,7 @@ export function QuizTable({
                     <BarChart3 className="size-4" />
                   </Button>
                   <Button
-                    render={<Link href={`/dashboard/quiz/${quiz.id}/edit`} />}
+                    render={<Link href={`/dashboard/quiz/${quiz.id}`} />}
                     nativeButton={false}
                     variant="ghost"
                     size="icon-sm"

@@ -108,16 +108,35 @@ avec le nombre de thématiques, de leçons et de quiz publiés
 
 Un quiz (`quiz`) appartient à une thématique et contient des questions
 ordonnées (`quiz_questions`, type `qcm` ou `vrai_faux`), chacune avec ses
-choix (`quiz_choix`, un ou plusieurs marqués `is_correct`). Édition dashboard
-en deux temps : `createQuiz` redirige directement vers
-`/dashboard/quiz/[id]/questions` (page dédiée à l'ajout de questions/choix),
-contrairement au pattern CRUD standard des autres entités — voir
-[`how-to.md`](./how-to.md).
+choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
+
+- **Édition (dashboard)** — `/dashboard/quiz/[id]` réunit les questions et
+  les réglages du quiz (thématique, titre, statut, score minimum) en deux
+  onglets, reflétés dans l'URL (`?onglet=reglages`) ; un nouveau quiz s'ouvre
+  sur les réglages. Les deux onglets forment un seul formulaire
+  (`quiz-editor.tsx`), enregistré
+  d'un coup par `createQuiz` / `updateQuiz` (`lib/actions/quiz.ts`). Un quiz
+  ne s'enregistre jamais sans au moins une question : il n'existe donc pas de
+  quiz publié vide. Après un enregistrement, l'éditeur reste ouvert ; il
+  prévient avant de quitter la page avec des modifications non enregistrées.
+  Les questions se réordonnent, se dupliquent, se replient (repliées d'office
+  au-delà de trois) ; une suppression s'annule depuis le toast. « Aperçu
+  élève » ouvre le quiz tel que l'élève le verra (`QuizAttempt` avec
+  `previewGrade`), corrigé sur place sans rien enregistrer.
+- **Mise à jour en place** — chaque question et chaque choix garde son id
+  d'un enregistrement à l'autre (`syncQuestions`) : corriger un énoncé ou un
+  choix ne touche pas aux réponses déjà données par les élèves, et l'écran de
+  correction de leurs tentatives reste complet. Seul ce qui est retiré de
+  l'éditeur est supprimé, avec les réponses qui s'y rattachaient (passer une
+  question de QCM à Vrai/Faux remplace ses choix). Un score déjà obtenu
+  n'est pas recalculé si une bonne réponse change.
 
 - **Passage** — `/quiz/[id]` (`quiz-attempt.tsx`) affiche les questions,
   collecte les réponses côté client puis les soumet à `submitQuizAttempt`
   (`lib/actions/quiz-tentatives.ts`).
-- **Correction côté serveur uniquement** — l'action recharge les
+- **Correction côté serveur uniquement** — le calcul est dans
+  `gradeQuestions` (`lib/quiz-grading.ts`), partagé avec l'aperçu du
+  dashboard. L'action recharge les
   `is_correct` réels depuis la base à partir des questions du quiz, jamais
   depuis le payload soumis par le client, avant de calculer le score. Une
   question à choix multiples n'est juste que si l'ensemble coché est

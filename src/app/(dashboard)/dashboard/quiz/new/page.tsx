@@ -2,7 +2,7 @@ import {
   Breadcrumbs,
   thematiqueCrumbs,
 } from "@/components/dashboard/breadcrumbs";
-import { QuizForm } from "@/components/dashboard/quiz-form";
+import { QuizEditor } from "@/components/dashboard/quiz-editor";
 import { getAllThematiques } from "@/lib/db/queries/thematiques";
 
 type Props = {
@@ -35,9 +35,10 @@ export default async function NewQuizPage({ searchParams }: Props) {
         Nouveau quiz
       </h1>
       <div className="mt-6">
-        <QuizForm
+        <QuizEditor
           thematiqueOptions={thematiqueOptions}
           defaultThematiqueId={parent?.id}
+          initialQuestions={[]}
         />
       </div>
     </div>

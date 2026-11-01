@@ -68,10 +68,11 @@ deux layouts et deux publics différents :
   systématiquement le même quatuor de pages :
   `dashboard/foo/page.tsx` (liste), `dashboard/foo/new/page.tsx` (création),
   `dashboard/foo/[id]/edit/page.tsx` (édition), plus un composant `foo-form.tsx`
-  et `foo-table.tsx` partagés entre create/edit et list. `quiz` est la seule
-  exception : `createQuiz` redirige vers une cinquième page,
-  `dashboard/quiz/[id]/questions/page.tsx`, dédiée à la gestion des questions
-  et choix imbriqués. `classes` (admin seulement) n'a pas de page `edit` :
+  et `foo-table.tsx` partagés entre create/edit et list. `quiz` est une
+  exception : une seule page, `dashboard/quiz/[id]/page.tsx`, édite ses
+  questions et ses réglages en deux onglets, enregistrés ensemble (`quiz-editor.tsx`, aussi utilisé par
+  `quiz/new`) ; les anciennes adresses `[id]/edit` et `[id]/questions`
+  redirigent vers elle. `classes` (admin seulement) n'a pas de page `edit` :
   `dashboard/classes/[id]/page.tsx` réunit tout en onglets
   (`class-tabs.tsx`, reflétés dans l'URL par `?onglet=`) : Suivi (par
   défaut), Cours, Étudiants, et Réglages (formulaire et code d'invitation) ;

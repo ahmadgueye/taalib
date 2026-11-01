@@ -14,6 +14,7 @@ import {
   quizTentatives,
 } from "@/lib/db/schema";
 import type { QuizCorrection } from "@/lib/db/queries/quiz-tentatives";
+import { gradeQuestions } from "@/lib/quiz-grading";
 
 const submitSchema = z.object({
   quizId: z.string().uuid(),
@@ -77,40 +78,17 @@ export async function submitQuizAttempt(
     parsed.data.answers.map((a) => [a.questionId, new Set(a.choixIds)])
   );
 
-  let score = 0;
-  const rowsToInsert: { questionId: string; choixId: string }[] = [];
-  const corrections: Extract<SubmitQuizResult, { score: number }>["corrections"] = [];
-
-  for (const question of questions) {
-    const selected = answersByQuestion.get(question.id) ?? new Set<string>();
-    const correctIds = new Set(
-      question.choix.filter((c) => c.isCorrect).map((c) => c.id)
-    );
-    const isCorrect =
-      selected.size === correctIds.size &&
-      [...selected].every((id) => correctIds.has(id));
-    if (isCorrect) score += 1;
-
-    for (const choixId of selected) {
-      rowsToInsert.push({ questionId: question.id, choixId });
-    }
-
-    corrections.push({
-      questionId: question.id,
-      prompt: question.prompt,
-      explanation: question.explanation,
-      selectedChoixIds: [...selected],
-      choix: question.choix.map((c) => ({
-        id: c.id,
-        label: c.label,
-        isCorrect: c.isCorrect,
-      })),
-    });
-  }
+  const { score, corrections } = gradeQuestions(questions, answersByQuestion);
+  const rowsToInsert = corrections.flatMap((c) =>
+    c.selectedChoixIds.map((choixId) => ({
+      questionId: c.questionId,
+      choixId,
+    }))
+  );
 
   // Les choix soumis mais inconnus du quiz (id trafiqué) sont ignorés
   // silencieusement plutôt que de planter la tentative — ils ne pourront de
-  // toute façon jamais matcher `correctIds` ci-dessus.
+  // toute façon jamais rendre une question juste (voir gradeQuestions).
   const validChoixIds = new Set(
     questions.flatMap((q) => q.choix.map((c) => c.id))
   );

@@ -134,8 +134,20 @@ Passer le compte en `contributor` puis `admin` dans Studio
       formulaire d'un hadith, en créer un nouveau en tapant son nom ;
       `/dashboard/rapporteurs` : renommer, fusionner deux orthographes (les
       hadiths suivent), suppression refusée tant qu'il est cité
-- [ ] Quiz : créer, ajouter questions QCM et vrai/faux, plusieurs bonnes
-      réponses, brouillon invisible et non soumissible côté public
+- [ ] Quiz : onglets « Questions » (par défaut) et « Réglages », l'URL suit
+      (`?onglet=reglages`) ; un nouveau quiz s'ouvre sur « Réglages » ;
+      modifier un réglage puis enregistrer depuis l'onglet Questions le garde
+- [ ] Quiz : créer (réglages et questions sur la même page), ajouter questions
+      QCM et vrai/faux, plusieurs bonnes réponses, brouillon invisible et non
+      soumissible côté public
+- [ ] Quiz : après « Enregistrer », on reste sur la page avec un toast ;
+      quitter avec des modifications non enregistrées demande confirmation ;
+      réordonner, dupliquer, replier une question ; supprimer puis
+      « Annuler » dans le toast ; « Aperçu élève » permet de répondre et de
+      voir la correction sans rien enregistrer
+- [ ] Quiz déjà tenté par un élève : corriger une faute dans un énoncé puis
+      enregistrer → la correction détaillée de sa tentative
+      (`/quiz/[id]/historique/...`) est toujours complète
 - [ ] Séances : créer avec thématiques et ressources rattachées
 - [ ] Classes : avec deux cours, glisser-déposer « Ordre de la feuille de
       route » → l'ordre change sur l'accueil des étudiants

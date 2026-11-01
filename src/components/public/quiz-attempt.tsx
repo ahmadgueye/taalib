@@ -32,9 +32,14 @@ function encouragement(score: number, total: number) {
 export function QuizAttempt({
   quizId,
   questions,
+  previewGrade,
 }: {
   quizId: string;
   questions: Question[];
+  // Aperçu du dashboard : corrige sur place, sans rien enregistrer.
+  previewGrade?: (
+    answers: Map<string, Set<string>>
+  ) => Pick<QuizResult, "score" | "corrections">;
 }) {
   const [answers, setAnswers] = useState<Record<string, Set<string>>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
@@ -91,6 +96,12 @@ export function QuizAttempt({
       return;
     }
 
+    if (previewGrade) {
+      const graded = previewGrade(new Map(Object.entries(answers)));
+      setResult({ ...graded, tentativeId: "", total: questions.length });
+      return;
+    }
+
     startTransition(async () => {
       const payload = questions.map((q) => ({
         questionId: q.id,
@@ -135,12 +146,14 @@ export function QuizAttempt({
           <Button variant="outline" onClick={restart}>
             Recommencer
           </Button>
-          <Button
-            variant="ghost"
-            render={<Link href={`/quiz/${quizId}/historique`} />}
-          >
-            Voir l&apos;historique
-          </Button>
+          {!previewGrade && (
+            <Button
+              variant="ghost"
+              render={<Link href={`/quiz/${quizId}/historique`} />}
+            >
+              Voir l&apos;historique
+            </Button>
+          )}
         </div>
       </div>
     );
