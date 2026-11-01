@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -23,6 +23,10 @@ export function ClassTabs({
   etudiants: ReactNode;
   reglages: ReactNode;
 }) {
+  // Figé au premier rendu : après une action, la page se recharge avec
+  // l'onglet de l'URL, et Tabs refuse qu'on change sa valeur initiale.
+  const [initialTab] = useState(defaultTab);
+
   function handleChange(value: ClassTab) {
     const url = new URL(window.location.href);
     if (value === "suivi") url.searchParams.delete("onglet");
@@ -32,7 +36,7 @@ export function ClassTabs({
 
   return (
     <Tabs
-      defaultValue={defaultTab}
+      defaultValue={initialTab}
       onValueChange={(value) => handleChange(value as ClassTab)}
       className="mt-6 gap-6"
     >

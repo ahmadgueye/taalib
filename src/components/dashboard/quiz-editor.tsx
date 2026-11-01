@@ -357,8 +357,11 @@ export function QuizEditor({
 
   // Un nouveau quiz s'ouvre sur ses réglages (thématique, titre). L'onglet
   // ouvert est reflété dans l'URL (?onglet=), comme sur la page d'une classe.
-  const defaultTab: QuizTab =
-    !quiz || initialTab === "reglages" ? "reglages" : "questions";
+  // Figé au premier rendu : après un enregistrement, la page se recharge
+  // avec l'onglet de l'URL, et Tabs refuse qu'on change sa valeur initiale.
+  const [defaultTab] = useState<QuizTab>(() =>
+    !quiz || initialTab === "reglages" ? "reglages" : "questions"
+  );
   function handleTabChange(value: QuizTab) {
     if (!quiz) return;
     const url = new URL(window.location.href);

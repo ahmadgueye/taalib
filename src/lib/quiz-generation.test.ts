@@ -109,7 +109,7 @@ describe("generateQuestions", () => {
   });
 
   it("turns API errors into a message", async () => {
-    mocks.parse.mockRejectedValue(new Anthropic.AuthenticationError("bad"));
+    mocks.parse.mockRejectedValue(new Anthropic.AuthenticationError(401, undefined, "bad", new Headers()));
     expect(
       await generateQuestions({ lessons, count: 5, instructions: "" })
     ).toEqual({ error: "Clé API Anthropic invalide." });
