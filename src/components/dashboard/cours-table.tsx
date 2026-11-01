@@ -8,6 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DeleteButton } from "@/components/dashboard/delete-button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SortableTableHead } from "@/components/dashboard/sortable-table-head";
 import {
   Table,
@@ -20,6 +27,13 @@ import {
 import { deleteCours } from "@/lib/actions/cours";
 import { coursStatusConfig, type CoursStatus } from "@/lib/cours-status";
 
+const statusFilterItems = {
+  all: "Tous les statuts",
+  ...Object.fromEntries(
+    Object.entries(coursStatusConfig).map(([k, v]) => [k, v.label])
+  ),
+};
+
 type CoursRow = {
   id: string;
   title: string;
@@ -30,8 +44,16 @@ type CoursRow = {
 
 type SortKey = "title" | "createdAt";
 
-export function CoursTable({ data }: { data: CoursRow[] }) {
+export function CoursTable({
+  data,
+  initialStatus = "all",
+}: {
+  data: CoursRow[];
+  // Filtre de départ, depuis l'URL (?statut=coming_soon depuis l'accueil).
+  initialStatus?: CoursStatus | "all";
+}) {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -46,13 +68,14 @@ export function CoursTable({ data }: { data: CoursRow[] }) {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return data;
     return data.filter(
       (c) =>
-        c.title.toLowerCase().includes(q) ||
-        (c.description?.toLowerCase().includes(q) ?? false)
+        (statusFilter === "all" || c.status === statusFilter) &&
+        (!q ||
+          c.title.toLowerCase().includes(q) ||
+          (c.description?.toLowerCase().includes(q) ?? false))
     );
-  }, [data, search]);
+  }, [data, search, statusFilter]);
 
   const sorted = useMemo(() => {
     if (!sortKey) return filtered;
@@ -69,12 +92,30 @@ export function CoursTable({ data }: { data: CoursRow[] }) {
 
   return (
     <div>
-      <Input
-        placeholder="Rechercher un cours…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-xs"
-      />
+      <div className="flex flex-wrap gap-2">
+        <Input
+          placeholder="Rechercher un cours…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => v && setStatusFilter(v)}
+          items={statusFilterItems}
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(statusFilterItems).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {sorted.length === 0 ? (
         <p className="mt-8 text-sm text-muted-foreground">Aucun résultat.</p>

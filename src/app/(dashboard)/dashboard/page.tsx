@@ -139,17 +139,17 @@ export default async function DashboardHomePage() {
     {
       count: todo.draftRessources,
       label: `${plural(todo.draftRessources, "ressource")} en brouillon`,
-      href: "/dashboard/ressources",
+      href: "/dashboard/ressources?statut=draft",
     },
     {
       count: todo.draftQuiz,
       label: `${plural(todo.draftQuiz, "quiz", "quiz")} en brouillon`,
-      href: "/dashboard/quiz",
+      href: "/dashboard/quiz?statut=draft",
     },
     {
       count: todo.comingSoonCours,
       label: `${plural(todo.comingSoonCours, "cours", "cours")} « Bientôt disponible »`,
-      href: "/dashboard/cours",
+      href: "/dashboard/cours?statut=coming_soon",
     },
   ].filter((t) => t.count > 0);
 

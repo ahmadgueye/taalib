@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Loader2, Trash2, type LucideIcon } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   AlertDialog,
@@ -23,6 +24,7 @@ export function DeleteButton({
   confirmLabel = "Supprimer",
   icon: Icon = Trash2,
   destructive = true,
+  successMessage,
 }: {
   action: () => Promise<void>;
   itemLabel: string;
@@ -32,14 +34,24 @@ export function DeleteButton({
   // Pour réutiliser la confirmation sur une action non destructive.
   icon?: LucideIcon;
   destructive?: boolean;
+  // Toast une fois l'action faite ; par défaut seulement pour une suppression.
+  successMessage?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
     startTransition(async () => {
-      await action();
+      try {
+        await action();
+      } catch {
+        toast.error("L'opération a échoué. Réessaie.");
+        return;
+      }
       setOpen(false);
+      const message =
+        successMessage ?? (destructive ? `Supprimé : « ${itemLabel} ».` : null);
+      if (message) toast.success(message);
     });
   }
 

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { setFlash } from "@/lib/actions/flash";
 import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { hadithNarrators, hadiths, narrators } from "@/lib/db/schema";
@@ -125,6 +126,7 @@ export async function createHadith(
   revalidatePath("/thematiques");
   revalidateCoursTree();
   // Ouvert depuis la page d'une thématique : on y revient.
+  await setFlash("Hadith ajouté.");
   redirect(
     formData.get("backToThematique")
       ? `/dashboard/thematiques/${parsed.data.thematiqueId}`
@@ -170,6 +172,7 @@ export async function updateHadith(
   revalidatePath("/thematiques");
   revalidateCoursTree();
   // Ouvert depuis la page d'une thématique : on y revient.
+  await setFlash("Hadith enregistré.");
   redirect(
     formData.get("backToThematique")
       ? `/dashboard/thematiques/${parsed.data.thematiqueId}`

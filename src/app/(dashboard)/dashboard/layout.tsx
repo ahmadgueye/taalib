@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
+import { FlashToaster } from "@/components/dashboard/flash-toaster";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-w-0 flex-1">
       <DashboardSidebar isAdmin={profile.role === "admin"} />
+      <FlashToaster />
       <main className="min-w-0 flex-1 px-8 py-8">{children}</main>
     </div>
   );

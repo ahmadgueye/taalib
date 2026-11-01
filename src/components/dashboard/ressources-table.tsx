@@ -56,10 +56,17 @@ type RessourceRow = {
 
 type SortKey = "title" | "type" | "thematique" | "createdAt";
 
-export function RessourcesTable({ data }: { data: RessourceRow[] }) {
+export function RessourcesTable({
+  data,
+  initialStatus = "all",
+}: {
+  data: RessourceRow[];
+  // Filtre de départ, depuis l'URL (?statut=draft depuis l'accueil).
+  initialStatus?: RessourceStatus | "all";
+}) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus);
   const [thematiqueFilter, setThematiqueFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");

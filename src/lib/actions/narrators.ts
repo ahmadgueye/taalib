@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { setFlash } from "@/lib/actions/flash";
 import { db } from "@/lib/db";
 import { hadithNarrators, narrators } from "@/lib/db/schema";
 
@@ -41,6 +42,7 @@ export async function createNarrator(
   }
 
   revalidateNarrators();
+  await setFlash("Rapporteur ajouté.");
   redirect("/dashboard/rapporteurs");
 }
 
@@ -68,6 +70,7 @@ export async function updateNarrator(
   }
 
   revalidateNarrators();
+  await setFlash("Rapporteur enregistré.");
   redirect("/dashboard/rapporteurs");
 }
 
@@ -106,6 +109,7 @@ export async function mergeNarrator(
   });
 
   revalidateNarrators();
+  await setFlash("Rapporteurs fusionnés.");
   redirect("/dashboard/rapporteurs");
 }
 

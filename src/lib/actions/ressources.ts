@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { setFlash } from "@/lib/actions/flash";
 import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { ressources } from "@/lib/db/schema";
@@ -70,6 +71,7 @@ export async function createRessource(
   revalidatePath("/dashboard/ressources");
   revalidatePath("/thematiques");
   revalidateCoursTree();
+  await setFlash("Ressource ajoutée.");
   redirect(`/dashboard/thematiques/${parsed.data.thematiqueId}`);
 }
 
@@ -109,6 +111,7 @@ export async function updateRessource(
   revalidatePath("/dashboard/ressources");
   revalidatePath("/thematiques");
   revalidateCoursTree();
+  await setFlash("Ressource enregistrée.");
   redirect(`/dashboard/thematiques/${parsed.data.thematiqueId}`);
 }
 

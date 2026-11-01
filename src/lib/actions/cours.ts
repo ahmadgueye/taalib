@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { setFlash } from "@/lib/actions/flash";
 import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { cours } from "@/lib/db/schema";
@@ -56,6 +57,7 @@ export async function createCours(
   revalidatePath("/dashboard/cours");
   revalidatePath("/cours");
   revalidatePath("/");
+  await setFlash("Cours créé.");
   redirect(`/dashboard/cours/${createdId}`);
 }
 
@@ -95,6 +97,7 @@ export async function updateCours(
   revalidatePath("/cours");
   revalidatePath("/");
   revalidateCoursTree();
+  await setFlash("Cours enregistré.");
   redirect(`/dashboard/cours/${id}`);
 }
 

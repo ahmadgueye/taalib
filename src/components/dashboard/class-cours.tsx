@@ -142,6 +142,7 @@ function CoursBlock({
           title={`Retirer « ${cours.title} » de la classe ?`}
           description="Le cours n'est pas supprimé. Ses déblocages pour cette classe sont effacés."
           confirmLabel="Retirer"
+          successMessage={`« ${cours.title} » retiré de la classe.`}
         />
       </div>
       {cours.thematiques.length === 0 ? (

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { setFlash } from "@/lib/actions/flash";
 import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { quiz } from "@/lib/db/schema";
@@ -51,6 +52,7 @@ export async function createQuiz(
   revalidatePath("/dashboard/quiz");
   revalidatePath("/thematiques");
   revalidateCoursTree();
+  await setFlash("Quiz créé. Ajoute ses questions.");
   redirect(`/dashboard/quiz/${created.id}/questions`);
 }
 
@@ -86,6 +88,7 @@ export async function updateQuiz(
   revalidatePath("/dashboard/quiz");
   revalidatePath("/thematiques");
   revalidateCoursTree();
+  await setFlash("Quiz enregistré.");
   redirect(`/dashboard/thematiques/${parsed.data.thematiqueId}`);
 }
 

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { setFlash } from "@/lib/actions/flash";
 import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { thematiques } from "@/lib/db/schema";
@@ -60,6 +61,7 @@ export async function createThematique(
   revalidatePath("/dashboard/thematiques");
   revalidatePath("/cours");
   revalidateCoursTree();
+  await setFlash("Thématique créée.");
   redirect(`/dashboard/thematiques/${createdId}`);
 }
 
@@ -96,6 +98,7 @@ export async function updateThematique(
   revalidatePath("/dashboard/thematiques");
   revalidatePath("/cours");
   revalidateCoursTree();
+  await setFlash("Thématique enregistrée.");
   redirect(`/dashboard/thematiques/${id}`);
 }
 

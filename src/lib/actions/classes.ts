@@ -16,6 +16,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/get-session";
+import { setFlash } from "@/lib/actions/flash";
 import { generateInviteCode } from "@/lib/class-invite";
 import { db } from "@/lib/db";
 import {
@@ -64,6 +65,7 @@ export async function createClass(
     .returning({ id: classes.id });
 
   revalidatePath("/dashboard/classes");
+  await setFlash("Classe créée.");
   redirect(`/dashboard/classes/${created.id}`);
 }
 

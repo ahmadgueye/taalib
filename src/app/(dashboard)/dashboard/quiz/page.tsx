@@ -4,8 +4,17 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QuizTable } from "@/components/dashboard/quiz-table";
 import { getAllQuiz } from "@/lib/db/queries/quiz";
+import { type RessourceStatus } from "@/lib/ressource-status";
 
-export default async function DashboardQuizPage() {
+const statuses: RessourceStatus[] = ["draft", "published"];
+
+type Props = {
+  searchParams: Promise<{ statut?: string }>;
+};
+
+export default async function DashboardQuizPage({ searchParams }: Props) {
+  const { statut } = await searchParams;
+  const initialStatus = statuses.find((s) => s === statut) ?? "all";
   const quizList = await getAllQuiz();
 
   return (
@@ -21,7 +30,7 @@ export default async function DashboardQuizPage() {
       </div>
 
       <div className="mt-6">
-        <QuizTable data={quizList} />
+        <QuizTable data={quizList} initialStatus={initialStatus} />
       </div>
     </div>
   );

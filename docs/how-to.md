@@ -34,7 +34,12 @@ Fichiers à créer/modifier, dans l'ordre :
    - `revalidatePath()` sur la route liste du dashboard, la route publique
      équivalente, et `/` si l'entité apparaît sur l'accueil ;
    - `redirect()` après create/update, pas après delete (delete reste sur la
-     page liste).
+     page liste) ;
+   - `await setFlash("Foo enregistré.")` (`src/lib/actions/flash.ts`) juste
+     avant ce `redirect()` : le message s'affiche en toast sur la page
+     d'arrivée (`flash-toaster.tsx`, monté dans le layout du dashboard). Les
+     suppressions n'en ont pas besoin, `delete-button.tsx` affiche son propre
+     toast.
 
 4. **Formulaire** — `src/components/dashboard/foo-form.tsx` (Client
    Component) : copier `cours-form.tsx`. Le pattern est toujours le même —

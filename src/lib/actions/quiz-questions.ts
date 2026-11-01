@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { setFlash } from "@/lib/actions/flash";
 import { db } from "@/lib/db";
 import { quiz, quizChoix, quizQuestions } from "@/lib/db/schema";
 import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
@@ -75,6 +76,7 @@ export async function saveQuizQuestions(
     where: eq(quiz.id, quizId),
     columns: { thematiqueId: true },
   });
+  await setFlash("Questions enregistrées.");
   redirect(
     saved ? `/dashboard/thematiques/${saved.thematiqueId}` : "/dashboard/quiz"
   );

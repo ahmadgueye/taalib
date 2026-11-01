@@ -87,7 +87,8 @@ deux layouts et deux publics différents :
   (brouillons, cours « Bientôt disponible », demandes d'accès pour l'admin),
   les derniers éléments modifiés avec un lien vers leur édition, les
   prochaines séances et les classes (requêtes dans
-  `src/lib/db/queries/dashboard.ts`). Voir [`how-to.md`](./how-to.md) pour dupliquer ce
+  `src/lib/db/queries/dashboard.ts`) ; ses liens « À traiter » ouvrent les
+  listes déjà filtrées (`?statut=draft`, `?statut=coming_soon`). Voir [`how-to.md`](./how-to.md) pour dupliquer ce
   pattern sur une nouvelle entité.
 
 Chaque groupe a son propre `layout.tsx` — pas de layout racine partagé au-delà
