@@ -123,6 +123,26 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   l'ouverture de la page) ; une suppression s'annule depuis le toast. « Aperçu
   élève » ouvre le quiz tel que l'élève le verra (`QuizAttempt` avec
   `previewGrade`), corrigé sur place sans rien enregistrer.
+- **Import (NotebookLM)** — « Importer », dans l'onglet Questions, ajoute
+  des questions collées depuis un texte (`ImportDialog` dans
+  `quiz-editor.tsx`, analyse dans `lib/quiz-import.ts`). NotebookLM n'exporte
+  pas ses quiz : on copie le prompt fourni (`QUIZ_IMPORT_PROMPT`) dans son
+  chat, qui génère les questions depuis les sources du notebook dans ce
+  format :
+
+  ```
+  Q: Quel est le premier pilier de l'islam ?
+  - [x] La Shahada
+  - [ ] Le jeûne
+  Explication: La Shahada est le témoignage de foi.
+  ```
+
+  Plusieurs `[x]` donnent une question à réponses multiples ; deux choix
+  « Vrai » et « Faux », une question Vrai/Faux. Le texte autour, le gras,
+  l'italique et la numérotation Markdown sont ignorés ; un bloc mal formé est signalé et
+  laissé de côté. Les questions s'ajoutent repliées à l'éditeur, sans être
+  enregistrées ; dans un nouveau quiz, le statut passe en Brouillon, pour
+  relire avant de publier.
 - **Mise à jour en place** — chaque question et chaque choix garde son id
   d'un enregistrement à l'autre (`syncQuestions`) : corriger un énoncé ou un
   choix ne touche pas aux réponses déjà données par les élèves, et l'écran de

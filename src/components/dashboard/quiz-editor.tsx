@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Copy,
   Eye,
+  FileUp,
   Plus,
   Trash2,
   X,
@@ -49,6 +50,11 @@ import type {
   QuestionType,
 } from "@/lib/quiz-drafts";
 import { gradeQuestions } from "@/lib/quiz-grading";
+import {
+  parseQuizText,
+  QUIZ_IMPORT_PROMPT,
+  type ImportedQuestion,
+} from "@/lib/quiz-import";
 import { cn } from "@/lib/utils";
 
 const statusOptions = [
@@ -195,6 +201,7 @@ export function QuizEditor({
   );
 
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const dirty = snapshot(meta, questions) !== saved;
   useLeaveGuard(dirty);
 
@@ -225,6 +232,32 @@ export function QuizEditor({
 
   function addQuestion() {
     setQuestions((qs) => [...qs, emptyQuestion()]);
+  }
+
+  // Les questions importées s'ajoutent à la suite, repliées, sans rien
+  // enregistrer. Une question vide restée seule (nouveau quiz) est remplacée.
+  function importQuestions(imported: ImportedQuestion[]) {
+    const drafts: QuestionDraft[] = imported.map((q) => ({
+      ...q,
+      key: newKey(),
+      choix: q.choix.map((c) => ({ ...c, key: newKey() })),
+    }));
+    setQuestions((qs) => {
+      const blank =
+        qs.length === 1 &&
+        !qs[0].prompt.trim() &&
+        qs[0].choix.every((c) => !c.label.trim());
+      return blank ? drafts : [...qs, ...drafts];
+    });
+    setFolded((prev) => new Set([...prev, ...drafts.map((d) => d.key)]));
+    // Un nouveau quiz généré par une IA se relit avant d'être publié.
+    if (!quiz) setMeta((m) => ({ ...m, status: "draft" }));
+    setImportOpen(false);
+    toast.success(
+      `${drafts.length} question${drafts.length > 1 ? "s" : ""} ajoutée${
+        drafts.length > 1 ? "s" : ""
+      }. Relis-les, puis enregistre.`
+    );
   }
 
   function duplicateQuestion(index: number) {
@@ -391,15 +424,20 @@ export function QuizEditor({
               ))}
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addQuestion}
-              className="mt-4 w-fit"
-            >
-              <Plus className="size-4" />
-              Ajouter une question
-            </Button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button type="button" variant="outline" onClick={addQuestion}>
+                <Plus className="size-4" />
+                Ajouter une question
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setImportOpen(true)}
+              >
+                <FileUp className="size-4" />
+                Importer
+              </Button>
+            </div>
           </TabsContent>
           {/* Toujours monté : ses champs font partie du formulaire. */}
           <TabsContent value="reglages" keepMounted>
@@ -531,6 +569,11 @@ export function QuizEditor({
           )}
         </div>
       </form>
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImport={importQuestions}
+      />
       {/* Hors du formulaire : l'aperçu contient son propre formulaire. */}
       <PreviewDialog
         open={previewOpen}
@@ -823,7 +866,7 @@ function PreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] grid-cols-[minmax(0,1fr)] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{title || "Quiz sans titre"}</DialogTitle>
           <DialogDescription>
@@ -841,6 +884,129 @@ function PreviewDialog({
           }))}
           previewGrade={(answers) => gradeQuestions(graded, answers)}
         />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Colle des questions générées ailleurs (le chat de NotebookLM, avec le prompt
+// fourni) : elles sont lues en direct et ajoutées à l'éditeur.
+function ImportDialog({
+  open,
+  onOpenChange,
+  onImport,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onImport: (questions: ImportedQuestion[]) => void;
+}) {
+  const [text, setText] = useState("");
+  const { questions, errors } = parseQuizText(text);
+  const count = questions.length;
+
+  async function copyPrompt() {
+    try {
+      await navigator.clipboard.writeText(QUIZ_IMPORT_PROMPT);
+      toast.success("Prompt copié. Colle-le dans le chat de NotebookLM.");
+    } catch {
+      toast.error(
+        "Copie impossible. Sélectionne le texte du prompt à la main."
+      );
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next);
+        if (!next) setText("");
+      }}
+    >
+      <DialogContent className="max-h-[90vh] grid-cols-[minmax(0,1fr)] overflow-y-auto sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Importer des questions</DialogTitle>
+          <DialogDescription>
+            Copie le prompt, colle-le dans le chat de NotebookLM (en précisant
+            le sujet), puis colle sa réponse ci-dessous.
+          </DialogDescription>
+        </DialogHeader>
+
+        <details className="rounded-md border text-sm">
+          <summary className="cursor-pointer px-3 py-2 text-muted-foreground">
+            Voir le prompt et le format attendu
+          </summary>
+          <pre className="max-h-60 overflow-auto border-t px-3 py-2 text-xs whitespace-pre-wrap">
+            {QUIZ_IMPORT_PROMPT}
+          </pre>
+        </details>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-fit"
+          onClick={copyPrompt}
+        >
+          <Copy className="size-4" />
+          Copier le prompt NotebookLM
+        </Button>
+
+        <Textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={10}
+          placeholder={"Q: …\n- [x] …\n- [ ] …\nExplication: …"}
+          aria-label="Questions à importer"
+          className="max-h-[45vh] font-mono text-xs"
+        />
+
+        {text.trim() && (
+          <div className="flex flex-col gap-2 text-sm">
+            <p className={cn("font-medium", count === 0 && "text-destructive")}>
+              {count === 0
+                ? "Aucune question reconnue. Vérifie que chaque question commence par « Q: »."
+                : `${count} question${count > 1 ? "s" : ""} reconnue${count > 1 ? "s" : ""}.`}
+            </p>
+            {errors.length > 0 && (
+              <ul className="flex flex-col gap-1 text-destructive">
+                {errors.map((e) => (
+                  <li key={e.block}>
+                    Question {e.block} ignorée : {e.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {count > 0 && (
+              <ol className="list-decimal pl-5 text-muted-foreground">
+                {questions.map((q, i) => (
+                  <li key={i} className="truncate">
+                    {q.prompt}{" "}
+                    <span className="text-xs">
+                      (
+                      {q.type === "vrai_faux"
+                        ? "Vrai / Faux"
+                        : `${q.choix.length} choix`}
+                      )
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        )}
+
+        <Button
+          type="button"
+          className="w-fit"
+          disabled={count === 0}
+          onClick={() => {
+            onImport(questions);
+            setText("");
+          }}
+        >
+          {count > 0
+            ? `Ajouter ${count} question${count > 1 ? "s" : ""}`
+            : "Ajouter"}
+        </Button>
       </DialogContent>
     </Dialog>
   );

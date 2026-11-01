@@ -145,6 +145,11 @@ Passer le compte en `contributor` puis `admin` dans Studio
       réordonner, dupliquer, replier une question ; supprimer puis
       « Annuler » dans le toast ; « Aperçu élève » permet de répondre et de
       voir la correction sans rien enregistrer
+- [ ] Quiz → « Importer » : « Copier le prompt NotebookLM » copie le prompt ;
+      coller une réponse au format `Q:` / `- [x]` affiche le nombre de
+      questions reconnues et les blocs ignorés ; « Ajouter » les place
+      repliées dans l'éditeur, sans enregistrer ; un nouveau quiz passe en
+      Brouillon
 - [ ] Quiz déjà tenté par un élève : corriger une faute dans un énoncé puis
       enregistrer → la correction détaillée de sa tentative
       (`/quiz/[id]/historique/...`) est toujours complète
