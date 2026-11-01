@@ -72,8 +72,9 @@ deux layouts et deux publics différents :
   exception : `createQuiz` redirige vers une cinquième page,
   `dashboard/quiz/[id]/questions/page.tsx`, dédiée à la gestion des questions
   et choix imbriqués. `classes` (admin seulement) n'a pas de page `edit` :
-  `dashboard/classes/[id]/page.tsx` réunit le formulaire, le suivi des
-  étudiants, les cours, le code d'invitation et la liste des étudiants ;
+  `dashboard/classes/[id]/page.tsx` réunit tout en onglets
+  (`class-tabs.tsx`, reflétés dans l'URL par `?onglet=`) : Suivi (par
+  défaut), Cours, Étudiants, et Réglages (formulaire et code d'invitation) ;
   `dashboard/classes/[id]/etudiants/[userId]/page.tsx` détaille un étudiant.
   Cours, thématiques et ressources se gèrent en arbre :
   `dashboard/cours/[id]/page.tsx` liste les thématiques du cours (réordonnables)

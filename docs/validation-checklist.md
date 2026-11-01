@@ -139,6 +139,9 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Séances : créer avec thématiques et ressources rattachées
 - [ ] Classes : avec deux cours, glisser-déposer « Ordre de la feuille de
       route » → l'ordre change sur l'accueil des étudiants
+- [ ] Page d'une classe : s'ouvre sur l'onglet « Suivi » ; changer d'onglet
+      met à jour l'URL (`?onglet=cours`…) et un rechargement le conserve ;
+      ajouter un étudiant ou enregistrer les réglages garde l'onglet ouvert
 - [ ] Utilisateurs (admin) : changer un rôle ; impossible de retirer le
       dernier admin
 - [ ] Quiz → icône « Soumissions » : stats (tentatives, étudiants, score
