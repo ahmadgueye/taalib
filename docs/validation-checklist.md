@@ -155,6 +155,11 @@ Passer le compte en `contributor` puis `admin` dans Studio
       → il passe dans « Anciens élèves », garde les ressources déjà
       débloquées mais pas celles débloquées ensuite ; « Réintégrer » → il
       voit de nouveau tout
+- [ ] Classes : « Suivi des étudiants » → leçons lues sur les ressources
+      débloquées de la classe, quiz réussis sur les quiz débloqués (avec la
+      moyenne), pourcentage du Coran identique à celui de l'étudiant sur
+      `/memorisation` ; « Jamais » ou plus de 7 jours sans activité → en
+      orange avec ⚠ ; tri par colonne ; anciens élèves repliés, affichables
 - [ ] `/rejoindre/[code]` déconnecté → « Se connecter », puis retour sur la
       page après connexion ; « Rejoindre la classe » → « Tu fais partie de
       cette classe » ; code saisi en minuscules ou avec tiret accepté sur

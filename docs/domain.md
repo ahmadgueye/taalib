@@ -348,6 +348,23 @@ elle qui détermine ce qu'un étudiant voit, voir
     suivi par plusieurs classes à des rythmes différents.
   - Retirer un cours (`removeClassCours`) efface ses déblocages pour cette
     classe : le remettre repart d'un cours entièrement verrouillé.
+- **Suivi des étudiants** — sur la page de la classe, un tableau
+  (`class-progress-table.tsx`, données de `getClassProgress` dans
+  `lib/db/queries/class-progress.ts`, calcul pur dans `lib/class-progress.ts`)
+  donne pour chaque étudiant :
+  - **Leçons** : ressources lues parmi celles débloquées pour la classe
+    (publiées, d'un cours encore suivi), pas sur tout le cours ;
+  - **Quiz** : quiz réussis (meilleure tentative ≥ seuil du quiz) parmi ceux
+    débloqués, et moyenne des meilleurs scores des quiz tentés ;
+  - **Coran** : pourcentage mémorisé, même calcul que `/memorisation` (au
+    prorata des mots), et versets à renforcer ; c'est la mémorisation
+    globale de l'étudiant, pas propre à la classe ;
+  - **Dernière activité** : la plus récente entre une leçon lue, un quiz
+    passé et un verset marqué, toutes classes confondues ; signalée au-delà
+    de 7 jours (`INACTIVE_AFTER_DAYS`) ou en l'absence d'activité.
+  Tri par colonne, les moins avancés en leçons d'abord. Les anciens élèves
+  sont repliés à part et jugés sur ce qui était débloqué avant leur départ.
+  Réservé à l'admin, comme le reste de la page.
 - **Rejoindre** — `/rejoindre` (saisie du code) et `/rejoindre/[code]`. Le
   code est normalisé (majuscules, sans espaces ni tirets). Un visiteur non
   connecté est envoyé vers `/login?next=/rejoindre/CODE` et revient sur la

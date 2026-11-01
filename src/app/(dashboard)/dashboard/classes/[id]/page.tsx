@@ -4,6 +4,7 @@ import { ClassCours } from "@/components/dashboard/class-cours";
 import { ClassForm } from "@/components/dashboard/class-form";
 import { ClassInvitePanel } from "@/components/dashboard/class-invite-panel";
 import { ClassMembers } from "@/components/dashboard/class-members";
+import { ClassProgressTable } from "@/components/dashboard/class-progress-table";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import {
   getClassById,
@@ -11,6 +12,7 @@ import {
   getClassMembers,
   getCoursNotInClass,
 } from "@/lib/db/queries/classes";
+import { getClassProgress } from "@/lib/db/queries/class-progress";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -21,12 +23,14 @@ export default async function ClassPage({ params }: Props) {
   if (profile?.role !== "admin") notFound();
 
   const { id } = await params;
-  const [classe, members, coursOutline, availableCours] = await Promise.all([
-    getClassById(id),
-    getClassMembers(id),
-    getClassCoursOutline(id),
-    getCoursNotInClass(id),
-  ]);
+  const [classe, members, coursOutline, availableCours, progress] =
+    await Promise.all([
+      getClassById(id),
+      getClassMembers(id),
+      getClassCoursOutline(id),
+      getCoursNotInClass(id),
+      getClassProgress(id),
+    ]);
 
   if (!classe) notFound();
 
@@ -38,6 +42,19 @@ export default async function ClassPage({ params }: Props) {
 
       <section className="mt-6">
         <ClassForm classe={classe} />
+      </section>
+
+      <section className="mt-10">
+        <h2 className="font-heading text-lg font-semibold tracking-tight">
+          Suivi des étudiants
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Leçons lues et quiz réussis parmi ce qui est débloqué pour la classe,
+          mémorisation du Coran et dernière activité (leçon, quiz ou verset).
+        </p>
+        <div className="mt-4">
+          <ClassProgressTable students={progress} now={new Date()} />
+        </div>
       </section>
 
       <section className="mt-10 max-w-2xl">
