@@ -119,8 +119,8 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   ne s'enregistre jamais sans au moins une question : il n'existe donc pas de
   quiz publié vide. Après un enregistrement, l'éditeur reste ouvert ; il
   prévient avant de quitter la page avec des modifications non enregistrées.
-  Les questions se réordonnent, se dupliquent, se replient (repliées d'office
-  au-delà de trois) ; une suppression s'annule depuis le toast. « Aperçu
+  Les questions se réordonnent, se dupliquent, se replient (repliées à
+  l'ouverture de la page) ; une suppression s'annule depuis le toast. « Aperçu
   élève » ouvre le quiz tel que l'élève le verra (`QuizAttempt` avec
   `previewGrade`), corrigé sur place sans rien enregistrer.
 - **Mise à jour en place** — chaque question et chaque choix garde son id

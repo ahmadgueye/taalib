@@ -170,13 +170,11 @@ export function QuizEditor({
   const [questions, setQuestions] = useState<QuestionDraft[]>(() =>
     initialQuestions.length > 0 ? initialQuestions : [emptyQuestion("new")]
   );
-  // Au-delà de quelques questions, tout est replié pour garder une vue
-  // d'ensemble ; une question ajoutée s'ouvre.
+  // Les questions existantes s'ouvrent repliées pour garder une vue
+  // d'ensemble ; une question ajoutée (ou la première d'un nouveau quiz)
+  // s'ouvre.
   const [folded, setFolded] = useState<Set<string>>(
-    () =>
-      new Set(
-        initialQuestions.length > 3 ? initialQuestions.map((q) => q.key) : []
-      )
+    () => new Set(initialQuestions.map((q) => q.key))
   );
   // État de référence pour savoir s'il reste des modifications à enregistrer.
   const [saved, setSaved] = useState(() => snapshot(meta, questions));
