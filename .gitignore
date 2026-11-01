@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Sauvegardes locales de la base de prod (données utilisateurs)
+/backups/

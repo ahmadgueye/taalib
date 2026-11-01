@@ -36,8 +36,22 @@ Il n'existe **pas encore de projet Supabase de dev/staging distant** :
 ### Migrer la production
 
 1. Écrire et tester la migration **en local** (`db:migrate:local`).
-2. Faire un backup de la base de production (Supabase → Database → Backups,
-   ou `pg_dump`).
+2. Faire un backup de la base de production. L'offre gratuite de Supabase
+   n'en propose pas : on fait un dump local avec le `pg_dump` du conteneur
+   Supabase local (même version majeure, 17, que la prod), dans `backups/`
+   (ignoré par git, car il contient des données d'utilisateurs) :
+
+   ```bash
+   set -a && . ./.env.local && set +a
+   docker exec -e PGURL="$DATABASE_URL" supabase_db_taalib \
+     sh -c 'pg_dump "$PGURL" --no-owner --no-privileges -n public -n drizzle' \
+     > backups/prod-full-$(date +%Y%m%d-%H%M).sql
+   ```
+
+   Le dump couvre les schémas `public` et `drizzle` (pas `auth`, géré par
+   Supabase). Avant une migration qui supprime des colonnes, exporter aussi
+   ces colonnes en CSV (`\copy (...) to stdout with csv header`) pour
+   pouvoir les restaurer telles quelles.
 3. Vérifier qu'elle est rétro-compatible avec la version actuellement
    déployée (le déploiement Vercel et la migration de base ne sont pas
    atomiques).
