@@ -52,8 +52,9 @@ Fichiers à créer/modifier, dans l'ordre :
      sans props.
    - `src/app/(dashboard)/dashboard/foo/[id]/edit/page.tsx` — `await params`,
      `getFooById(id)`, `notFound()` si absent, rend `<FooForm foo={f} />`.
-   - Ajouter l'entrée dans `navItems` de
-     `src/components/dashboard/dashboard-sidebar.tsx`.
+   - Ajouter l'entrée dans le bon groupe de `navGroups` de
+     `src/components/dashboard/dashboard-sidebar.tsx` (Enseignement,
+     Hadiths, ou Gestion pour ce qui est réservé à l'admin).
    - Si l'entité a des sous-éléments imbriqués (ex : les questions d'un quiz),
      ajouter une page dédiée `dashboard/foo/[id]/sous-element/page.tsx` plutôt
      que de tout gérer dans le formulaire d'édition — voir

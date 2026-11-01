@@ -73,7 +73,12 @@ deux layouts et deux publics différents :
   et choix imbriqués. `classes` (admin seulement) n'a pas de page `edit` :
   `dashboard/classes/[id]/page.tsx` réunit le formulaire, le suivi des
   étudiants, les cours, le code d'invitation et la liste des étudiants ;
-  `dashboard/classes/[id]/etudiants/[userId]/page.tsx` détaille un étudiant. Voir [`how-to.md`](./how-to.md) pour dupliquer ce
+  `dashboard/classes/[id]/etudiants/[userId]/page.tsx` détaille un étudiant. L'accueil
+  `dashboard/page.tsx` est orienté tâches : ce qui attend une action
+  (brouillons, cours « Bientôt disponible », demandes d'accès pour l'admin),
+  les derniers éléments modifiés avec un lien vers leur édition, les
+  prochaines séances et les classes (requêtes dans
+  `src/lib/db/queries/dashboard.ts`). Voir [`how-to.md`](./how-to.md) pour dupliquer ce
   pattern sur une nouvelle entité.
 
 Chaque groupe a son propre `layout.tsx` — pas de layout racine partagé au-delà
