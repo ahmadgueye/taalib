@@ -82,13 +82,15 @@ describe("generateQuestions", () => {
     mocks.parse.mockResolvedValue({
       stop_reason: "end_turn",
       parsed_output: { questions: [good] },
+      usage: { input_tokens: 10_000, output_tokens: 5_000 },
     });
     const result = await generateQuestions({
       lessons,
       count: 5,
       instructions: "Insiste sur la prière.",
     });
-    expect(result).toEqual({ questions: [good], dropped: 0 });
+    // 10 000 × 4 $ + 5 000 × 20 $ par million de tokens.
+    expect(result).toEqual({ questions: [good], dropped: 0, cost: 0.14 });
     const request = mocks.parse.mock.calls[0][0];
     expect(request.fallbacks).toBe("default");
     expect(request.messages[0].content).toContain(
@@ -109,7 +111,9 @@ describe("generateQuestions", () => {
   });
 
   it("turns API errors into a message", async () => {
-    mocks.parse.mockRejectedValue(new Anthropic.AuthenticationError(401, undefined, "bad", new Headers()));
+    mocks.parse.mockRejectedValue(
+      new Anthropic.AuthenticationError(401, undefined, "bad", new Headers())
+    );
     expect(
       await generateQuestions({ lessons, count: 5, instructions: "" })
     ).toEqual({ error: "Clé API Anthropic invalide." });

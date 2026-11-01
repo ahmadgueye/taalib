@@ -153,9 +153,13 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   filtré par les mêmes règles que l'éditeur ; les questions mal formées sont
   écartées. Elles s'ajoutent comme à l'import : repliées, non enregistrées,
   nouveau quiz en Brouillon. Le bouton n'apparaît que si `ANTHROPIC_API_KEY`
-  est configurée ; les vidéos et PDF restent couverts par l'import. Coût
-  indicatif : 0,10 à 0,15 $ par quiz de 10 questions. Le plafond de dépense
-  se règle dans la console Anthropic.
+  est configurée ; les vidéos et PDF restent couverts par l'import. La
+  fenêtre affiche un coût estimé avant de générer (d'après le nombre de mots
+  et de questions), puis le coût réel d'après les tokens consommés
+  (`lib/quiz-generation-cost.ts`, tarifs d'Opus 5.5 à mettre à jour s'ils
+  changent), et un lien « Voir mon crédit » vers la facturation de la
+  console Anthropic : l'API ne donne pas le solde restant. Le plafond de
+  dépense se règle aussi dans la console.
 - **Mise à jour en place** — chaque question et chaque choix garde son id
   d'un enregistrement à l'autre (`syncQuestions`) : corriger un énoncé ou un
   choix ne touche pas aux réponses déjà données par les élèves, et l'écran de

@@ -3,6 +3,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 
 import { questionSchema } from "@/lib/actions/quiz-questions.schema";
+import { usageCost } from "@/lib/quiz-generation-cost";
 import type { ImportedQuestion } from "@/lib/quiz-import";
 
 // Server-only : génère des questions de quiz à partir des leçons écrites
@@ -45,8 +46,11 @@ const outputSchema = z.object({
 
 export type GenerationLesson = { title: string; content: string };
 
+// `cost` : coût réel en dollars, d'après les tokens consommés (approximatif
+// si l'API a dû passer par le modèle de repli).
 export type GenerationResult =
-  { questions: ImportedQuestion[]; dropped: number } | { error: string };
+  | { questions: ImportedQuestion[]; dropped: number; cost: number }
+  | { error: string };
 
 function buildUserMessage(
   lessons: GenerationLesson[],
@@ -154,7 +158,7 @@ export async function generateQuestions({
     if (result.questions.length === 0) {
       return { error: "Aucune question exploitable. Réessaie." };
     }
-    return result;
+    return { ...result, cost: usageCost(response.usage) };
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError) {
       return { error: "Clé API Anthropic invalide." };

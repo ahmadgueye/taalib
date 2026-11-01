@@ -152,8 +152,10 @@ Passer le compte en `contributor` puis `admin` dans Studio
       Brouillon
 - [ ] Quiz → « Générer avec l'IA » (visible seulement avec
       `ANTHROPIC_API_KEY`) : liste les leçons écrites de la thématique ;
-      sans thématique ou sans leçon écrite, un message l'explique ;
-      « Générer » renvoie des questions fidèles aux leçons ; « Ajouter » les
+      sans thématique ou sans leçon écrite, un message l'explique ; le coût
+      estimé suit les leçons cochées et le nombre de questions ; « Voir mon
+      crédit » ouvre la facturation Anthropic ; « Générer » renvoie des
+      questions fidèles aux leçons, avec leur coût réel ; « Ajouter » les
       place repliées dans l'éditeur, sans enregistrer
 - [ ] Quiz déjà tenté par un élève : corriger une faute dans un énoncé puis
       enregistrer → la correction détaillée de sa tentative

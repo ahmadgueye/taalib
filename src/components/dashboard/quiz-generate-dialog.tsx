@@ -25,6 +25,11 @@ import {
   generateQuizQuestions,
   listQuizSources,
 } from "@/lib/actions/quiz-generation";
+import {
+  ANTHROPIC_BILLING_URL,
+  estimateGenerationCost,
+  formatCost,
+} from "@/lib/quiz-generation-cost";
 import type { ImportedQuestion } from "@/lib/quiz-import";
 
 type Source = Awaited<ReturnType<typeof listQuizSources>>[number];
@@ -72,6 +77,7 @@ export function GenerateDialog({
   const [result, setResult] = useState<{
     questions: ImportedQuestion[];
     dropped: number;
+    cost: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingSources, startLoadingSources] = useTransition();
@@ -119,6 +125,9 @@ export function GenerateDialog({
   }
 
   const found = result?.questions.length ?? 0;
+  const selectedWords = (sources ?? [])
+    .filter((s) => selected.has(s.id))
+    .reduce((n, s) => n + s.words, 0);
 
   return (
     <Dialog
@@ -133,7 +142,15 @@ export function GenerateDialog({
           <DialogTitle>Générer des questions</DialogTitle>
           <DialogDescription>
             Claude écrit des questions à partir des leçons écrites de la
-            thématique. Tu les relis avant d&apos;enregistrer.
+            thématique. Tu les relis avant d&apos;enregistrer.{" "}
+            <a
+              href={ANTHROPIC_BILLING_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              Voir mon crédit
+            </a>
           </DialogDescription>
         </DialogHeader>
 
@@ -213,11 +230,14 @@ export function GenerateDialog({
                 <Sparkles className="size-4" />
                 {generating ? "Génération…" : result ? "Régénérer" : "Générer"}
               </Button>
-              {generating && (
-                <span className="text-sm text-muted-foreground">
-                  Cela peut prendre une minute.
-                </span>
-              )}
+              <span className="text-sm text-muted-foreground">
+                {generating
+                  ? "Cela peut prendre une minute."
+                  : selected.size > 0 &&
+                    `Coût estimé : environ ${formatCost(
+                      estimateGenerationCost(selectedWords, count)
+                    )}`}
+              </span>
             </div>
             {error && <FieldError>{error}</FieldError>}
           </FieldGroup>
@@ -227,7 +247,10 @@ export function GenerateDialog({
           <div className="flex flex-col gap-2 border-t pt-4">
             <p className="text-sm font-medium">
               {found} question{found > 1 ? "s" : ""} générée
-              {found > 1 ? "s" : ""}.
+              {found > 1 ? "s" : ""}.{" "}
+              <span className="font-normal text-muted-foreground">
+                Coût réel : {formatCost(result.cost)}.
+              </span>
             </p>
             {result.dropped > 0 && (
               <p className="text-sm text-muted-foreground">
