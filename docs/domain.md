@@ -386,6 +386,9 @@ elle qui détermine ce qu'un étudiant voit, voir
   verrouillée dans l'ordre du dashboard), « Tout débloquer »
   (`unlockAllInThematique`, ressources et quiz), ou le cadenas d'un élément
   (`setRessourceUnlocked`, `setQuizUnlocked`) pour ouvrir ou refermer.
+  Dans l'onglet Cours, les thématiques sont toutes repliées ; celle en cours
+  de déblocage (une partie seulement est ouverte) porte un badge « En
+  cours ».
   - Seuls les éléments **publiés** d'un cours suivi par la classe se
     débloquent ; un brouillon publié plus tard arrive verrouillé.
   - Une thématique sera visible pour la classe dès qu'un de ses éléments est
