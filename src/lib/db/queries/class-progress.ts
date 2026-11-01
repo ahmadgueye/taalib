@@ -126,3 +126,25 @@ export async function getClassProgress(classId: string) {
     chapters,
   });
 }
+
+// Date de lecture de chaque ressource lue par l'étudiant, parmi celles
+// demandées (détail d'un étudiant).
+export async function getRessourceCompletionDates(
+  userId: string,
+  ressourceIds: string[]
+) {
+  if (ressourceIds.length === 0) return new Map<string, Date>();
+  const rows = await db
+    .select({
+      ressourceId: ressourceProgress.ressourceId,
+      completedAt: ressourceProgress.completedAt,
+    })
+    .from(ressourceProgress)
+    .where(
+      and(
+        eq(ressourceProgress.userId, userId),
+        inArray(ressourceProgress.ressourceId, ressourceIds)
+      )
+    );
+  return new Map(rows.map((r) => [r.ressourceId, r.completedAt]));
+}

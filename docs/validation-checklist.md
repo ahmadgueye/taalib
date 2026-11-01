@@ -160,6 +160,10 @@ Passer le compte en `contributor` puis `admin` dans Studio
       moyenne), pourcentage du Coran identique à celui de l'étudiant sur
       `/memorisation` ; « Jamais » ou plus de 7 jours sans activité → en
       orange avec ⚠ ; tri par colonne ; anciens élèves repliés, affichables
+- [ ] Cliquer un nom → détail de l'étudiant : mêmes chiffres, leçons lues
+      (avec la date) ou « à lire », quiz avec meilleur score ou « pas
+      tenté », mémorisation (tableau de bord et barre par sourate) ; lien
+      retour vers la classe ; un étudiant d'une autre classe → 404
 - [ ] `/rejoindre/[code]` déconnecté → « Se connecter », puis retour sur la
       page après connexion ; « Rejoindre la classe » → « Tu fais partie de
       cette classe » ; code saisi en minuscules ou avec tiret accepté sur

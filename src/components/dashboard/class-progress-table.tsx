@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { ChevronDown, TriangleAlert } from "lucide-react";
 
 import { SortableTableHead } from "@/components/dashboard/sortable-table-head";
@@ -58,9 +59,11 @@ function MiniBar({ value }: { value: number }) {
 }
 
 function ProgressRows({
+  classId,
   rows,
   now,
 }: {
+  classId: string;
   rows: StudentProgress[];
   now: Date;
 }) {
@@ -69,7 +72,12 @@ function ProgressRows({
     return (
       <TableRow key={row.userId}>
         <TableCell>
-          <p className="font-medium">{row.name}</p>
+          <Link
+            href={`/dashboard/classes/${classId}/etudiants/${row.userId}`}
+            className="font-medium underline-offset-2 hover:underline"
+          >
+            {row.name}
+          </Link>
           {row.name !== row.email && (
             <p className="text-xs text-muted-foreground">{row.email}</p>
           )}
@@ -128,9 +136,11 @@ function ProgressRows({
 }
 
 export function ClassProgressTable({
+  classId,
   students,
   now,
 }: {
+  classId: string;
   students: StudentProgress[];
   now: Date;
 }) {
@@ -195,7 +205,7 @@ export function ClassProgressTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          <ProgressRows rows={active} now={now} />
+          <ProgressRows classId={classId} rows={active} now={now} />
           {showFormer && former.length > 0 && (
             <>
               <TableRow className="hover:bg-transparent">
@@ -206,7 +216,7 @@ export function ClassProgressTable({
                   Anciens élèves
                 </TableCell>
               </TableRow>
-              <ProgressRows rows={former} now={now} />
+              <ProgressRows classId={classId} rows={former} now={now} />
             </>
           )}
         </TableBody>

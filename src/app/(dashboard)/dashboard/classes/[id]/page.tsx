@@ -53,7 +53,11 @@ export default async function ClassPage({ params }: Props) {
           mémorisation du Coran et dernière activité (leçon, quiz ou verset).
         </p>
         <div className="mt-4">
-          <ClassProgressTable students={progress} now={new Date()} />
+          <ClassProgressTable
+            classId={classe.id}
+            students={progress}
+            now={new Date()}
+          />
         </div>
       </section>
 

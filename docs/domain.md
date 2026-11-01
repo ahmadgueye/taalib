@@ -365,6 +365,14 @@ elle qui détermine ce qu'un étudiant voit, voir
   Tri par colonne, les moins avancés en leçons d'abord. Les anciens élèves
   sont repliés à part et jugés sur ce qui était débloqué avant leur départ.
   Réservé à l'admin, comme le reste de la page.
+  - **Détail d'un étudiant** — le nom ouvre
+    `/dashboard/classes/[id]/etudiants/[userId]` (`notFound()` si l'étudiant
+    n'est pas membre de la classe, actif ou ancien) : les mêmes chiffres en
+    cartes, puis chaque cours avec ce que l'étudiant voit de la classe
+    (leçons lues avec leur date ou « à lire », quiz avec le meilleur score et
+    le nombre de tentatives ou « pas tenté »), et sa mémorisation : le
+    tableau de bord de `/memorisation` (`memorization-dashboard.tsx`) et une
+    barre par sourate suivie (maîtrisés / à renforcer).
 - **Rejoindre** — `/rejoindre` (saisie du code) et `/rejoindre/[code]`. Le
   code est normalisé (majuscules, sans espaces ni tirets). Un visiteur non
   connecté est envoyé vers `/login?next=/rejoindre/CODE` et revient sur la
