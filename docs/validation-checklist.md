@@ -181,6 +181,19 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Textes en français sans faute, messages d'erreur compréhensibles
 - [ ] Navigation clavier de base (Tab, Entrée, Échap dans les dialogues)
 - [ ] Passe étroite ≈ 400 px : menu, tab bar, lecteur Coran, quiz utilisables
+- [ ] `/coran` sur mobile : la barre du haut tient sur une ligne ; le bouton
+      Réglages ouvre un tiroir (affichage, taille, tajwid et sa légende,
+      progression et « Gérer mon parcours » si connecté, mode Zen)
+- [ ] `/coran` : le bouton « sourate · verset » ouvre le tiroir de
+      navigation (à gauche sur desktop, en bas sur mobile) ; recherche par
+      nom, numéro ou en arabe ; choisir un verset y mène et ferme le tiroir ;
+      couleurs de mémorisation sur les versets si connecté
+- [ ] `/coran` : ouvrir une sourate jamais lue s'affiche en moins d'une
+      seconde ; en mode Lecture la page suivante est déjà prête au
+      défilement ; `/coran?sourate=5&verset=90` arrive bien sur le verset 90
+- [ ] `/coran` en mode avion le temps d'ouvrir une sourate sur plusieurs
+      pages : message « La page n'a pas pu être chargée », puis la suite
+      s'affiche seule une fois le réseau revenu (y compris en PWA)
 
 ## 6. Ce qu'il manque / ce qui frustre (libre)
 Noter tout ce qu'on cherche sans le trouver, tout ce qui demande trop de

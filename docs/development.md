@@ -83,6 +83,8 @@ simulés.
 | `lib/actions/users.test.ts` | Rôle invalide refusé, impossible de retirer le dernier admin |
 | `lib/actions/progress.test.ts` | Seule une ressource publiée est complétable, pour l'utilisateur connecté |
 | `lib/actions/memorization.test.ts` | Bornes des sourates/versets, plage `1..N`, retour en arrière |
+| `lib/quran/verse-page.test.ts` | Table des débuts de page complète (604, dans l'ordre de lecture), page d'un verset aux limites de page, Ash-Sharh qui déborde sur la page suivante |
+| `lib/quran/chapter-search.test.ts` | Recherche de sourate du lecteur : numéro en préfixe, nom sans casse/accents/tirets, arabe avec ou sans tashkeel |
 | `lib/actions/quiz-questions.schema.test.ts` | Validation du formulaire de questions |
 | `lib/class-progress.test.ts` | Suivi des étudiants : leçons et quiz comptés sur ce que la classe a débloqué, meilleure tentative et moyenne, ancien élève jugé sur ce qui était débloqué avant son départ, mémorisation au prorata des mots, dernière activité, seuil d'inactivité de 7 jours |
 | `lib/db/queries/roadmap.test.ts` | Feuille de route : ordre des cours, états `upcoming` / `active` / `completed`, classe terminée réduite aux étapes débloquées, liste « À faire » (quiz après les leçons de sa thématique), badge « Nouveau » |

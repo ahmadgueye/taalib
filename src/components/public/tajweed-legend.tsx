@@ -17,6 +17,25 @@ const TAJWEED_RULES = [
   { key: "tafkhim", label: "Tafkhim (lourd)" },
 ] as const;
 
+// La liste seule, sans repli : réutilisée dans les réglages mobiles du
+// lecteur, où elle s'affiche sous l'interrupteur du tajwid.
+export function TajweedLegendItems({ className }: { className?: string }) {
+  return (
+    <div className={className}>
+      {TAJWEED_RULES.map((rule) => (
+        <div key={rule.key} className="flex items-center gap-2">
+          <span
+            aria-hidden="true"
+            className="h-3 w-3 shrink-0"
+            style={{ backgroundColor: `var(--tajweed-${rule.key})` }}
+          />
+          <span>{rule.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function TajweedLegend({ show }: { show: boolean }) {
   const [open, setOpen] = useState(false);
 
@@ -37,18 +56,7 @@ export function TajweedLegend({ show }: { show: boolean }) {
       </button>
       {open && (
         <div className="border-t">
-          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-3 px-6 py-4 text-sm">
-            {TAJWEED_RULES.map((rule) => (
-              <div key={rule.key} className="flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className="h-3 w-3 shrink-0"
-                  style={{ backgroundColor: `var(--tajweed-${rule.key})` }}
-                />
-                <span>{rule.label}</span>
-              </div>
-            ))}
-          </div>
+          <TajweedLegendItems className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-3 px-6 py-4 text-sm" />
         </div>
       )}
     </div>

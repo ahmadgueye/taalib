@@ -100,22 +100,6 @@ export async function getVersesByPage(
   return { pageNumber, verses };
 }
 
-type VerseByKeyResponse = {
-  verse: { page_number: number };
-};
-
-export async function getVersePage(
-  chapterId: number,
-  verseNumber: number
-): Promise<number> {
-  const data = await quranFetch<VerseByKeyResponse>(
-    `/verses/by_key/${chapterId}:${verseNumber}`,
-    { fields: "page_number" },
-    86400
-  );
-  return data.verse.page_number;
-}
-
 type RecitationsResponse = {
   recitations: {
     id: number;
