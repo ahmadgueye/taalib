@@ -187,6 +187,12 @@ l'aperçu qui s'affiche quand on colle un lien dans WhatsApp, par exemple. Le
 logo y est un tracé SVG (`lib/logo-path.ts`), pas du texte : le moteur
 d'`ImageResponse` lierait mal les lettres arabes.
 
+Le dashboard a son propre titre d'onglet pour qu'on ne le confonde pas avec
+l'aperçu du site : `dashboard/layout.tsx` définit « Dashboard · Taalib » par
+défaut et le modèle `%s · Dashboard`. Chaque liste de la sidebar donne son
+nom (`export const metadata = { title: "Cours" }` → « Cours · Dashboard ») ;
+les pages de détail gardent le titre par défaut.
+
 Les pages réservées (cours, thématiques, hadiths, séances…) n'ont pas d'image
 propre : un visiteur non connecté, donc aussi le robot d'un réseau social, est
 renvoyé vers `/login`, et c'est l'aperçu de la page de connexion qui s'affiche.

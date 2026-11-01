@@ -5,7 +5,10 @@ import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { FlashToaster } from "@/components/dashboard/flash-toaster";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 
+// Titre d'onglet distinct du site (« Cours — Taalib ») : on sait d'un coup
+// d'œil si l'onglet ouvert est le dashboard ou l'aperçu.
 export const metadata: Metadata = {
+  title: { default: "Dashboard · Taalib", template: "%s · Dashboard" },
   robots: { index: false, follow: false },
 };
 

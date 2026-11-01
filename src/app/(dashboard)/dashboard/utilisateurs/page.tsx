@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { AccountsTable } from "@/components/dashboard/accounts-table";
@@ -5,6 +6,8 @@ import { RolesHelpDialog } from "@/components/dashboard/roles-help-dialog";
 import { TeamSection } from "@/components/dashboard/team-section";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { getAccounts, getTeam } from "@/lib/db/queries/users";
+
+export const metadata: Metadata = { title: "Utilisateurs" };
 
 export default async function DashboardUtilisateursPage() {
   const currentProfile = await getCurrentProfile();

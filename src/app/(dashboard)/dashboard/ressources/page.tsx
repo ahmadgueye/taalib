@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
@@ -5,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { RessourcesTable } from "@/components/dashboard/ressources-table";
 import { getAllRessources } from "@/lib/db/queries/ressources";
 import { type RessourceStatus } from "@/lib/ressource-status";
+
+export const metadata: Metadata = { title: "Ressources" };
 
 const statuses: RessourceStatus[] = ["draft", "published"];
 

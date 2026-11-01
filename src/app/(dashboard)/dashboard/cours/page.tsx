@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
@@ -5,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { CoursTable } from "@/components/dashboard/cours-table";
 import { getAllCours } from "@/lib/db/queries/cours";
 import { type CoursStatus } from "@/lib/cours-status";
+
+export const metadata: Metadata = { title: "Cours" };
 
 const statuses: CoursStatus[] = ["published", "coming_soon"];
 

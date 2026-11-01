@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { NarratorsTable } from "@/components/dashboard/narrators-table";
 import { getAllNarrators } from "@/lib/db/queries/narrators";
+
+export const metadata: Metadata = { title: "Rapporteurs" };
 
 export default async function DashboardRapporteursPage() {
   const narratorsList = await getAllNarrators();
