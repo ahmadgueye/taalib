@@ -106,7 +106,7 @@ utilisateur n'y lit que son propre profil.
 | Rôle | Peut lire le contenu | Peut créer/éditer/supprimer du contenu | Peut gérer les rôles et les classes |
 |---|---|---|---|
 | `viewer` (défaut à la création de compte, = étudiant) | seulement ce qui est débloqué pour ses classes | ❌ | ❌ |
-| `contributor` | ✅ tout | ✅ | ❌ |
+| `contributor` (affiché « Éditeur » dans le dashboard) | ✅ tout | ✅ | ❌ |
 | `admin` | ✅ tout | ✅ | ✅ (`/dashboard/utilisateurs`, `/dashboard/classes`) |
 
 Un nouveau compte atterrit en `viewer` (défaut de colonne sur `profiles.role`,

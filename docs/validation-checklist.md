@@ -143,7 +143,7 @@ Passer le compte en `contributor` puis `admin` dans Studio
       met à jour l'URL (`?onglet=cours`…) et un rechargement le conserve ;
       ajouter un étudiant ou enregistrer les réglages garde l'onglet ouvert
 - [ ] Utilisateurs (admin) : section « Équipe » ; ajouter par e-mail un
-      compte existant (Contributeur ou Admin) → il passe dans l'équipe ; un
+      compte existant (Éditeur ou Admin) → il passe dans l'équipe ; un
       e-mail inconnu ou déjà dans l'équipe donne un message clair ; changer
       un rôle ; impossible de retirer le dernier admin ; « Retirer l'accès »
       absent sur sa propre ligne, et sur une autre le compte repasse dans

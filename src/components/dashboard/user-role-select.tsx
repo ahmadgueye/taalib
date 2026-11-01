@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { updateUserRole } from "@/lib/actions/users";
 
-export const teamRoleLabels = { admin: "Admin", contributor: "Contributeur" };
+export const teamRoleLabels = { admin: "Admin", contributor: "Éditeur" };
 
 export function UserRoleSelect({
   userId,
