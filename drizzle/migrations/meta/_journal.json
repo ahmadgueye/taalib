@@ -225,6 +225,13 @@
       "when": 1793489352719,
       "tag": "0031_quran_memorization_drop_review",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793502693592,
+      "tag": "0032_hadith_narrators",
+      "breakpoints": true
     }
   ]
 }

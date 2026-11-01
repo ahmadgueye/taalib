@@ -1,8 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 
 import { MarkdownEditorField } from "@/components/dashboard/markdown-editor-field";
+import { NarratorMultiSelect } from "@/components/dashboard/narrator-multi-select";
 import { SubmitButton } from "@/components/dashboard/submit-button";
 import {
   Field,
@@ -27,16 +29,18 @@ import {
 
 export function HadithForm({
   thematiqueOptions,
+  narratorOptions,
   hadith,
 }: {
   thematiqueOptions: { id: string; title: string; coursTitle: string }[];
+  narratorOptions: { id: string; name: string }[];
   hadith?: {
     id: string;
     title: string;
     arabicText: string;
     translationFr: string;
     translationWolof: string | null;
-    narrator: string;
+    hadithNarrators: { narrator: { id: string; name: string } }[];
     source: string | null;
     thematiqueId: string;
   };
@@ -109,12 +113,20 @@ export function HadithForm({
         />
         <Field>
           <FieldLabel htmlFor="narrator">Rapporteur(s)</FieldLabel>
-          <Input
+          <NarratorMultiSelect
             id="narrator"
-            name="narrator"
-            defaultValue={hadith?.narrator}
-            required
+            name="narrators"
+            options={narratorOptions}
+            defaultValue={hadith?.hadithNarrators.map((hn) => hn.narrator)}
           />
+          <FieldDescription>
+            Tapez un nom absent de la liste pour l&apos;ajouter. Les
+            rapporteurs se gèrent dans{" "}
+            <Link href="/dashboard/rapporteurs" className="underline">
+              Rapporteurs
+            </Link>
+            .
+          </FieldDescription>
         </Field>
         <Field>
           <FieldLabel htmlFor="source">Source</FieldLabel>

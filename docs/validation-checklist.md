@@ -130,6 +130,10 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Ressources : créer chaque type (vidéo, PDF upload, lien, texte
       markdown), brouillon invisible côté public, réordonner
 - [ ] Hadiths : créer avec arabe + FR obligatoire, wolof optionnel
+- [ ] Rapporteurs : choisir plusieurs rapporteurs existants dans le
+      formulaire d'un hadith, en créer un nouveau en tapant son nom ;
+      `/dashboard/rapporteurs` : renommer, fusionner deux orthographes (les
+      hadiths suivent), suppression refusée tant qu'il est cité
 - [ ] Quiz : créer, ajouter questions QCM et vrai/faux, plusieurs bonnes
       réponses, brouillon invisible et non soumissible côté public
 - [ ] Séances : créer avec thématiques et ressources rattachées

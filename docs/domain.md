@@ -30,6 +30,19 @@ flowchart TD
   arabe + traduction française obligatoire (`translationFr`), traduction
   wolof optionnelle (`translationWolof`) — spécificité du public visé par
   cette plateforme.
+- **Rapporteurs** — table `narrators` partagée entre les hadiths (relation
+  plusieurs-à-plusieurs via `hadith_narrators`, avec un `order_index` pour
+  garder l'ordre de saisie). Un rapporteur est créé une fois, depuis
+  `/dashboard/rapporteurs` ou directement dans le formulaire d'un hadith en
+  tapant un nom absent de la liste, puis réutilisé. Nom unique sans tenir
+  compte de la casse. Un rapporteur encore cité ne peut pas être supprimé
+  (`onDelete: restrict`) : on le **fusionne** dans un autre depuis sa page
+  d'édition pour regrouper les orthographes en double. Affichage public :
+  `formatNarrators()` (`lib/narrators.ts`) → « Al-Bukhârî et Muslim ».
+  La migration `0032` a repris l'ancien champ texte en le découpant sur
+  « et », « & » et les virgules ; les annotations entre crochets qui s'y
+  trouvaient (numéro « [7280] », degré « [Authentique] ») ont été déplacées
+  à la fin de la `source` du hadith plutôt que gardées dans le nom.
 - **Quiz** — rattaché à une thématique comme les ressources, statut
   `draft`/`published`. Sert à valider la compréhension (voir
   [Quiz](#quiz) plus bas) et à terminer une étape de la

@@ -1,8 +1,12 @@
 import { HadithForm } from "@/components/dashboard/hadith-form";
+import { getAllNarrators } from "@/lib/db/queries/narrators";
 import { getAllThematiques } from "@/lib/db/queries/thematiques";
 
 export default async function NewHadithPage() {
-  const thematiques = await getAllThematiques();
+  const [thematiques, narratorOptions] = await Promise.all([
+    getAllThematiques(),
+    getAllNarrators(),
+  ]);
   const thematiqueOptions = thematiques.map((t) => ({
     id: t.id,
     title: t.title,
@@ -15,7 +19,10 @@ export default async function NewHadithPage() {
         Nouveau hadith
       </h1>
       <div className="mt-6">
-        <HadithForm thematiqueOptions={thematiqueOptions} />
+        <HadithForm
+          thematiqueOptions={thematiqueOptions}
+          narratorOptions={narratorOptions}
+        />
       </div>
     </div>
   );
