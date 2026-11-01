@@ -10,12 +10,13 @@
 // Fonts are pulled one page at a time via the FontFace API instead of
 // declaring all 604 (times two variants) as static @font-face rules.
 
-// NB: the repo also has a "mushaf-woff2/QCF_PNNN.woff2" set that looks
-// page-specific by name but is actually a small shared ornament/symbol font
-// (~600 glyphs, same across pages) — verified by rendering it and by cmap
-// glyph counts. The real per-page word glyphs (~150-200 per page, matching
-// the API's code_v2 field) only exist as TTF under mushaf-v2/QCF2NNN.ttf.
-const QCF_V2_FONT_CDN = "https://cdn.jsdelivr.net/gh/nuqayah/qpc-fonts@master/mushaf-v2";
+// Official Quran Foundation CDN for QCF V2 (mushaf_id 1), in woff2: about
+// half the size of the TTF set previously loaded from nuqayah/qpc-fonts
+// (162 KB vs 300 KB for page 312). Compared glyph by glyph against that TTF
+// set by drawing every line of several pages with both: same glyphs, only
+// scattered antialiasing pixels differ on some pages.
+const QCF_V2_FONT_CDN =
+  "https://verses.quran.foundation/fonts/quran/hafs/v2/woff2";
 
 // Official Quran Foundation CDN for QCF Tajweed V4 (mushaf_id 19), COLRv1
 // color-font format — supported natively by Chrome/Safari/Edge without any
@@ -81,7 +82,7 @@ export function loadQcfPageFont(
   const src =
     mushafId === 19
       ? `url(${QCF_V4_TAJWEED_FONT_CDN}/p${page}.woff2) format("woff2")`
-      : `url(${QCF_V2_FONT_CDN}/QCF2${String(page).padStart(3, "0")}.ttf) format("truetype")`;
+      : `url(${QCF_V2_FONT_CDN}/p${page}.woff2) format("woff2")`;
 
   const promise = (async () => {
     try {

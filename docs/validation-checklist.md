@@ -179,6 +179,9 @@ Passer le compte en `contributor` puis `admin` dans Studio
       navigation (à gauche sur desktop, en bas sur mobile) ; recherche par
       nom, numéro ou en arabe ; choisir un verset y mène et ferme le tiroir ;
       couleurs de mémorisation sur les versets si connecté
+- [ ] `/coran` : ouvrir une sourate jamais lue s'affiche en moins d'une
+      seconde ; en mode Lecture la page suivante est déjà prête au
+      défilement ; `/coran?sourate=5&verset=90` arrive bien sur le verset 90
 
 ## 6. Ce qu'il manque / ce qui frustre (libre)
 Noter tout ce qu'on cherche sans le trouver, tout ce qui demande trop de

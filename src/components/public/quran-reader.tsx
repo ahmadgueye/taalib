@@ -50,6 +50,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { QuranChapter, QuranPage, QuranVerse } from "@/lib/quran/types";
+import { getVersePageNumber } from "@/lib/quran/verse-page";
 
 type ViewMode = "arabic" | "arabic-fr";
 
@@ -173,27 +174,41 @@ function keepChapterVerses(page: QuranPage, chapterId: number): QuranPage {
 
 const LAST_MUSHAF_PAGE = 604;
 
+// Pages déjà demandées (ou en cours) pendant la visite : la page suivante
+// préchargée en arrière-plan, ou une page relue, ne repart pas sur le réseau.
+const pageRequests = new Map<string, Promise<QuranPage>>();
+
+function requestPage(pageNumber: number, mushafId: MushafId): Promise<QuranPage> {
+  const key = `${mushafId}:${pageNumber}`;
+  const cached = pageRequests.get(key);
+  if (cached) return cached;
+  const request = fetch(`/api/quran/pages/${pageNumber}?mushaf=${mushafId}`)
+    .then((res) => {
+      if (!res.ok) throw new Error("Failed to load page");
+      return res.json() as Promise<QuranPage>;
+    })
+    .catch((error) => {
+      pageRequests.delete(key);
+      throw error;
+    });
+  pageRequests.set(key, request);
+  return request;
+}
+
+// Lance en parallèle le texte d'une page et, en mode Lecture, sa police QCF :
+// sinon la police n'est demandée qu'une fois le texte affiché.
+function preloadPage(pageNumber: number, mushafId: MushafId, viewMode: ViewMode) {
+  requestPage(pageNumber, mushafId).catch(() => {});
+  if (viewMode === "arabic") loadQcfPageFont(pageNumber, mushafId);
+}
+
 async function fetchPage(
   pageNumber: number,
   chapterId: number,
   mushafId: MushafId = 1,
 ): Promise<QuranPage> {
-  const res = await fetch(`/api/quran/pages/${pageNumber}?mushaf=${mushafId}`);
-  if (!res.ok) throw new Error("Failed to load page");
-  const page = (await res.json()) as QuranPage;
+  const page = await requestPage(pageNumber, mushafId);
   return keepChapterVerses(page, chapterId);
-}
-
-async function fetchVersePage(
-  chapterId: number,
-  verseNumber: number,
-): Promise<number> {
-  const res = await fetch(
-    `/api/quran/verse-location?chapter=${chapterId}&verse=${verseNumber}`,
-  );
-  if (!res.ok) throw new Error("Failed to locate verse");
-  const data = (await res.json()) as { pageNumber: number };
-  return data.pageNumber;
 }
 
 // A zero-size virtual anchor at the click point, so the right-click status
@@ -641,6 +656,7 @@ export function QuranReader({
 
     let cancelled = false;
     const token = loadTokenRef.current;
+    preloadPage(initialPage, mushafId, viewMode);
     fetchPage(initialPage, initialChapterId, mushafId).then((page) => {
       if (!cancelled && token === loadTokenRef.current) setPages([page]);
     });
@@ -760,8 +776,18 @@ export function QuranReader({
   const hasMultiplePages =
     selectedChapter.lastPage > selectedChapter.firstPage || !chapterFullyLoaded;
 
+  // Précharge la page suivante (texte et police) dès que la dernière page
+  // chargée est affichée : le défilement continu la trouve déjà prête.
+  useEffect(() => {
+    if (currentChapterPages.length === 0 || chapterFullyLoaded) return;
+    preloadPage(lastLoadedPage + 1, mushafId, viewMode);
+  }, [currentChapterPages.length, chapterFullyLoaded, lastLoadedPage, mushafId, viewMode]);
+
   async function loadNextPage() {
-    if (loadingNext || chapterFullyLoaded) return;
+    // Rien de la sourate n'est encore chargé (changement de sourate en
+    // cours) : la « page suivante » serait calculée sur une page supposée.
+    if (loadingNext || chapterFullyLoaded || currentChapterPages.length === 0)
+      return;
     const token = loadTokenRef.current;
     setLoadingNext(true);
     try {
@@ -804,6 +830,7 @@ export function QuranReader({
     selectedChapterId,
     chapterFullyLoaded,
     mushafId,
+    currentChapterPages.length,
   ]);
 
   // Restores every page from the chapter's start up to the saved one, so
@@ -815,8 +842,8 @@ export function QuranReader({
     const chapter = chaptersById.get(chapterId);
     if (!chapter) return;
     const token = ++loadTokenRef.current;
-    const targetPage = await fetchVersePage(chapterId, verseNumber);
-    if (token !== loadTokenRef.current) return;
+    const targetPage = getVersePageNumber(chapterId, verseNumber);
+    preloadPage(targetPage, mushafId, viewMode);
 
     updateUrl(chapterId, verseNumber);
     pendingVerseKey.current = `${chapterId}:${verseNumber}`;
@@ -848,8 +875,8 @@ export function QuranReader({
 
   async function goToVerse(chapterId: number, verseNumber: number) {
     const token = ++loadTokenRef.current;
-    const pageNumber = await fetchVersePage(chapterId, verseNumber);
-    if (token !== loadTokenRef.current) return;
+    const pageNumber = getVersePageNumber(chapterId, verseNumber);
+    preloadPage(pageNumber, mushafId, viewMode);
 
     updateUrl(chapterId, verseNumber);
 

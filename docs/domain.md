@@ -219,12 +219,20 @@ sur l'API externe Quran Foundation).
   `apis.quran.foundation/content/api/v4`. Les routes internes
   `api/quran/pages/[page]`, `api/quran/chapter-audio/[chapter]`,
   `api/quran/verse-audio/[chapter]`, `api/quran/verse-timings/[chapter]`,
-  `api/quran/recitations`, `api/quran/verse-location` exposent ces données au
-  client sans jamais lui donner les credentials (`QURAN_CLIENT_ID`/`SECRET`
-  restent server-only).
+  `api/quran/recitations` exposent ces données au client sans jamais lui
+  donner les credentials (`QURAN_CLIENT_ID`/`SECRET` restent server-only).
+- **Rapidité du lecteur** — la page d'un verset est connue sans appel
+  réseau : `lib/quran/page-starts.ts` donne le premier verset de chacune des
+  604 pages (table générée une fois depuis `verses/by_page`, la pagination
+  qu'affiche le lecteur) et `getVersePageNumber` (`lib/quran/verse-page.ts`)
+  en déduit la page. Le texte d'une page et sa police QCF sont demandés en
+  même temps, la page suivante est préchargée dès que la dernière s'affiche,
+  et `api/quran/pages/[page]` est mis en cache (navigateur une semaine, CDN
+  Vercel un an) : le texte du Coran ne change pas.
 - **Rendu mushaf** — `components/public/quran-reader.tsx` reconstitue une
   page de mushaf authentique (pagination fixe façon Coran papier, pas un flux
-  continu), avec la police QCF officielle (`lib/quran/qcf-font.ts`) pour un
+  continu), avec la police QCF officielle (`lib/quran/qcf-font.ts`, une
+  police par page servie en woff2 par le CDN de Quran Foundation) pour un
   rendu du texte arabe fidèle glyphe par glyphe.
 - **Taille du texte** — réglée avec les boutons − / + et retenue dans le
   `localStorage` (`deenshare:quran-font-size-rem`). Sans choix enregistré,
