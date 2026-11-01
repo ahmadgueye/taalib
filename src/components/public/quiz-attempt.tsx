@@ -151,7 +151,7 @@ export function QuizAttempt({
             {encouragement(result.score, result.total)}
           </p>
           {result.attemptsLeft !== null && (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm font-medium text-destructive">
               {result.attemptsLeft === 0
                 ? "Tu as utilisé toutes tes tentatives pour ce quiz."
                 : `Il te reste ${result.attemptsLeft} tentative${
@@ -207,7 +207,7 @@ export function QuizAttempt({
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-4">
+    <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-6">
       {/* Reste visible au défilement, sous l'en-tête du site (ou en haut du
           dialogue de l'aperçu du dashboard). */}
       <div
@@ -250,11 +250,11 @@ export function QuizAttempt({
             role={isTrueFalse ? "radiogroup" : "group"}
             aria-labelledby={`q-${question.id}`}
             className={cn(
-              "scroll-mt-24 border p-4 transition-colors",
+              "scroll-mt-24 border-b pb-6 transition-colors",
               isMissing && "border-destructive"
             )}
           >
-            <p id={`q-${question.id}`} className="font-medium">
+            <p id={`q-${question.id}`} className="font-semibold">
               {index + 1}. {question.prompt}
             </p>
             {!isTrueFalse && (

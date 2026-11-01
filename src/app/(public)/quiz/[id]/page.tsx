@@ -5,6 +5,7 @@ import { History } from "lucide-react";
 
 import { BackButton } from "@/components/public/back-button";
 import { QuizAttempt } from "@/components/public/quiz-attempt";
+import { Button } from "@/components/ui/button";
 import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { canSeeQuiz } from "@/lib/content-access";
@@ -74,21 +75,29 @@ export default async function QuizPage({ params }: Props) {
         <p className="mt-2 text-muted-foreground">{quiz.description}</p>
       )}
       {score && (
-        <Link
-          href={`/quiz/${quiz.id}/historique`}
-          className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:underline hover:underline-offset-4"
-        >
-          <History className="size-4" />
-          {score.attemptsCount} tentative{score.attemptsCount > 1 ? "s" : ""} ·
-          meilleur score {score.bestScore}/{score.bestTotal} · voir mes
-          tentatives
-        </Link>
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          <span>
+            {score.attemptsCount} tentative{score.attemptsCount > 1 ? "s" : ""}{" "}
+            · meilleur score {score.bestScore}/{score.bestTotal}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            render={<Link href={`/quiz/${quiz.id}/historique`} />}
+            nativeButton={false}
+          >
+            <History className="size-4" />
+            Voir mes tentatives
+          </Button>
+        </div>
       )}
       {status.left !== null && status.left > 0 && (
         <p className="mt-2 text-sm text-muted-foreground">
-          {status.used === 0
-            ? `Ce quiz est limité à ${status.left} tentative${status.left > 1 ? "s" : ""}.`
-            : `Il te reste ${status.left} tentative${status.left > 1 ? "s" : ""}.`}
+          <span className="font-medium text-destructive">
+            {status.used === 0
+              ? `Ce quiz est limité à ${status.left} tentative${status.left > 1 ? "s" : ""}.`
+              : `Il te reste ${status.left} tentative${status.left > 1 ? "s" : ""}.`}
+          </span>
           {quiz.hideCorrections &&
             !status.passed &&
             " La correction détaillée s'affichera quand tu auras réussi le quiz ou utilisé toutes tes tentatives."}
