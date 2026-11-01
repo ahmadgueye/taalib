@@ -134,6 +134,11 @@ export const quiz = pgTable("quiz", {
   description: text("description"),
   status: ressourceStatusEnum("status").notNull().default("published"),
   passingScore: integer("passing_score").notNull().default(80),
+  // Nombre de tentatives par étudiant ; null = illimité.
+  maxAttempts: integer("max_attempts"),
+  // Avec une limite : la correction détaillée n'est montrée qu'une fois le
+  // quiz réussi ou les tentatives épuisées.
+  hideCorrections: boolean("hide_corrections").notNull().default(false),
   addedBy: uuid("added_by").references(() => profiles.id),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -178,6 +183,27 @@ export const quizTentatives = pgTable("quiz_tentatives", {
     .notNull()
     .defaultNow(),
 });
+
+// Tentatives accordées en plus de la limite du quiz, par étudiant.
+export const quizExtraAttempts = pgTable(
+  "quiz_extra_attempts",
+  {
+    quizId: uuid("quiz_id")
+      .notNull()
+      .references(() => quiz.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    extra: integer("extra").notNull().default(0),
+    grantedBy: uuid("granted_by").references(() => profiles.id, {
+      onDelete: "set null",
+    }),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.quizId, table.userId] })]
+);
 
 export const quizReponses = pgTable(
   "quiz_reponses",

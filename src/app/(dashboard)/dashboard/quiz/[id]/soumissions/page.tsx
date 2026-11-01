@@ -9,9 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { QuizSubmissionsTable } from "@/components/dashboard/quiz-submissions-table";
-import { getQuizById } from "@/lib/db/queries/quiz";
 import {
+  Breadcrumbs,
+  thematiqueCrumbs,
+} from "@/components/dashboard/breadcrumbs";
+import { QuizSubmissionsTable } from "@/components/dashboard/quiz-submissions-table";
+import { getQuizWithThematique } from "@/lib/db/queries/quiz";
+import {
+  getExtraAttempts,
   getQuizQuestionStats,
   getQuizSubmissionStats,
 } from "@/lib/db/queries/quiz-tentatives";
@@ -22,13 +27,18 @@ type Props = {
 
 export default async function QuizSoumissionsPage({ params }: Props) {
   const { id } = await params;
-  const quiz = await getQuizById(id);
+  const quiz = await getQuizWithThematique(id);
   if (!quiz) notFound();
 
   const [
     { tentatives, attemptsCount, uniqueUsersCount, averagePercent, students },
     questionStats,
-  ] = await Promise.all([getQuizSubmissionStats(id), getQuizQuestionStats(id)]);
+    extras,
+  ] = await Promise.all([
+    getQuizSubmissionStats(id),
+    getQuizQuestionStats(id),
+    getExtraAttempts(id),
+  ]);
 
   const passRate =
     attemptsCount === 0
@@ -54,11 +64,25 @@ export default async function QuizSoumissionsPage({ params }: Props) {
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          ...thematiqueCrumbs(quiz.thematique),
+          {
+            label: quiz.title,
+            href: `/dashboard/quiz/${quiz.id}`,
+          },
+          { label: "Toutes les soumissions" },
+        ]}
+      />
       <h1 className="font-heading text-2xl font-semibold tracking-tight">
-        Soumissions — {quiz.title}
+        Toutes les soumissions — {quiz.title}
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Seuil de réussite : {quiz.passingScore}%.
+        Tous les étudiants, toutes classes confondues : le suivi d&apos;une
+        classe se trouve dans l&apos;onglet Suivi de sa page. Seuil de
+        réussite : {quiz.passingScore}%.
+        {quiz.maxAttempts !== null &&
+          ` ${quiz.maxAttempts} tentative${quiz.maxAttempts > 1 ? "s" : ""} par étudiant.`}
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -114,7 +138,13 @@ export default async function QuizSoumissionsPage({ params }: Props) {
           Aucune tentative pour ce quiz.
         </p>
       ) : (
-        <QuizSubmissionsTable students={students} passingScore={quiz.passingScore} />
+        <QuizSubmissionsTable
+          quizId={quiz.id}
+          students={students}
+          passingScore={quiz.passingScore}
+          maxAttempts={quiz.maxAttempts}
+          extras={extras}
+        />
       )}
     </div>
   );

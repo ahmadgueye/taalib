@@ -11,7 +11,7 @@ import { cn, isNavActive } from "@/lib/utils";
 const tabs = [
   { href: "/", label: "Accueil", icon: Home, exact: true, membersOnly: false },
   { href: "/cours", label: "Cours", icon: BookOpen, membersOnly: true },
-  { href: "/coran", label: "Coran", icon: BookMarked, membersOnly: false },
+  { href: "/coran", label: "Qur'an", icon: BookMarked, membersOnly: false },
   { href: "/hadiths", label: "Hadiths", icon: ScrollText, membersOnly: true },
   { href: "/recherche", label: "Recherche", icon: Search, membersOnly: true },
 ];

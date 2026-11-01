@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -6,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { ClassesTable } from "@/components/dashboard/classes-table";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { getAllClasses } from "@/lib/db/queries/classes";
+
+export const metadata: Metadata = { title: "Classes" };
 
 export default async function DashboardClassesPage() {
   const profile = await getCurrentProfile();

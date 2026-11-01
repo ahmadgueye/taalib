@@ -99,7 +99,7 @@ export async function getClassCoursOutline(classId: string) {
                 },
                 quiz: {
                   where: eq(quiz.status, "published"),
-                  orderBy: [asc(quiz.orderIndex), asc(quiz.title)],
+                  orderBy: [asc(quiz.orderIndex), asc(quiz.createdAt)],
                 },
               },
             },
@@ -145,6 +145,7 @@ export async function getClassCoursOutline(classId: string) {
           id: q.id,
           title: q.title,
           passingScore: q.passingScore,
+          maxAttempts: q.maxAttempts,
           unlockedAt: quizUnlockedAt.get(q.id) ?? null,
         })),
       })),

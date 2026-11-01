@@ -73,6 +73,7 @@ Toutes documentées avec leur provenance exacte dans `.env.example`. Résumé :
 | `NEXT_PUBLIC_SITE_URL` | à définir soi-même (URL de production, ex. `https://taalib.vercel.app`) | URL absolue des Open Graph images, liens canoniques, `sitemap.xml` et `robots.txt`. Absente → `localhost`. |
 | `CRON_SECRET` | à générer (`openssl rand -hex 32`) | Authentifie les appels de Vercel Cron vers `/api/cron/keep-alive` |
 | `QURAN_CLIENT_ID` / `QURAN_CLIENT_SECRET` | Console développeur Quran Foundation | OAuth2 client-credentials pour l'API Coran (server-only) |
+| `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys | Génération de questions de quiz par IA (server-only). Facultative : absente, le bouton « Générer avec l'IA » est masqué |
 
 Le Client ID/Secret Google OAuth **ne sont pas** des variables d'env de
 l'app — ils se configurent directement dans Supabase (Authentication →

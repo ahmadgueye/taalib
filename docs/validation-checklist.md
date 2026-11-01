@@ -17,7 +17,7 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
 
 ## 1. Visiteur non connecté
 - [ ] Accueil : vitrine avec « Se connecter », « Rejoindre une classe »,
-      « Lire le Coran », lien vers bayanun.com ; aucun cours ni thématique
+      « Lire le Qur'an », lien vers bayanun.com ; aucun cours ni thématique
       affiché ; l'en-tête n'a que Quran et Connexion (pas de Cours, Hadith ni
       recherche), la barre mobile que Accueil et Quran
 - [ ] `/cours`, `/thematiques/...`, `/ressources/...`, `/quiz/...`,
@@ -134,14 +134,70 @@ Passer le compte en `contributor` puis `admin` dans Studio
       formulaire d'un hadith, en créer un nouveau en tapant son nom ;
       `/dashboard/rapporteurs` : renommer, fusionner deux orthographes (les
       hadiths suivent), suppression refusée tant qu'il est cité
-- [ ] Quiz : créer, ajouter questions QCM et vrai/faux, plusieurs bonnes
-      réponses, brouillon invisible et non soumissible côté public
+- [ ] Quiz : sur la page d'une thématique, glisser-déposer un quiz change
+      son ordre (toast « Ordre mis à jour. »), repris dans la feuille de
+      route et la page publique de la thématique ; un nouveau quiz se place
+      en dernier
+- [ ] Quiz : onglets « Questions » (par défaut) et « Réglages », l'URL suit
+      (`?onglet=reglages`) ; un nouveau quiz s'ouvre sur « Réglages » ;
+      modifier un réglage puis enregistrer depuis l'onglet Questions le garde
+- [ ] Quiz : créer (réglages et questions sur la même page), ajouter questions
+      QCM et vrai/faux, plusieurs bonnes réponses, brouillon invisible et non
+      soumissible côté public
+- [ ] Quiz : après « Enregistrer », on reste sur la page avec un toast ;
+      quitter avec des modifications non enregistrées demande confirmation ;
+      réordonner, dupliquer, replier une question ; supprimer puis
+      « Annuler » dans le toast ; « Aperçu élève » permet de répondre et de
+      voir la correction sans rien enregistrer
+- [ ] Quiz → « Importer » : « Copier le prompt NotebookLM » copie le prompt ;
+      coller une réponse au format `Q:` / `- [x]` affiche le nombre de
+      questions reconnues et les blocs ignorés ; « Ajouter » les place
+      repliées dans l'éditeur, sans enregistrer ; un nouveau quiz passe en
+      Brouillon
+- [ ] Quiz → « Générer avec l'IA » (visible seulement avec
+      `ANTHROPIC_API_KEY`) : liste les leçons écrites de la thématique ;
+      sans thématique ou sans leçon écrite, un message l'explique ; le coût
+      estimé suit les leçons cochées et le nombre de questions ; « Voir mon
+      crédit » ouvre la facturation Anthropic ; « Générer » renvoie des
+      questions fidèles aux leçons, avec leur coût réel ; « Ajouter » les
+      place repliées dans l'éditeur, sans enregistrer
+- [ ] Quiz avec « Nombre de tentatives maximum » à 2 : l'élève voit « Ce quiz
+      est limité à 2 tentatives », puis « Il te reste 1 tentative » ; après la
+      2e, le quiz est verrouillé (et une soumission forcée est refusée) ;
+      dans les Soumissions, la colonne affiche « 2 / 2 » et « Accorder une
+      tentative » débloque une 3e
+- [ ] Même quiz avec « Masquer la correction » : après un échec avec des
+      tentatives restantes, seul le score s'affiche (soumission et
+      historique) ; la correction apparaît après une réussite ou la
+      dernière tentative
+- [ ] Quiz déjà tenté par un élève : corriger une faute dans un énoncé puis
+      enregistrer → la correction détaillée de sa tentative
+      (`/quiz/[id]/historique/...`) est toujours complète
 - [ ] Séances : créer avec thématiques et ressources rattachées
 - [ ] Classes : avec deux cours, glisser-déposer « Ordre de la feuille de
       route » → l'ordre change sur l'accueil des étudiants
-- [ ] Utilisateurs (admin) : changer un rôle ; impossible de retirer le
-      dernier admin
-- [ ] Quiz → icône « Soumissions » : stats (tentatives, étudiants, score
+- [ ] Page d'une classe : s'ouvre sur l'onglet « Suivi » ; changer d'onglet
+      met à jour l'URL (`?onglet=cours`…) et un rechargement le conserve ;
+      ajouter un étudiant ou enregistrer les réglages garde l'onglet ouvert
+- [ ] Utilisateurs (admin) : section « Équipe » ; ajouter par e-mail un
+      compte existant (Éditeur ou Admin) → il passe dans l'équipe ; un
+      e-mail inconnu ou déjà dans l'équipe donne un message clair ; changer
+      un rôle ; impossible de retirer le dernier admin ; « Retirer l'accès »
+      absent sur sa propre ligne, et sur une autre le compte repasse dans
+      « Comptes »
+- [ ] Utilisateurs : « Qui peut faire quoi ? » ouvre le tableau des droits
+      (Compte, Éditeur, Admin)
+- [ ] Utilisateurs : section « Comptes » en lecture seule, recherche par nom
+      ou e-mail, liens vers la fiche de l'élève dans chacune de ses classes
+- [ ] Accueil du dashboard : plus de ligne « en attente d'autorisation »
+- [ ] Classe → Suivi s'ouvre sur « Par étudiant » (même après un
+      rechargement) ; « Par quiz » : chaque quiz débloqué avec réussi /
+      effectif, pas tenté, moyenne, bloqués ;
+      un quiz ouvre ses soumissions pour la classe : étudiants de la classe
+      seulement, ceux qui n'ont pas tenté en « Pas tenté », « Accorder une
+      tentative », réussite par question ; le fil d'Ariane ramène à la
+      classe ; un quiz verrouillé pour la classe → 404
+- [ ] Quiz → icône « Soumissions » (« Toutes les soumissions ») : stats (tentatives, étudiants, score
       moyen, taux de réussite), réussite par question, une ligne par étudiant
       (meilleur score, dernière tentative) ; cliquer une ligne ouvre un modal
       avec toutes ses tentatives
@@ -163,11 +219,14 @@ Passer le compte en `contributor` puis `admin` dans Studio
       débloquées de la classe, quiz réussis sur les quiz débloqués (avec la
       moyenne), pourcentage du Coran identique à celui de l'étudiant sur
       `/memorisation` ; « Jamais » ou plus de 7 jours sans activité → en
-      orange avec ⚠ ; tri par colonne ; anciens élèves repliés, affichables
+      orange avec ⚠ ; tri par colonne ; anciens élèves repliés, affichables ;
+      un quiz limité raté sans tentative restante → « 1 bloqué » en rouge
 - [ ] Cliquer un nom → détail de l'étudiant : mêmes chiffres, leçons lues
       (avec la date) ou « à lire », quiz avec meilleur score ou « pas
       tenté », mémorisation (tableau de bord et barre par sourate) ; lien
-      retour vers la classe ; un étudiant d'une autre classe → 404
+      retour vers la classe ; un étudiant d'une autre classe → 404 ; un quiz
+      bloqué affiche « 2/2 tentatives » en rouge et « Accorder une
+      tentative », qui le débloque (le « bloqué » disparaît du Suivi)
 - [ ] `/rejoindre/[code]` déconnecté → « Se connecter », puis retour sur la
       page après connexion ; « Rejoindre la classe » → « Tu fais partie de
       cette classe » ; code saisi en minuscules ou avec tiret accepté sur

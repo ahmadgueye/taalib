@@ -17,8 +17,11 @@ flowchart TD
   `published` ou `coming_soon` (`lib/cours-status.ts`) : `coming_soon` reste
   visible publiquement (annonce) mais sans contenu accessible.
 - **Thématiques** — sous-sections d'un cours, ordonnées manuellement via
-  `order_index` (drag & drop dans le dashboard, `sortable-reorder-list.tsx` +
-  `@dnd-kit`). Pas de statut propre — visibles dès que le cours parent l'est.
+  `order_index` (drag & drop sur la page du cours dans le dashboard,
+  `sortable-reorder-list.tsx` + `@dnd-kit`). Les ressources et les quiz d'une
+  thématique s'ordonnent de la même façon, sur la page de la thématique ; un
+  nouvel élément se place en fin de liste. Les quiz créés avant cet ordre
+  (tous à 0) gardent leur ordre de création. Pas de statut propre — visibles dès que le cours parent l'est.
 - **Ressources** — le contenu consommable dans une thématique : vidéo (URL
   externe), PDF, lien, ou texte libre (markdown, rendu par
   `markdown-content.tsx` / `text-resource-reader.tsx`). Statut
@@ -106,16 +109,77 @@ avec le nombre de thématiques, de leçons et de quiz publiés
 
 Un quiz (`quiz`) appartient à une thématique et contient des questions
 ordonnées (`quiz_questions`, type `qcm` ou `vrai_faux`), chacune avec ses
-choix (`quiz_choix`, un ou plusieurs marqués `is_correct`). Édition dashboard
-en deux temps : `createQuiz` redirige directement vers
-`/dashboard/quiz/[id]/questions` (page dédiée à l'ajout de questions/choix),
-contrairement au pattern CRUD standard des autres entités — voir
-[`how-to.md`](./how-to.md).
+choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
 
-- **Passage** — `/quiz/[id]` (`quiz-attempt.tsx`) affiche les questions,
+- **Édition (dashboard)** — `/dashboard/quiz/[id]` réunit les questions et
+  les réglages du quiz (thématique, titre, statut, score minimum) en deux
+  onglets, reflétés dans l'URL (`?onglet=reglages`) ; un nouveau quiz s'ouvre
+  sur les réglages. Les deux onglets forment un seul formulaire
+  (`quiz-editor.tsx`), enregistré
+  d'un coup par `createQuiz` / `updateQuiz` (`lib/actions/quiz.ts`). Un quiz
+  ne s'enregistre jamais sans au moins une question : il n'existe donc pas de
+  quiz publié vide. Après un enregistrement, l'éditeur reste ouvert ; il
+  prévient avant de quitter la page avec des modifications non enregistrées.
+  Les questions se réordonnent, se dupliquent, se replient (repliées à
+  l'ouverture de la page) ; une suppression s'annule depuis le toast. « Aperçu
+  élève » ouvre le quiz tel que l'élève le verra (`QuizAttempt` avec
+  `previewGrade`), corrigé sur place sans rien enregistrer.
+- **Import (NotebookLM)** — « Importer », dans l'onglet Questions, ajoute
+  des questions collées depuis un texte (`ImportDialog` dans
+  `quiz-editor.tsx`, analyse dans `lib/quiz-import.ts`). NotebookLM n'exporte
+  pas ses quiz : on copie le prompt fourni (`QUIZ_IMPORT_PROMPT`) dans son
+  chat, qui génère les questions depuis les sources du notebook dans ce
+  format :
+
+  ```
+  Q: Quel est le premier pilier de l'islam ?
+  - [x] La Shahada
+  - [ ] Le jeûne
+  Explication: La Shahada est le témoignage de foi.
+  ```
+
+  Plusieurs `[x]` donnent une question à réponses multiples ; deux choix
+  « Vrai » et « Faux », une question Vrai/Faux. Le texte autour, le gras,
+  l'italique et la numérotation Markdown sont ignorés ; un bloc mal formé est signalé et
+  laissé de côté. Les questions s'ajoutent repliées à l'éditeur, sans être
+  enregistrées ; dans un nouveau quiz, le statut passe en Brouillon, pour
+  relire avant de publier.
+- **Génération par IA** — « Générer avec l'IA », à côté d'« Importer »,
+  demande à Claude (`claude-opus-5-5`) d'écrire des questions à partir des
+  leçons écrites (ressources de type `texte`) de la thématique du quiz
+  (`GenerateDialog` dans `quiz-generate-dialog.tsx`, actions dans
+  `lib/actions/quiz-generation.ts`, appel à l'API dans
+  `lib/quiz-generation.ts`). On choisit les leçons, le nombre de questions
+  (3 à 20) et une consigne facultative. Le modèle répartit les questions
+  entre les leçons (au moins une par leçon quand leur nombre le permet). La
+  réponse est du JSON structuré,
+  filtré par les mêmes règles que l'éditeur ; les questions mal formées sont
+  écartées. Elles s'ajoutent comme à l'import : repliées, non enregistrées,
+  nouveau quiz en Brouillon. Le bouton n'apparaît que si `ANTHROPIC_API_KEY`
+  est configurée ; les vidéos et PDF restent couverts par l'import. La
+  fenêtre affiche un coût estimé avant de générer (d'après le nombre de mots
+  et de questions), puis le coût réel d'après les tokens consommés
+  (`lib/quiz-generation-cost.ts`, tarifs d'Opus 5.5 à mettre à jour s'ils
+  changent), et un lien « Voir mon crédit » vers la facturation de la
+  console Anthropic : l'API ne donne pas le solde restant. Le plafond de
+  dépense se règle aussi dans la console.
+- **Mise à jour en place** — chaque question et chaque choix garde son id
+  d'un enregistrement à l'autre (`syncQuestions`) : corriger un énoncé ou un
+  choix ne touche pas aux réponses déjà données par les élèves, et l'écran de
+  correction de leurs tentatives reste complet. Seul ce qui est retiré de
+  l'éditeur est supprimé, avec les réponses qui s'y rattachaient (passer une
+  question de QCM à Vrai/Faux remplace ses choix). Un score déjà obtenu
+  n'est pas recalculé si une bonne réponse change.
+
+- **Passage** — `/quiz/[id]` (`quiz-attempt.tsx`) rappelle en haut le
+  nombre de tentatives et le meilleur score de l'élève, avec un lien vers
+  son historique (`/quiz/[id]/historique`), s'il a déjà tenté le quiz ;
+  il affiche les questions,
   collecte les réponses côté client puis les soumet à `submitQuizAttempt`
   (`lib/actions/quiz-tentatives.ts`).
-- **Correction côté serveur uniquement** — l'action recharge les
+- **Correction côté serveur uniquement** — le calcul est dans
+  `gradeQuestions` (`lib/quiz-grading.ts`), partagé avec l'aperçu du
+  dashboard. L'action recharge les
   `is_correct` réels depuis la base à partir des questions du quiz, jamais
   depuis le payload soumis par le client, avant de calculer le score. Une
   question à choix multiples n'est juste que si l'ensemble coché est
@@ -123,6 +187,17 @@ contrairement au pattern CRUD standard des autres entités — voir
   ligne `quiz_tentatives` (score, total) et des `quiz_reponses` (choix
   cochés par question) — l'historique complet est gardé, pas seulement le
   meilleur score.
+- **Limite de tentatives** — facultative, dans les Réglages du quiz
+  (`quiz.maxAttempts`, vide = illimité). `submitQuizAttempt` compte les
+  tentatives dans la transaction (verrou par étudiant et par quiz) et refuse
+  au-delà ; la page du quiz affiche les tentatives restantes, puis se
+  verrouille. Dans les Soumissions, « Accorder une tentative » en ajoute une
+  à un étudiant (`grantQuizAttempt`, table `quiz_extra_attempts`) :
+  indispensable, car un quiz non réussi bloque l'étape de la feuille de
+  route. Avec une limite, l'option « Masquer la correction »
+  (`quiz.hideCorrections`) ne montre que le score tant que l'étudiant n'a ni
+  réussi ni épuisé ses tentatives, à la soumission comme dans l'historique
+  (`canSeeCorrections`, `lib/quiz-attempts.ts`).
 - **Score et seuil** — `quiz.passingScore` (0-100, défaut 80) est un seuil en
   pourcentage. `getQuizScores()` (`lib/db/queries/quiz-tentatives.ts`) calcule
   le meilleur score obtenu par un utilisateur sur un quiz ; c'est ce meilleur
@@ -147,7 +222,20 @@ contrairement au pattern CRUD standard des autres entités — voir
   `getQuizSubmissionStats` regroupe aussi les tentatives par étudiant (une
   ligne par élève avec son meilleur score et la date de sa dernière
   tentative, via `QuizSubmissionsTable`) ; cliquer une ligne ouvre un modal
-  listant toutes ses tentatives.
+  listant toutes ses tentatives. C'est la vue « Toutes les soumissions »,
+  toutes classes confondues (utile aux Éditeurs, qui n'ont pas accès aux
+  classes, et pour les comptes hors classe).
+- **Soumissions d'une classe (admin)** — dans l'onglet Suivi d'une classe,
+  « Par quiz » (`class-quiz-progress-table.tsx`, calcul pur
+  `buildClassQuizProgress` dans `lib/class-progress.ts`) liste les quiz
+  débloqués : réussi sur l'effectif, pas tenté, moyenne des meilleurs
+  scores, bloqués. Chaque quiz ouvre `/dashboard/classes/[id]/quiz/[quizId]`
+  (`notFound()` s'il n'est pas débloqué pour la classe) : les mêmes
+  statistiques, les étudiants de la classe — y compris ceux qui n'ont pas
+  tenté le quiz — avec « Accorder une tentative », et la réussite par
+  question limitée à la classe (`getQuizSubmissionStats` et
+  `getQuizQuestionStats` acceptent une liste d'étudiants). Le suivi s'ouvre
+  toujours sur « Par étudiant ».
 
 ## Feuille de route
 
@@ -384,6 +472,9 @@ elle qui détermine ce qu'un étudiant voit, voir
   verrouillée dans l'ordre du dashboard), « Tout débloquer »
   (`unlockAllInThematique`, ressources et quiz), ou le cadenas d'un élément
   (`setRessourceUnlocked`, `setQuizUnlocked`) pour ouvrir ou refermer.
+  Dans l'onglet Cours, les thématiques sont toutes repliées ; celle en cours
+  de déblocage (une partie seulement est ouverte) porte un badge « En
+  cours ».
   - Seuls les éléments **publiés** d'un cours suivi par la classe se
     débloquent ; un brouillon publié plus tard arrive verrouillé.
   - Une thématique sera visible pour la classe dès qu'un de ses éléments est
@@ -399,7 +490,9 @@ elle qui détermine ce qu'un étudiant voit, voir
   - **Leçons** : ressources lues parmi celles débloquées pour la classe
     (publiées, d'un cours encore suivi), pas sur tout le cours ;
   - **Quiz** : quiz réussis (meilleure tentative ≥ seuil du quiz) parmi ceux
-    débloqués, et moyenne des meilleurs scores des quiz tentés ;
+    débloqués, moyenne des meilleurs scores des quiz tentés, et « N bloqués »
+    en rouge pour les quiz pas réussis dont l'étudiant a épuisé les
+    tentatives ;
   - **Coran** : pourcentage mémorisé, même calcul que `/memorisation` (au
     prorata des mots), et versets à renforcer ; c'est la mémorisation
     globale de l'étudiant, pas propre à la classe ;
@@ -414,7 +507,10 @@ elle qui détermine ce qu'un étudiant voit, voir
     n'est pas membre de la classe, actif ou ancien) : les mêmes chiffres en
     cartes, puis chaque cours avec ce que l'étudiant voit de la classe
     (leçons lues avec leur date ou « à lire », quiz avec le meilleur score et
-    le nombre de tentatives ou « pas tenté »), et sa mémorisation : le
+    le nombre de tentatives ou « pas tenté » ; pour un quiz limité, « 2/2
+    tentatives », en rouge avec « Accorder une tentative »
+    (`grant-attempt-button.tsx`) s'il est raté et sans tentative restante),
+    et sa mémorisation : le
     tableau de bord de `/memorisation` (`memorization-dashboard.tsx`) et une
     barre par sourate suivie (maîtrisés / à renforcer).
 - **Rejoindre** — `/rejoindre` (saisie du code) et `/rejoindre/[code]`. Le

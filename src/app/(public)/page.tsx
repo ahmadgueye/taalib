@@ -126,7 +126,7 @@ function Vitrine() {
         </p>
         <p className="mt-4 text-base text-muted-foreground sm:text-lg">
           Les cours, ressources et quiz sont réservés aux étudiants
-          du programme, au rythme de leur classe. Le Coran reste ouvert à
+          du programme, au rythme de leur classe. Le Qur&apos;an reste ouvert à
           tous.
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
@@ -145,7 +145,7 @@ function Vitrine() {
             nativeButton={false}
             variant="ghost"
           >
-            Lire le Coran →
+            Lire le Qur&apos;an →
           </Button>
         </div>
         <a
@@ -193,7 +193,7 @@ function SansClasse({
             nativeButton={false}
             variant="ghost"
           >
-            Lire le Coran →
+            Lire le Qur&apos;an →
           </Button>
         </div>
       </section>

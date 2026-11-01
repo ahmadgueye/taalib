@@ -5,7 +5,10 @@ import { notFound, redirect } from "next/navigation";
 import { BackButton } from "@/components/public/back-button";
 import { QuizCorrections } from "@/components/public/quiz-corrections";
 import { getCurrentProfile } from "@/lib/auth/get-session";
-import { getTentativeDetail } from "@/lib/db/queries/quiz-tentatives";
+import {
+  getAttemptStatus,
+  getTentativeDetail,
+} from "@/lib/db/queries/quiz-tentatives";
 
 type Props = {
   params: Promise<{ id: string; tentativeId: string }>;
@@ -25,6 +28,10 @@ export default async function QuizTentativeDetailPage({ params }: Props) {
   if (!detail || detail.tentative.quizId !== id) notFound();
 
   const { tentative, corrections } = detail;
+  const { showCorrections } = await getAttemptStatus(
+    tentative.quiz,
+    profile.id
+  );
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -57,7 +64,14 @@ export default async function QuizTentativeDetailPage({ params }: Props) {
       </div>
 
       <div className="mt-6">
-        <QuizCorrections corrections={corrections} />
+        {showCorrections ? (
+          <QuizCorrections corrections={corrections} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            La correction détaillée sera disponible quand tu auras réussi le
+            quiz ou utilisé toutes tes tentatives.
+          </p>
+        )}
       </div>
     </div>
   );

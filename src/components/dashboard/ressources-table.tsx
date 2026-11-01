@@ -56,10 +56,17 @@ type RessourceRow = {
 
 type SortKey = "title" | "type" | "thematique" | "createdAt";
 
-export function RessourcesTable({ data }: { data: RessourceRow[] }) {
+export function RessourcesTable({
+  data,
+  initialStatus = "all",
+}: {
+  data: RessourceRow[];
+  // Filtre de départ, depuis l'URL (?statut=draft depuis l'accueil).
+  initialStatus?: RessourceStatus | "all";
+}) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus);
   const [thematiqueFilter, setThematiqueFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -224,7 +231,12 @@ export function RessourcesTable({ data }: { data: RessourceRow[] }) {
                   className="max-w-xs truncate font-medium"
                   title={r.title}
                 >
-                  {r.title}
+                  <Link
+                    href={`/dashboard/ressources/${r.id}/edit`}
+                    className="hover:underline hover:underline-offset-4"
+                  >
+                    {r.title}
+                  </Link>
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary">{typeLabels[r.type]}</Badge>
@@ -251,6 +263,7 @@ export function RessourcesTable({ data }: { data: RessourceRow[] }) {
                     nativeButton={false}
                     variant="ghost"
                     size="icon-sm"
+                    aria-label={`Modifier « ${r.title} »`}
                   >
                     <Pencil className="size-4" />
                   </Button>

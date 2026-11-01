@@ -1,11 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { CoursTable } from "@/components/dashboard/cours-table";
 import { getAllCours } from "@/lib/db/queries/cours";
+import { type CoursStatus } from "@/lib/cours-status";
 
-export default async function DashboardCoursPage() {
+export const metadata: Metadata = { title: "Cours" };
+
+const statuses: CoursStatus[] = ["published", "coming_soon"];
+
+type Props = {
+  searchParams: Promise<{ statut?: string }>;
+};
+
+export default async function DashboardCoursPage({ searchParams }: Props) {
+  const { statut } = await searchParams;
+  const initialStatus = statuses.find((s) => s === statut) ?? "all";
   const coursList = await getAllCours();
 
   return (
@@ -21,7 +33,7 @@ export default async function DashboardCoursPage() {
       </div>
 
       <div className="mt-6">
-        <CoursTable data={coursList} />
+        <CoursTable data={coursList} initialStatus={initialStatus} />
       </div>
     </div>
   );

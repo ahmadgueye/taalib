@@ -101,6 +101,11 @@ function ProgressRows({
                   moy. {Math.round(row.quiz.averageScore)} %
                 </p>
               )}
+              {row.quiz.blocked > 0 && (
+                <p className="text-xs text-rose-600">
+                  {row.quiz.blocked} bloqué{row.quiz.blocked > 1 ? "s" : ""}
+                </p>
+              )}
             </>
           ) : (
             <span className="text-muted-foreground">—</span>
@@ -200,7 +205,7 @@ export function ClassProgressTable({
             {head("Étudiant", "name")}
             {head("Leçons", "lessons")}
             {head("Quiz", "quiz")}
-            {head("Coran", "quran")}
+            {head("Qur'an", "quran")}
             {head("Dernière activité", "activity")}
           </TableRow>
         </TableHeader>

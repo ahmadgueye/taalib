@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SeancesTable } from "@/components/dashboard/seances-table";
 import { getAllSeances } from "@/lib/db/queries/seances";
+
+export const metadata: Metadata = { title: "Séances" };
 
 export default async function DashboardSeancesPage() {
   const seancesList = await getAllSeances();

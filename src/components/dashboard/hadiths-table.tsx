@@ -170,7 +170,12 @@ export function HadithsTable({ data }: { data: HadithRow[] }) {
                   className="max-w-xs truncate font-medium"
                   title={h.title}
                 >
-                  {h.title}
+                  <Link
+                    href={`/dashboard/hadiths/${h.id}/edit`}
+                    className="hover:underline hover:underline-offset-4"
+                  >
+                    {h.title}
+                  </Link>
                 </TableCell>
                 <TableCell
                   className="max-w-xs truncate text-muted-foreground"
@@ -193,6 +198,7 @@ export function HadithsTable({ data }: { data: HadithRow[] }) {
                     nativeButton={false}
                     variant="ghost"
                     size="icon-sm"
+                    aria-label={`Modifier « ${h.title} »`}
                   >
                     <Pencil className="size-4" />
                   </Button>
