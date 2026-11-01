@@ -116,7 +116,7 @@ export default async function ComptePage({ searchParams }: Props) {
       </section>
 
       <section>
-        <h2 className="font-heading text-xl font-semibold">Coran</h2>
+        <h2 className="font-heading text-xl font-semibold">Qur&apos;an</h2>
         <div className="mt-4">
           <QuranProgressCard chapters={chapters} statusMap={statusMap} />
         </div>

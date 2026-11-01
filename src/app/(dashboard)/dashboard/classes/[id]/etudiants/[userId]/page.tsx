@@ -101,7 +101,7 @@ export default async function ClassStudentPage({ params }: Props) {
           : undefined,
     },
     {
-      label: "Coran mémorisé",
+      label: "Qur'an mémorisé",
       value: `${formatPercent(student.quran.percent)} %`,
     },
     {
@@ -241,7 +241,7 @@ export default async function ClassStudentPage({ params }: Props) {
 
       <section className="mt-10">
         <h2 className="font-heading text-lg font-semibold tracking-tight">
-          Mémorisation du Coran
+          Mémorisation du Qur&apos;an
         </h2>
         <div className="mt-4">
           <MemorizationDashboard

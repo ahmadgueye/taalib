@@ -200,7 +200,7 @@ export function ClassProgressTable({
             {head("Étudiant", "name")}
             {head("Leçons", "lessons")}
             {head("Quiz", "quiz")}
-            {head("Coran", "quran")}
+            {head("Qur'an", "quran")}
             {head("Dernière activité", "activity")}
           </TableRow>
         </TableHeader>

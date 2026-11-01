@@ -47,7 +47,7 @@ export function QuranProgressCard({
         </div>
         <div className="min-w-0">
           <p className="font-medium">
-            {started ? "Coran maîtrisé" : "Pas encore de verset suivi"}
+            {started ? "Qur'an maîtrisé" : "Pas encore de verset suivi"}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             {started
@@ -58,7 +58,7 @@ export function QuranProgressCard({
                 ]
                   .filter(Boolean)
                   .join(" · ")
-              : "Marque les versets que tu apprends depuis le lecteur du Coran."}
+              : "Marque les versets que tu apprends depuis le lecteur du Qur'an."}
           </p>
         </div>
       </div>
@@ -67,7 +67,7 @@ export function QuranProgressCard({
           render={<Link href={started ? "/memorisation" : "/coran"} />}
           nativeButton={false}
         >
-          {started ? "Voir ma mémorisation" : "Ouvrir le Coran"}
+          {started ? "Voir ma mémorisation" : "Ouvrir le Qur'an"}
           <MoveRight />
         </Button>
       </div>

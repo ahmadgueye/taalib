@@ -17,7 +17,7 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
 
 ## 1. Visiteur non connecté
 - [ ] Accueil : vitrine avec « Se connecter », « Rejoindre une classe »,
-      « Lire le Coran », lien vers bayanun.com ; aucun cours ni thématique
+      « Lire le Qur'an », lien vers bayanun.com ; aucun cours ni thématique
       affiché ; l'en-tête n'a que Quran et Connexion (pas de Cours, Hadith ni
       recherche), la barre mobile que Accueil et Quran
 - [ ] `/cours`, `/thematiques/...`, `/ressources/...`, `/quiz/...`,

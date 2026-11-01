@@ -72,7 +72,7 @@ export default async function ClassPage({ params, searchParams }: Props) {
         defaultTab={classTabs.find((t) => t === onglet) ?? "suivi"}
         studentCount={members.filter((m) => m.leftAt === null).length}
         suivi={
-          <Section hint="Leçons lues et quiz réussis parmi ce qui est débloqué pour la classe, mémorisation du Coran et dernière activité (leçon, quiz ou verset).">
+          <Section hint="Leçons lues et quiz réussis parmi ce qui est débloqué pour la classe, mémorisation du Qur'an et dernière activité (leçon, quiz ou verset).">
             <ClassProgressTable
               classId={classe.id}
               students={progress}
