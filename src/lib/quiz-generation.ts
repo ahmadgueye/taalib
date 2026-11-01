@@ -26,7 +26,8 @@ On te donne une ou plusieurs leçons. Tu écris des questions qui vérifient que
 
 Règles :
 - Appuie-toi uniquement sur le contenu des leçons fournies. N'ajoute aucune information, aucun avis ni aucune référence qui n'y figure pas. Si une notion est ambiguë dans la leçon, ne pose pas de question dessus.
-- Couvre l'ensemble des leçons plutôt qu'un seul passage, et privilégie les notions importantes aux détails anecdotiques.
+- Répartis les questions entre les leçons : au moins une question par leçon quand le nombre de questions le permet, puis davantage sur les leçons les plus riches. S'il y a plus de leçons que de questions, choisis les notions les plus importantes de l'ensemble.
+- Privilégie les notions importantes aux détails anecdotiques.
 - Mélange des questions à une seule bonne réponse, à plusieurs bonnes réponses, et des Vrai/Faux.
 - QCM ("qcm") : 3 ou 4 choix, avec des mauvaises réponses plausibles. Indique toutes les bonnes réponses.
 - Vrai/Faux ("vrai_faux") : exactement deux choix, « Vrai » puis « Faux », dont un seul correct.
@@ -66,7 +67,9 @@ function buildUserMessage(
   const extra = instructions.trim()
     ? `\n\nConsigne de l'enseignant : ${instructions.trim()}`
     : "";
-  return `${sources}\n\nÉcris ${count} questions de quiz sur ces leçons.${extra}`;
+  const about =
+    lessons.length > 1 ? `ces ${lessons.length} leçons` : "cette leçon";
+  return `${sources}\n\nÉcris ${count} questions de quiz sur ${about}.${extra}`;
 }
 
 // Garde les questions qui respectent les règles de l'éditeur (comme à

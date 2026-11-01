@@ -149,7 +149,9 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   (`GenerateDialog` dans `quiz-generate-dialog.tsx`, actions dans
   `lib/actions/quiz-generation.ts`, appel à l'API dans
   `lib/quiz-generation.ts`). On choisit les leçons, le nombre de questions
-  (3 à 20) et une consigne facultative. La réponse est du JSON structuré,
+  (3 à 20) et une consigne facultative. Le modèle répartit les questions
+  entre les leçons (au moins une par leçon quand leur nombre le permet). La
+  réponse est du JSON structuré,
   filtré par les mêmes règles que l'éditeur ; les questions mal formées sont
   écartées. Elles s'ajoutent comme à l'import : repliées, non enregistrées,
   nouveau quiz en Brouillon. Le bouton n'apparaît que si `ANTHROPIC_API_KEY`

@@ -96,8 +96,28 @@ describe("generateQuestions", () => {
     expect(request.messages[0].content).toContain(
       '<lecon titre="Les piliers">'
     );
-    expect(request.messages[0].content).toContain("Écris 5 questions");
+    expect(request.messages[0].content).toContain(
+      "Écris 5 questions de quiz sur cette leçon."
+    );
     expect(request.messages[0].content).toContain("Insiste sur la prière.");
+  });
+
+  it("tells the model how many lessons to spread the questions over", async () => {
+    mocks.parse.mockResolvedValue({
+      stop_reason: "end_turn",
+      parsed_output: { questions: [good] },
+      usage: { input_tokens: 0, output_tokens: 0 },
+    });
+    await generateQuestions({
+      lessons: [...lessons, { title: "La prière", content: "Cinq prières." }],
+      count: 10,
+      instructions: "",
+    });
+    const request = mocks.parse.mock.calls[0][0];
+    expect(request.messages[0].content).toContain(
+      "Écris 10 questions de quiz sur ces 2 leçons."
+    );
+    expect(request.system).toContain("au moins une question par leçon");
   });
 
   it("reports a refusal", async () => {
