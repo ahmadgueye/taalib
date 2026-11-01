@@ -234,6 +234,9 @@ sur l'API externe Quran Foundation).
   continu), avec la police QCF officielle (`lib/quran/qcf-font.ts`, une
   police par page servie en woff2 par le CDN de Quran Foundation) pour un
   rendu du texte arabe fidèle glyphe par glyphe.
+- **Affichage** — « Lecture » (pages du mushaf, par défaut) ou « Ayah par
+  ayah » (chaque verset suivi de sa traduction française). Le choix est
+  retenu dans le `localStorage` (`deenshare:quran-view-mode`).
 - **Taille du texte** — réglée avec les boutons − / + et retenue dans le
   `localStorage` (`deenshare:quran-font-size-rem`). Sans choix enregistré,
   elle part de 2.25rem sur ordinateur et de 1.5rem sur mobile (moins de

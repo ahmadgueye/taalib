@@ -100,7 +100,7 @@ function createPersistedState<T>(
 
 const viewModeStore = createPersistedState<ViewMode>(
   "deenshare:quran-view-mode",
-  "arabic-fr",
+  "arabic",
   (raw) => (raw === "arabic" || raw === "arabic-fr" ? raw : undefined),
 );
 
