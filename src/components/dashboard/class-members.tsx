@@ -132,6 +132,7 @@ function MembersTable({
                       title={`Terminer la classe pour ${label} ?`}
                       description="Ancien élève, l'étudiant garde l'accès à ce qui est débloqué aujourd'hui, mais pas aux prochains déblocages."
                       confirmLabel="Terminer"
+                      successMessage={`Classe terminée pour ${label}.`}
                       icon={GraduationCap}
                       destructive={false}
                     />
@@ -142,6 +143,7 @@ function MembersTable({
                     title={`Retirer ${label} de la classe ?`}
                     description="L'étudiant perd l'accès à tout le contenu de la classe. Son compte et sa progression sont conservés."
                     confirmLabel="Retirer"
+                    successMessage={`Retiré de la classe : ${label}.`}
                   />
                 </div>
               </TableCell>

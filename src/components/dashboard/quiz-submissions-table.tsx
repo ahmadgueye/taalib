@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { GrantAttemptButton } from "@/components/dashboard/grant-attempt-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -17,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { attemptsLeft } from "@/lib/quiz-attempts";
 import { cn } from "@/lib/utils";
 
 type Attempt = {
@@ -59,13 +61,37 @@ function ScoreBadge({
 }
 
 export function QuizSubmissionsTable({
+  quizId,
   students,
   passingScore,
+  maxAttempts,
+  extras,
+  notAttempted = [],
 }: {
+  quizId: string;
   students: StudentRow[];
+  // Étudiants de la classe qui n'ont pas encore tenté le quiz.
+  notAttempted?: { id: string; name: string }[];
   passingScore: number;
+  // null : illimité.
+  maxAttempts: number | null;
+  // Tentatives accordées en plus, par id d'étudiant.
+  extras: Record<string, number>;
 }) {
   const [selected, setSelected] = useState<StudentRow | null>(null);
+
+  function allowed(s: StudentRow) {
+    return maxAttempts === null ? null : maxAttempts + (extras[s.user.id] ?? 0);
+  }
+
+  const selectedAllowed = selected ? allowed(selected) : null;
+  const selectedLeft = selected
+    ? attemptsLeft(
+        maxAttempts,
+        extras[selected.user.id] ?? 0,
+        selected.attemptsCount
+      )
+    : null;
 
   return (
     <>
@@ -95,6 +121,7 @@ export function QuizSubmissionsTable({
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {s.attemptsCount}
+                {allowed(s) !== null && ` / ${allowed(s)}`}
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {s.lastCompletedAt.toLocaleString("fr-FR", {
@@ -102,6 +129,16 @@ export function QuizSubmissionsTable({
                   timeStyle: "short",
                 })}
               </TableCell>
+            </TableRow>
+          ))}
+          {notAttempted.map((s) => (
+            <TableRow key={s.id}>
+              <TableCell>{s.name}</TableCell>
+              <TableCell className="text-muted-foreground">Pas tenté</TableCell>
+              <TableCell className="text-muted-foreground">
+                0{maxAttempts !== null && ` / ${maxAttempts + (extras[s.id] ?? 0)}`}
+              </TableCell>
+              <TableCell className="text-muted-foreground">—</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -114,6 +151,16 @@ export function QuizSubmissionsTable({
               Tentatives — {selected?.user.fullName ?? selected?.user.email}
             </DialogTitle>
           </DialogHeader>
+          {selected && selectedAllowed !== null && (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span className="text-muted-foreground">
+                {selected.attemptsCount} sur {selectedAllowed} tentative
+                {selectedAllowed > 1 ? "s" : ""}
+                {selectedLeft === 0 ? " · plus de tentative" : ""}
+              </span>
+              <GrantAttemptButton quizId={quizId} userId={selected.user.id} />
+            </div>
+          )}
           <div className="flex flex-col gap-2">
             {selected?.attempts.map((a) => (
               <div

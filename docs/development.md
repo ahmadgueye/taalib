@@ -18,8 +18,8 @@ npm run db:local:start      # Postgres, Auth, Storage, Studio dans Docker
 
 La commande affiche l'URL de l'API, la clé anon et la `DATABASE_URL` locales.
 Créer `.env.development.local` avec ces valeurs (modèle dans `.env.example`,
-section « Local ») et y copier `CRON_SECRET`, `QURAN_CLIENT_ID` et
-`QURAN_CLIENT_SECRET` depuis `.env.local`. Ce fichier est ignoré par git.
+section « Local ») et y copier `CRON_SECRET`, `QURAN_CLIENT_ID`,
+`QURAN_CLIENT_SECRET` et, si besoin, `ANTHROPIC_API_KEY` depuis `.env.local`. Ce fichier est ignoré par git.
 
 ```bash
 npm run db:migrate:local    # applique les migrations Drizzle
@@ -86,7 +86,10 @@ simulés.
 | `lib/quran/verse-page.test.ts` | Table des débuts de page complète (604, dans l'ordre de lecture), page d'un verset aux limites de page, Ash-Sharh qui déborde sur la page suivante |
 | `lib/quran/chapter-search.test.ts` | Recherche de sourate du lecteur : numéro en préfixe, nom sans casse/accents/tirets, arabe avec ou sans tashkeel |
 | `lib/actions/quiz-questions.schema.test.ts` | Validation du formulaire de questions |
-| `lib/class-progress.test.ts` | Suivi des étudiants : leçons et quiz comptés sur ce que la classe a débloqué, meilleure tentative et moyenne, ancien élève jugé sur ce qui était débloqué avant son départ, mémorisation au prorata des mots, dernière activité, seuil d'inactivité de 7 jours |
+| `lib/actions/quiz.test.ts` | Enregistrement d'un quiz : questions et choix gardés mis à jour en place (pas recréés), choix retirés supprimés, id d'un autre quiz traité comme nouveau, erreur qui nomme la question fautive |
+| `lib/quiz-import.test.ts` | Import de questions depuis un texte : QCM à une ou plusieurs réponses, Vrai/Faux reconnu et normalisé, décorations Markdown (gras, italique, puces) et texte autour ignorés, énoncé sur plusieurs lignes, blocs mal formés signalés |
+| `lib/quiz-grading.test.ts` | Calcul du score : une question n'est juste qu'avec exactement les bons choix, correction rendue pour chaque question |
+| `lib/class-progress.test.ts` | Suivi des étudiants : leçons et quiz comptés sur ce que la classe a débloqué, meilleure tentative et moyenne, quiz bloqués (tentatives épuisées, tentatives accordées déduites), bilan par quiz sur les étudiants qui le voient, ancien élève jugé sur ce qui était débloqué avant son départ, mémorisation au prorata des mots, dernière activité, seuil d'inactivité de 7 jours |
 | `lib/db/queries/roadmap.test.ts` | Feuille de route : ordre des cours, états `upcoming` / `active` / `completed`, classe terminée réduite aux étapes débloquées, liste « À faire » (quiz après les leçons de sa thématique), badge « Nouveau » |
 | `lib/content-access.test.ts`, `lib/auth/content-access.test.ts` | Ce que voit un visiteur, un étudiant, le staff |
 

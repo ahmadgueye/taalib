@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { HadithsTable } from "@/components/dashboard/hadiths-table";
 import { getAllHadiths } from "@/lib/db/queries/hadiths";
+import { formatNarrators } from "@/lib/narrators";
+
+export const metadata: Metadata = { title: "Hadiths" };
 
 export default async function DashboardHadithsPage() {
   const hadithsList = await getAllHadiths();
@@ -24,7 +28,12 @@ export default async function DashboardHadithsPage() {
       </div>
 
       <div className="mt-6">
-        <HadithsTable data={hadithsList} />
+        <HadithsTable
+          data={hadithsList.map((h) => ({
+            ...h,
+            narrator: formatNarrators(h.hadithNarrators),
+          }))}
+        />
       </div>
     </div>
   );

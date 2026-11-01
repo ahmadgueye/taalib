@@ -34,6 +34,8 @@ erDiagram
     cours ||--o{ thematiques : contains
     thematiques ||--o{ ressources : contains
     thematiques ||--o{ hadiths : contains
+    hadiths ||--o{ hadith_narrators : "cited by"
+    narrators ||--o{ hadith_narrators : cites
     thematiques ||--o{ quiz : contains
     thematiques ||--o{ seance_thematiques : "linked via"
     ressources ||--o{ seance_ressources : "linked via"
@@ -44,6 +46,7 @@ erDiagram
     quiz_questions ||--o{ quiz_choix : contains
     quiz ||--o{ quiz_tentatives : "attempted via"
     quiz_tentatives ||--o{ quiz_reponses : records
+    quiz ||--o{ quiz_extra_attempts : "extra attempts"
     quiz_questions ||--o{ quiz_reponses : "answered via"
     quiz_choix ||--o{ quiz_reponses : "selected via"
 
@@ -84,8 +87,16 @@ erDiagram
         text arabic_text
         text translation_fr
         text translation_wolof
-        text narrator
         text source
+    }
+    narrators {
+        uuid id PK
+        text name UK "unique sur lower(name)"
+    }
+    hadith_narrators {
+        uuid hadith_id PK,FK
+        uuid narrator_id PK,FK
+        int order_index
     }
     seances {
         uuid id PK
@@ -113,6 +124,14 @@ erDiagram
         int order_index
         ressource_status status "draft | published"
         int passing_score "0-100, défaut 80"
+        int max_attempts "null = illimité"
+        boolean hide_corrections
+    }
+    quiz_extra_attempts {
+        uuid quiz_id FK
+        uuid user_id FK
+        int extra
+        uuid granted_by FK
     }
     quiz_questions {
         uuid id PK
@@ -218,7 +237,10 @@ Points notables :
 - `quiz_tentatives` conserve chaque tentative (pas seulement la meilleure) :
   `score`/`total_questions` sont dénormalisés au moment de la soumission,
   `quiz_reponses` détaille les choix cochés par question pour permettre
-  d'afficher la correction après coup.
+  d'afficher la correction après coup. `quiz.max_attempts` limite le nombre
+  de tentatives par étudiant (null = illimité) ; `quiz_extra_attempts`
+  compte, par quiz et par étudiant, les tentatives accordées en plus
+  (`0033_quiz_attempt_limit.sql`).
 - Toutes les FK vers `cours`/`thematiques`/`quiz` sont en
   `onDelete: "cascade"` : supprimer un cours supprime en cascade ses
   thématiques, ressources, hadiths et quiz. Pas de confirmation
@@ -233,14 +255,15 @@ défense en profondeur qui donne des messages d'erreur propres). Résumé (déta
 dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 `0006_hadiths_rls.sql`, `0013_flat_lifeguard.sql`,
 `0019_quran_memorization_rls.sql`, `0023_classes.sql`, `0024_class_cours_unlocks.sql`,
-`0025_class_item_unlocks.sql`, `0027_private_content_rls.sql`) :
+`0025_class_item_unlocks.sql`, `0027_private_content_rls.sql`,
+`0032_hadith_narrators.sql`, `0033_quiz_attempt_limit.sql`) :
 
 | Table | Lecture | Écriture |
 |---|---|---|
-| `cours`, `thematiques`, `ressources`, `hadiths`, `seances`, `seance_*`, `quiz`, `quiz_questions`, `quiz_choix` | `admin` ou `contributor` uniquement (plus de lecture publique depuis `0027` : le contenu est réservé aux étudiants, et les étudiants le lisent via l'app, voir [`auth.md`](./auth.md#les-trois-couches-de-vérification)) | `admin` ou `contributor` (fonction SQL `is_contributor()`) |
+| `cours`, `thematiques`, `ressources`, `hadiths`, `narrators`, `hadith_narrators`, `seances`, `seance_*`, `quiz`, `quiz_questions`, `quiz_choix`, `quiz_extra_attempts` | `admin` ou `contributor` uniquement (plus de lecture publique depuis `0027` : le contenu est réservé aux étudiants, et les étudiants le lisent via l'app, voir [`auth.md`](./auth.md#les-trois-couches-de-vérification)) | `admin` ou `contributor` (fonction SQL `is_contributor()`) |
 | `profiles` | son propre profil ; tous pour `admin`/`contributor` (depuis `0027`) | `admin` uniquement (`is_admin()`), et seulement en `UPDATE` |
 | `ressource_progress`, `quran_memorization` | l'utilisateur lui-même (`auth.uid() = user_id`) | l'utilisateur lui-même, sur ses propres lignes uniquement |
-| `quiz_tentatives`, `quiz_reponses` | l'utilisateur lui-même (ses propres tentatives) | l'utilisateur lui-même, en `INSERT` seulement (pas d'édition d'une tentative passée) |
+| `quiz_tentatives`, `quiz_reponses` | l'utilisateur lui-même (ses propres tentatives) | personne via l'API (depuis `0033`) : une tentative ne s'enregistre que par `submitQuizAttempt`, qui corrige côté serveur et applique la limite. Les policies `INSERT` de `0013` laissaient un étudiant insérer une tentative au score de son choix |
 | `classes` | `admin` uniquement (**pas** de lecture publique : `invite_code` ouvrirait la classe à quiconque interroge l'API REST) | `admin` uniquement |
 | `class_members` | `admin`, et l'étudiant pour ses propres lignes | `admin` uniquement (l'inscription par code passe par une Server Action, hors RLS) |
 | `class_cours`, `class_ressource_unlocks`, `class_quiz_unlocks` | `admin`, et les membres de la classe concernée | `admin` uniquement |

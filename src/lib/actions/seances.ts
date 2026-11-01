@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { setFlash } from "@/lib/actions/flash";
 import { db } from "@/lib/db";
 import { seanceRessources, seanceThematiques, seances } from "@/lib/db/schema";
 import { slugify } from "@/lib/utils";
@@ -81,6 +82,7 @@ export async function createSeance(
   revalidatePath("/dashboard/seances");
   revalidatePath("/seances");
   revalidatePath("/");
+  await setFlash("Séance créée.");
   redirect("/dashboard/seances");
 }
 
@@ -137,6 +139,7 @@ export async function updateSeance(
   revalidatePath("/dashboard/seances");
   revalidatePath("/seances");
   revalidatePath("/");
+  await setFlash("Séance enregistrée.");
   redirect("/dashboard/seances");
 }
 

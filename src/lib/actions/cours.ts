@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { setFlash } from "@/lib/actions/flash";
+import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { cours } from "@/lib/db/schema";
 import { slugify } from "@/lib/utils";
@@ -34,15 +36,20 @@ export async function createCours(
     return { error: parsed.error.issues[0].message };
   }
 
+  let createdId: string;
   try {
-    await db.insert(cours).values({
-      title: parsed.data.title,
-      arabicTitle: parsed.data.arabicTitle || null,
-      description: parsed.data.description || null,
-      status: parsed.data.status,
-      slug: slugify(parsed.data.title),
-      createdBy: profile.id,
-    });
+    const [created] = await db
+      .insert(cours)
+      .values({
+        title: parsed.data.title,
+        arabicTitle: parsed.data.arabicTitle || null,
+        description: parsed.data.description || null,
+        status: parsed.data.status,
+        slug: slugify(parsed.data.title),
+        createdBy: profile.id,
+      })
+      .returning({ id: cours.id });
+    createdId = created.id;
   } catch {
     return { error: "Un cours avec ce titre existe déjà." };
   }
@@ -50,7 +57,8 @@ export async function createCours(
   revalidatePath("/dashboard/cours");
   revalidatePath("/cours");
   revalidatePath("/");
-  redirect("/dashboard/cours");
+  await setFlash("Cours créé.");
+  redirect(`/dashboard/cours/${createdId}`);
 }
 
 export async function updateCours(
@@ -88,7 +96,9 @@ export async function updateCours(
   revalidatePath("/dashboard/cours");
   revalidatePath("/cours");
   revalidatePath("/");
-  redirect("/dashboard/cours");
+  revalidateCoursTree();
+  await setFlash("Cours enregistré.");
+  redirect(`/dashboard/cours/${id}`);
 }
 
 export async function deleteCours(id: string) {

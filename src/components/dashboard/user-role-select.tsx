@@ -12,14 +12,14 @@ import {
 } from "@/components/ui/select";
 import { updateUserRole } from "@/lib/actions/users";
 
-const roleLabels = { admin: "Admin", contributor: "Contributeur", viewer: "En attente" };
+export const teamRoleLabels = { admin: "Admin", contributor: "Éditeur" };
 
 export function UserRoleSelect({
   userId,
   role,
 }: {
   userId: string;
-  role: "admin" | "contributor" | "viewer";
+  role: keyof typeof teamRoleLabels;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -40,13 +40,13 @@ export function UserRoleSelect({
       value={role}
       onValueChange={handleChange}
       disabled={isPending}
-      items={roleLabels}
+      items={teamRoleLabels}
     >
       <SelectTrigger className="w-40">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {Object.entries(roleLabels).map(([value, label]) => (
+        {Object.entries(teamRoleLabels).map(([value, label]) => (
           <SelectItem key={value} value={value}>
             {label}
           </SelectItem>

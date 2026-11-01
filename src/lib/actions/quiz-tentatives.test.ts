@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
   tentativeValues: vi.fn(),
   reponsesValues: vi.fn(),
   getContentAccess: vi.fn(),
+  previousAttempts: [] as { score: number; totalQuestions: number }[],
+  extra: 0,
 }));
 
 vi.mock("@/lib/auth/content-access", () => ({
@@ -33,8 +35,17 @@ vi.mock("@/lib/db", () => ({
       quizQuestions: { findMany: mocks.findMany },
       quiz: { findFirst: mocks.findQuiz },
     },
-    transaction: async (fn: (tx: unknown) => Promise<string>) =>
+    transaction: async (fn: (tx: unknown) => Promise<unknown>) =>
       fn({
+        execute: async () => undefined,
+        select: () => ({
+          from: () => ({ where: async () => mocks.previousAttempts }),
+        }),
+        query: {
+          quizExtraAttempts: {
+            findFirst: async () => ({ extra: mocks.extra }),
+          },
+        },
         insert: () => ({
           values: (v: unknown) => {
             const isTentative = !Array.isArray(v);
@@ -57,7 +68,14 @@ function choix(id: string, isCorrect: boolean, orderIndex: number) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.getCurrentProfile.mockResolvedValue({ id: "user-1", role: "viewer" });
-  mocks.findQuiz.mockResolvedValue({ id: QUIZ });
+  mocks.findQuiz.mockResolvedValue({
+    id: QUIZ,
+    passingScore: 80,
+    maxAttempts: null,
+    hideCorrections: false,
+  });
+  mocks.previousAttempts = [];
+  mocks.extra = 0;
   mocks.getContentAccess.mockResolvedValue({ all: true });
   mocks.findMany.mockResolvedValue([
     {
@@ -192,5 +210,69 @@ describe("submitQuizAttempt access", () => {
     });
     expect(mocks.findMany).not.toHaveBeenCalled();
     expect(mocks.tentativeValues).not.toHaveBeenCalled();
+  });
+
+  describe("with an attempt limit", () => {
+    const perfect = [
+      { questionId: Q1, choixIds: [A] },
+      { questionId: Q2, choixIds: [C, D] },
+    ];
+    const failing = [
+      { questionId: Q1, choixIds: [B] },
+      { questionId: Q2, choixIds: [E] },
+    ];
+
+    beforeEach(() => {
+      mocks.findQuiz.mockResolvedValue({
+        id: QUIZ,
+        passingScore: 80,
+        maxAttempts: 2,
+        hideCorrections: true,
+      });
+    });
+
+    it("refuses an attempt once the limit is used, without saving it", async () => {
+      mocks.previousAttempts = [
+        { score: 0, totalQuestions: 2 },
+        { score: 1, totalQuestions: 2 },
+      ];
+      const res = await submitQuizAttempt(QUIZ, perfect);
+      expect(res).toEqual({
+        error: "Tu as utilisé toutes tes tentatives pour ce quiz.",
+      });
+      expect(mocks.tentativeValues).not.toHaveBeenCalled();
+    });
+
+    it("counts attempts granted on top of the limit", async () => {
+      mocks.previousAttempts = [
+        { score: 0, totalQuestions: 2 },
+        { score: 0, totalQuestions: 2 },
+      ];
+      mocks.extra = 1;
+      const res = await submitQuizAttempt(QUIZ, failing);
+      expect(res).toMatchObject({ attemptsLeft: 0 });
+    });
+
+    it("hides the corrections of a failed attempt while attempts remain", async () => {
+      const res = await submitQuizAttempt(QUIZ, failing);
+      expect(res).toMatchObject({
+        attemptsLeft: 1,
+        showCorrections: false,
+        corrections: [],
+      });
+    });
+
+    it("shows the corrections once the quiz is passed", async () => {
+      const res = await submitQuizAttempt(QUIZ, perfect);
+      if ("error" in res) throw new Error(res.error);
+      expect(res.showCorrections).toBe(true);
+      expect(res.corrections).toHaveLength(2);
+    });
+
+    it("shows the corrections after the last attempt", async () => {
+      mocks.previousAttempts = [{ score: 0, totalQuestions: 2 }];
+      const res = await submitQuizAttempt(QUIZ, failing);
+      expect(res).toMatchObject({ attemptsLeft: 0, showCorrections: true });
+    });
   });
 });

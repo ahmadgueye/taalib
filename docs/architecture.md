@@ -63,17 +63,35 @@ deux layouts et deux publics différents :
 - **`(dashboard)/dashboard/`** — l'admin, protégé par `proxy.ts` +
   une double vérification de rôle dans
   `src/app/(dashboard)/dashboard/layout.tsx` (un `viewer` qui y accède est
-  renvoyé vers `/?welcome=1`, jamais informé de l'existence du dashboard). Une entité "Foo" y a
+  renvoyé vers `/?welcome=1`, jamais informé de l'existence du dashboard). Sur
+  mobile, la sidebar se replie dans un menu latéral (`dashboard-sidebar.tsx`). Une entité "Foo" y a
   systématiquement le même quatuor de pages :
   `dashboard/foo/page.tsx` (liste), `dashboard/foo/new/page.tsx` (création),
   `dashboard/foo/[id]/edit/page.tsx` (édition), plus un composant `foo-form.tsx`
-  et `foo-table.tsx` partagés entre create/edit et list. `quiz` est la seule
-  exception : `createQuiz` redirige vers une cinquième page,
-  `dashboard/quiz/[id]/questions/page.tsx`, dédiée à la gestion des questions
-  et choix imbriqués. `classes` (admin seulement) n'a pas de page `edit` :
-  `dashboard/classes/[id]/page.tsx` réunit le formulaire, le suivi des
-  étudiants, les cours, le code d'invitation et la liste des étudiants ;
-  `dashboard/classes/[id]/etudiants/[userId]/page.tsx` détaille un étudiant. Voir [`how-to.md`](./how-to.md) pour dupliquer ce
+  et `foo-table.tsx` partagés entre create/edit et list. `quiz` est une
+  exception : une seule page, `dashboard/quiz/[id]/page.tsx`, édite ses
+  questions et ses réglages en deux onglets, enregistrés ensemble (`quiz-editor.tsx`, aussi utilisé par
+  `quiz/new`) ; les anciennes adresses `[id]/edit` et `[id]/questions`
+  redirigent vers elle. `classes` (admin seulement) n'a pas de page `edit` :
+  `dashboard/classes/[id]/page.tsx` réunit tout en onglets
+  (`class-tabs.tsx`, reflétés dans l'URL par `?onglet=`) : Suivi (par
+  défaut), Cours, Étudiants, et Réglages (formulaire et code d'invitation) ;
+  `dashboard/classes/[id]/etudiants/[userId]/page.tsx` détaille un étudiant.
+  Cours, thématiques et ressources se gèrent en arbre :
+  `dashboard/cours/[id]/page.tsx` liste les thématiques du cours (réordonnables)
+  et `dashboard/thematiques/[id]/page.tsx` les ressources et quiz
+  (réordonnables) et les hadiths de la thématique, avec un fil d'Ariane (`breadcrumbs.tsx`). Les
+  boutons « Ajouter » passent le parent en paramètre (`?cours=`, `?thematique=`)
+  pour pré-remplir le formulaire, et les actions renvoient ensuite dans l'arbre
+  (les hadiths seulement s'ils ont été ouverts depuis une thématique). Il n'y a
+  plus de liste à plat des thématiques : `dashboard/thematiques` redirige vers
+  les cours. L'accueil
+  `dashboard/page.tsx` est orienté tâches : ce qui attend une action
+  (brouillons, cours « Bientôt disponible »),
+  les derniers éléments modifiés avec un lien vers leur édition, les
+  prochaines séances et les classes (requêtes dans
+  `src/lib/db/queries/dashboard.ts`) ; ses liens « À traiter » ouvrent les
+  listes déjà filtrées (`?statut=draft`, `?statut=coming_soon`). Voir [`how-to.md`](./how-to.md) pour dupliquer ce
   pattern sur une nouvelle entité.
 
 Chaque groupe a son propre `layout.tsx` — pas de layout racine partagé au-delà
@@ -169,6 +187,12 @@ description par défaut, « La plateforme de cours du programme Bayān. ». C'es
 l'aperçu qui s'affiche quand on colle un lien dans WhatsApp, par exemple. Le
 logo y est un tracé SVG (`lib/logo-path.ts`), pas du texte : le moteur
 d'`ImageResponse` lierait mal les lettres arabes.
+
+Le dashboard a son propre titre d'onglet pour qu'on ne le confonde pas avec
+l'aperçu du site : `dashboard/layout.tsx` définit « Dashboard · Taalib » par
+défaut et le modèle `%s · Dashboard`. Chaque liste de la sidebar donne son
+nom (`export const metadata = { title: "Cours" }` → « Cours · Dashboard ») ;
+les pages de détail gardent le titre par défaut.
 
 Les pages réservées (cours, thématiques, hadiths, séances…) n'ont pas d'image
 propre : un visiteur non connecté, donc aussi le robot d'un réseau social, est

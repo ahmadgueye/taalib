@@ -1,12 +1,16 @@
 import { z } from "zod";
 
+// `id` : celui de la base, pour mettre à jour un élément existant au lieu de
+// le recréer (et garder les réponses des élèves qui s'y rattachent).
 export const choixSchema = z.object({
+  id: z.string().uuid().optional(),
   label: z.string().trim().min(1, "Chaque choix doit avoir un intitulé."),
   isCorrect: z.boolean(),
 });
 
 export const questionSchema = z
   .object({
+    id: z.string().uuid().optional(),
     prompt: z.string().trim().min(1, "Chaque question doit avoir un énoncé."),
     type: z.enum(["qcm", "vrai_faux"]),
     explanation: z.string().trim().optional(),

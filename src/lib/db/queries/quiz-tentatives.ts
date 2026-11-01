@@ -1,7 +1,18 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { quizQuestions, quizReponses, quizTentatives } from "@/lib/db/schema";
+import {
+  quizExtraAttempts,
+  quizQuestions,
+  quizReponses,
+  quizTentatives,
+} from "@/lib/db/schema";
+import {
+  attemptsLeft,
+  canSeeCorrections,
+  isPassing,
+  type AttemptRules,
+} from "@/lib/quiz-attempts";
 
 export type QuizScore = {
   lastScore: number;
@@ -52,6 +63,50 @@ export async function getQuizScores(userId: string, quizIds: string[]) {
 
   return scores;
 }
+
+type Executor = Pick<typeof db, "select" | "query">;
+
+// Où en est un étudiant avec un quiz : tentatives utilisées et restantes,
+// réussite, et s'il peut voir la correction détaillée. `exec` : une
+// transaction, pour compter au moment d'enregistrer une tentative.
+export async function getAttemptStatus(
+  quiz: AttemptRules & { id: string; passingScore: number },
+  userId: string,
+  exec: Executor = db
+) {
+  const [tentatives, extraRow] = await Promise.all([
+    exec
+      .select({
+        score: quizTentatives.score,
+        totalQuestions: quizTentatives.totalQuestions,
+      })
+      .from(quizTentatives)
+      .where(
+        and(eq(quizTentatives.quizId, quiz.id), eq(quizTentatives.userId, userId))
+      ),
+    exec.query.quizExtraAttempts.findFirst({
+      where: and(
+        eq(quizExtraAttempts.quizId, quiz.id),
+        eq(quizExtraAttempts.userId, userId)
+      ),
+    }),
+  ]);
+  const used = tentatives.length;
+  const extra = extraRow?.extra ?? 0;
+  const left = attemptsLeft(quiz.maxAttempts, extra, used);
+  const passed = tentatives.some((t) =>
+    isPassing(t.score, t.totalQuestions, quiz.passingScore)
+  );
+  return {
+    used,
+    extra,
+    left,
+    passed,
+    showCorrections: canSeeCorrections(quiz, { left, passed }),
+  };
+}
+
+export type AttemptStatus = Awaited<ReturnType<typeof getAttemptStatus>>;
 
 export async function getTentativesForQuiz(quizId: string, userId: string) {
   return db.query.quizTentatives.findMany({
@@ -111,14 +166,30 @@ export async function getQuizAttemptsSummary(userId: string) {
   );
 }
 
-export async function getQuizSubmissionStats(quizId: string) {
-  const tentatives = await db.query.quizTentatives.findMany({
-    where: eq(quizTentatives.quizId, quizId),
-    orderBy: [desc(quizTentatives.completedAt)],
-    with: {
-      user: { columns: { id: true, fullName: true, email: true } },
-    },
-  });
+// `userIds` : limite aux étudiants donnés (ceux d'une classe).
+function tentativesOf(quizId: string, userIds?: string[]) {
+  return userIds
+    ? and(
+        eq(quizTentatives.quizId, quizId),
+        inArray(quizTentatives.userId, userIds)
+      )
+    : eq(quizTentatives.quizId, quizId);
+}
+
+export async function getQuizSubmissionStats(
+  quizId: string,
+  userIds?: string[]
+) {
+  const tentatives =
+    userIds?.length === 0
+      ? []
+      : await db.query.quizTentatives.findMany({
+          where: tentativesOf(quizId, userIds),
+          orderBy: [desc(quizTentatives.completedAt)],
+          with: {
+            user: { columns: { id: true, fullName: true, email: true } },
+          },
+        });
 
   const uniqueUsersCount = new Set(tentatives.map((t) => t.userId)).size;
   const averagePercent =
@@ -173,7 +244,30 @@ export async function getQuizSubmissionStats(quizId: string) {
   };
 }
 
-export async function getQuizQuestionStats(quizId: string) {
+// Tentatives accordées en plus de la limite à un étudiant, par quiz.
+export async function getExtraAttemptsForUser(userId: string, quizIds: string[]) {
+  if (quizIds.length === 0) return new Map<string, number>();
+  const rows = await db.query.quizExtraAttempts.findMany({
+    where: and(
+      eq(quizExtraAttempts.userId, userId),
+      inArray(quizExtraAttempts.quizId, quizIds)
+    ),
+  });
+  return new Map(rows.map((r) => [r.quizId, r.extra]));
+}
+
+// Tentatives accordées en plus de la limite, par étudiant.
+export async function getExtraAttempts(quizId: string) {
+  const rows = await db.query.quizExtraAttempts.findMany({
+    where: eq(quizExtraAttempts.quizId, quizId),
+  });
+  return Object.fromEntries(rows.map((r) => [r.userId, r.extra]));
+}
+
+export async function getQuizQuestionStats(
+  quizId: string,
+  userIds?: string[]
+) {
   const questions = await db.query.quizQuestions.findMany({
     where: eq(quizQuestions.quizId, quizId),
     orderBy: [asc(quizQuestions.orderIndex)],
@@ -181,12 +275,15 @@ export async function getQuizQuestionStats(quizId: string) {
   });
   if (questions.length === 0) return [];
 
-  const tentativeIds = (
-    await db.query.quizTentatives.findMany({
-      where: eq(quizTentatives.quizId, quizId),
-      columns: { id: true },
-    })
-  ).map((t) => t.id);
+  const tentativeIds =
+    userIds?.length === 0
+      ? []
+      : (
+          await db.query.quizTentatives.findMany({
+            where: tentativesOf(quizId, userIds),
+            columns: { id: true },
+          })
+        ).map((t) => t.id);
 
   if (tentativeIds.length === 0) {
     return questions.map((q) => ({

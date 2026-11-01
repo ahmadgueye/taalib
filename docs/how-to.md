@@ -34,7 +34,12 @@ Fichiers à créer/modifier, dans l'ordre :
    - `revalidatePath()` sur la route liste du dashboard, la route publique
      équivalente, et `/` si l'entité apparaît sur l'accueil ;
    - `redirect()` après create/update, pas après delete (delete reste sur la
-     page liste).
+     page liste) ;
+   - `await setFlash("Foo enregistré.")` (`src/lib/actions/flash.ts`) juste
+     avant ce `redirect()` : le message s'affiche en toast sur la page
+     d'arrivée (`flash-toaster.tsx`, monté dans le layout du dashboard). Les
+     suppressions n'en ont pas besoin, `delete-button.tsx` affiche son propre
+     toast.
 
 4. **Formulaire** — `src/components/dashboard/foo-form.tsx` (Client
    Component) : copier `cours-form.tsx`. Le pattern est toujours le même —
@@ -52,12 +57,16 @@ Fichiers à créer/modifier, dans l'ordre :
      sans props.
    - `src/app/(dashboard)/dashboard/foo/[id]/edit/page.tsx` — `await params`,
      `getFooById(id)`, `notFound()` si absent, rend `<FooForm foo={f} />`.
-   - Ajouter l'entrée dans `navItems` de
-     `src/components/dashboard/dashboard-sidebar.tsx`.
+   - Mettre un `<Breadcrumbs>` (`src/components/dashboard/breadcrumbs.tsx`)
+     en haut des pages `new` et `edit`, et dans la table lier le titre de
+     chaque ligne vers sa page avec un `aria-label` sur chaque bouton icône.
+   - Ajouter l'entrée dans le bon groupe de `navGroups` de
+     `src/components/dashboard/dashboard-sidebar.tsx` (Enseignement,
+     Hadiths, ou Gestion pour ce qui est réservé à l'admin).
    - Si l'entité a des sous-éléments imbriqués (ex : les questions d'un quiz),
-     ajouter une page dédiée `dashboard/foo/[id]/sous-element/page.tsx` plutôt
-     que de tout gérer dans le formulaire d'édition — voir
-     `dashboard/quiz/[id]/questions/page.tsx` comme référence.
+     les éditer dans le même formulaire que l'entité et les mettre à jour en
+     place en gardant leurs ids, pour ne pas casser ce qui s'y rattache —
+     voir `quiz-editor.tsx` et `syncQuestions` dans `lib/actions/quiz.ts`.
 
 7. **Tests** — ajouter l'entité à la liste de `modules` de
    `src/lib/actions/authorization.test.ts` : le test vérifie que chaque action

@@ -105,7 +105,7 @@ export async function getStudentRoadmap(
           },
           quiz: {
             where: eq(quiz.status, "published"),
-            orderBy: [asc(quiz.createdAt)],
+            orderBy: [asc(quiz.orderIndex), asc(quiz.createdAt)],
             columns: { id: true, title: true, passingScore: true },
           },
         },

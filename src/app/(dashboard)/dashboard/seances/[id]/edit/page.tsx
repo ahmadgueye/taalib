@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { SeanceForm } from "@/components/dashboard/seance-form";
 import { getAllRessources } from "@/lib/db/queries/ressources";
 import { getSeanceById } from "@/lib/db/queries/seances";
@@ -34,6 +35,12 @@ export default async function EditSeancePage({ params }: Props) {
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Séances", href: "/dashboard/seances" },
+          { label: s.title },
+        ]}
+      />
       <h1 className="font-heading text-2xl font-semibold tracking-tight">
         Modifier la séance
       </h1>

@@ -46,8 +46,9 @@ sequenceDiagram
   `db:studio`. Tous les comptes suivants naissent `viewer` (défaut de colonne,
   voir `drizzle/migrations/0003_default_viewer_role.sql`) : ils utilisent le
   site public (progression, quiz, mémorisation) sans rien savoir du
-  dashboard. Un admin peut leur donner l'accès en écriture (`contributor` ou
-  `admin`) depuis `/dashboard/utilisateurs`.
+  dashboard. Personne n'attend de validation : les élèves arrivent par une
+  classe, et un admin ajoute lui-même l'équipe (`contributor` ou `admin`)
+  depuis `/dashboard/utilisateurs`.
 
 ## `src/proxy.ts` — la porte d'entrée
 
@@ -105,15 +106,33 @@ utilisateur n'y lit que son propre profil.
 | Rôle | Peut lire le contenu | Peut créer/éditer/supprimer du contenu | Peut gérer les rôles et les classes |
 |---|---|---|---|
 | `viewer` (défaut à la création de compte, = étudiant) | seulement ce qui est débloqué pour ses classes | ❌ | ❌ |
-| `contributor` | ✅ tout | ✅ | ❌ |
+| `contributor` (affiché « Éditeur » dans le dashboard) | ✅ tout | ✅ | ❌ |
 | `admin` | ✅ tout | ✅ | ✅ (`/dashboard/utilisateurs`, `/dashboard/classes`) |
 
 Un nouveau compte atterrit en `viewer` (défaut de colonne sur `profiles.role`,
 voir `drizzle/migrations/0003_default_viewer_role.sql`). Les concepts de rôle
 et de dashboard ne sont **jamais exposés** à un `viewer` : `/dashboard` le
-renvoie vers l'accueil (`dashboard/layout.tsx`). Un admin peut le promouvoir
-`contributor` ou `admin` depuis `/dashboard/utilisateurs`
-(`lib/actions/users.ts`, qui refuse de retirer le dernier admin).
+renvoie vers l'accueil (`dashboard/layout.tsx`).
+
+`/dashboard/utilisateurs` a deux sections :
+
+- **Équipe** (`team-section.tsx`) : les `admin` et `contributor`. On y
+  ajoute quelqu'un par l'e-mail de son compte, avec son rôle
+  (`addTeamMember`). La personne doit s'être connectée au moins une fois,
+  puisque son profil naît à la première connexion ; c'est la même règle que
+  pour ajouter un élève à une classe. On peut changer le rôle d'un membre
+  (`updateUserRole`, qui refuse de retirer le dernier admin) ou lui retirer
+  l'accès (`removeFromTeam`, qui le repasse `viewer` et refuse qu'on se
+  retire soi-même). Son compte, ses classes et sa progression restent.
+- **Comptes** (`accounts-table.tsx`) : tous les `viewer`, en lecture seule,
+  avec leurs classes (lien vers leur fiche dans chacune) et une recherche
+  par nom ou e-mail. Pas de menu de rôle ici : on passe par « Ajouter à
+  l'équipe ».
+
+Toutes ces actions sont dans `lib/actions/users.ts` ; les requêtes dans
+`lib/db/queries/users.ts`. Le bouton « Qui peut faire quoi ? » ouvre un
+tableau des droits par rôle (`roles-help-dialog.tsx`) : il est écrit à la
+main, à mettre à jour si une permission change.
 
 ## Ajouter un rôle ou changer une permission
 
@@ -127,7 +146,9 @@ Si un jour il faut un rôle intermédiaire ou une permission plus fine :
    `lib/auth/get-session.ts` pour rester cohérent avec la fonction SQL.
 4. Mettre à jour l'UI qui branche sur le rôle : `dashboard/layout.tsx`
    (redirection des `viewer`), `dashboard-sidebar.tsx` (`isAdmin`),
-   `dashboard/utilisateurs/page.tsx` + `user-role-select.tsx`.
+   `dashboard/utilisateurs/page.tsx`, `team-section.tsx` et
+   `user-role-select.tsx` (`teamRoleLabels`), `roles-help-dialog.tsx`,
+   `lib/actions/users.ts`.
 
 Oublier une de ces quatre étapes est la source d'incohérence la plus probable
 (ex : RLS autorise mais l'UI cache le bouton, ou l'inverse). Penser aussi à

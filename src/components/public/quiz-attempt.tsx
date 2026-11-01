@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,9 +33,18 @@ function encouragement(score: number, total: number) {
 export function QuizAttempt({
   quizId,
   questions,
+  previewGrade,
+  locked = false,
 }: {
   quizId: string;
   questions: Question[];
+  // Plus de tentative : le résultat de la dernière reste affiché s'il vient
+  // d'être obtenu, sinon un message remplace le quiz.
+  locked?: boolean;
+  // Aperçu du dashboard : corrige sur place, sans rien enregistrer.
+  previewGrade?: (
+    answers: Map<string, Set<string>>
+  ) => Pick<QuizResult, "score" | "corrections">;
 }) {
   const [answers, setAnswers] = useState<Record<string, Set<string>>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
@@ -42,6 +52,7 @@ export function QuizAttempt({
   const [missing, setMissing] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const router = useRouter();
 
   const answeredCount = questions.filter(
     (q) => (answers[q.id]?.size ?? 0) > 0
@@ -91,6 +102,18 @@ export function QuizAttempt({
       return;
     }
 
+    if (previewGrade) {
+      const graded = previewGrade(new Map(Object.entries(answers)));
+      setResult({
+        ...graded,
+        tentativeId: "",
+        total: questions.length,
+        showCorrections: true,
+        attemptsLeft: null,
+      });
+      return;
+    }
+
     startTransition(async () => {
       const payload = questions.map((q) => ({
         questionId: q.id,
@@ -102,6 +125,8 @@ export function QuizAttempt({
         return;
       }
       setResult(res);
+      // Met à jour le résumé des tentatives en haut de la page.
+      router.refresh();
     });
   }
 
@@ -125,31 +150,71 @@ export function QuizAttempt({
           <p className="mt-2 text-sm font-medium">
             {encouragement(result.score, result.total)}
           </p>
+          {result.attemptsLeft !== null && (
+            <p className="mt-2 text-sm font-medium text-destructive">
+              {result.attemptsLeft === 0
+                ? "Tu as utilisé toutes tes tentatives pour ce quiz."
+                : `Il te reste ${result.attemptsLeft} tentative${
+                    result.attemptsLeft > 1 ? "s" : ""
+                  }.`}
+            </p>
+          )}
         </div>
 
         <div className="mt-6">
-          <QuizCorrections corrections={result.corrections} />
+          {result.showCorrections ? (
+            <QuizCorrections corrections={result.corrections} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              La correction détaillée sera disponible quand tu auras réussi le
+              quiz ou utilisé toutes tes tentatives.
+            </p>
+          )}
         </div>
 
         <div className="mt-6 flex gap-3">
-          <Button variant="outline" onClick={restart}>
-            Recommencer
-          </Button>
-          <Button
-            variant="ghost"
-            render={<Link href={`/quiz/${quizId}/historique`} />}
-          >
-            Voir l&apos;historique
-          </Button>
+          {result.attemptsLeft !== 0 && (
+            <Button variant="outline" onClick={restart}>
+              Recommencer
+            </Button>
+          )}
+          {!previewGrade && (
+            <Button
+              variant="ghost"
+              render={<Link href={`/quiz/${quizId}/historique`} />}
+              nativeButton={false}
+            >
+              Voir l&apos;historique
+            </Button>
+          )}
         </div>
       </div>
     );
   }
 
+  if (locked) {
+    return (
+      <div className="mt-8 rounded-lg border p-4 text-sm">
+        <p className="font-medium">
+          Tu as utilisé toutes tes tentatives pour ce quiz.
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          Si tu as besoin d&apos;une tentative supplémentaire, demande-la à ton
+          enseignant.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-4">
+    <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-6">
+      {/* Reste visible au défilement, sous l'en-tête du site (ou en haut du
+          dialogue de l'aperçu du dashboard). */}
       <div
-        className="flex items-center gap-3 py-2 text-sm text-muted-foreground"
+        className={cn(
+          "sticky z-20 flex items-center gap-3 border-b py-2 text-sm text-muted-foreground backdrop-blur",
+          previewGrade ? "top-0 bg-popover" : "top-16 bg-background/95"
+        )}
         aria-live="polite"
       >
         <span className="shrink-0 tabular-nums">
@@ -185,11 +250,11 @@ export function QuizAttempt({
             role={isTrueFalse ? "radiogroup" : "group"}
             aria-labelledby={`q-${question.id}`}
             className={cn(
-              "scroll-mt-24 border p-4 transition-colors",
+              "scroll-mt-24 border-b pb-6 transition-colors",
               isMissing && "border-destructive"
             )}
           >
-            <p id={`q-${question.id}`} className="font-medium">
+            <p id={`q-${question.id}`} className="font-semibold">
               {index + 1}. {question.prompt}
             </p>
             {!isTrueFalse && (

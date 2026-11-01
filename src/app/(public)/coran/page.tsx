@@ -7,8 +7,8 @@ import { getChapters } from "@/lib/quran/queries";
 import { getVersePageNumber } from "@/lib/quran/verse-page";
 
 export const metadata: Metadata = {
-  title: "Le Coran — Taalib",
-  description: "Lire le Coran, sourate par sourate, verset par verset.",
+  title: "Qur'an — Taalib",
+  description: "Lire le Qur'an, sourate par sourate, verset par verset.",
 };
 
 type Props = {
@@ -41,7 +41,7 @@ export default async function CoranPage({ searchParams }: Props) {
     // -mt-12 annule le padding haut de <main> : la barre d'outils du lecteur
     // est collée sous l'en-tête dès le départ, comme une fois la page défilée.
     <div className="animate-in fade-in -mt-12 duration-300">
-      <h1 className="sr-only">Le Coran</h1>
+      <h1 className="sr-only">Qur&apos;an</h1>
       <QuranReader
         chapters={chapters}
         initialPage={initialPage}

@@ -1,11 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { RessourcesTable } from "@/components/dashboard/ressources-table";
 import { getAllRessources } from "@/lib/db/queries/ressources";
+import { type RessourceStatus } from "@/lib/ressource-status";
 
-export default async function DashboardRessourcesPage() {
+export const metadata: Metadata = { title: "Ressources" };
+
+const statuses: RessourceStatus[] = ["draft", "published"];
+
+type Props = {
+  searchParams: Promise<{ statut?: string }>;
+};
+
+export default async function DashboardRessourcesPage({ searchParams }: Props) {
+  const { statut } = await searchParams;
+  const initialStatus = statuses.find((s) => s === statut) ?? "all";
   const ressourcesList = await getAllRessources();
 
   return (
@@ -21,7 +33,7 @@ export default async function DashboardRessourcesPage() {
       </div>
 
       <div className="mt-6">
-        <RessourcesTable data={ressourcesList} />
+        <RessourcesTable data={ressourcesList} initialStatus={initialStatus} />
       </div>
     </div>
   );

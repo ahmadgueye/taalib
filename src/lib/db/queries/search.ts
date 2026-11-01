@@ -4,12 +4,16 @@ import { db } from "@/lib/db";
 import type { ContentAccess } from "@/lib/content-access";
 import {
   cours,
+  hadithNarrators,
   hadiths,
+  narrators,
   ressources,
   seanceRessources,
   seanceThematiques,
   seances,
 } from "@/lib/db/schema";
+import { withNarrators } from "@/lib/db/queries/hadiths";
+import { formatNarrators } from "@/lib/narrators";
 import {
   ALL_ENTITY_TYPES,
   ALL_RESSOURCE_TYPES,
@@ -158,25 +162,33 @@ export async function searchCatalogue(
             .limit(20)
         : Promise.resolve([]),
       types.includes("hadith")
-        ? db
-            .select()
-            .from(hadiths)
-            .where(
-              and(
-                textCondition
-                  ? or(
-                      ilike(hadiths.title, pattern),
-                      ilike(hadiths.translationFr, pattern),
-                      ilike(hadiths.translationWolof, pattern),
-                      ilike(hadiths.narrator, pattern)
+        ? db.query.hadiths.findMany({
+            where: and(
+              textCondition
+                ? or(
+                    ilike(hadiths.title, pattern),
+                    ilike(hadiths.translationFr, pattern),
+                    ilike(hadiths.translationWolof, pattern),
+                    inArray(
+                      hadiths.id,
+                      db
+                        .select({ id: hadithNarrators.hadithId })
+                        .from(hadithNarrators)
+                        .innerJoin(
+                          narrators,
+                          eq(narrators.id, hadithNarrators.narratorId)
+                        )
+                        .where(ilike(narrators.name, pattern))
                     )
-                  : undefined,
-                visible
-                  ? inArray(hadiths.thematiqueId, visible.thematiqueIds)
-                  : undefined
-              )
-            )
-            .limit(20)
+                  )
+                : undefined,
+              visible
+                ? inArray(hadiths.thematiqueId, visible.thematiqueIds)
+                : undefined
+            ),
+            with: withNarrators,
+            limit: 20,
+          })
         : Promise.resolve([]),
     ]);
 
@@ -208,7 +220,7 @@ export async function searchCatalogue(
     ...hadithResults.map((h) => ({
       type: "hadith" as const,
       title: h.title,
-      subtitle: h.narrator,
+      subtitle: formatNarrators(h.hadithNarrators),
       href: `/hadiths/${h.slug}`,
     })),
   ];

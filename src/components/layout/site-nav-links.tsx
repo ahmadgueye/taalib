@@ -9,7 +9,7 @@ import { cn, isNavActive } from "@/lib/utils";
 // (le proxy le renverrait vers /login).
 const links = [
   { href: "/cours", label: "Cours", membersOnly: true },
-  { href: "/coran", label: "Coran", membersOnly: false },
+  { href: "/coran", label: "Qur'an", membersOnly: false },
   { href: "/hadiths", label: "Hadiths", membersOnly: true },
   { href: "/recherche", label: "Recherche", membersOnly: true },
 ];

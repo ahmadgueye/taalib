@@ -142,6 +142,7 @@ function CoursBlock({
           title={`Retirer « ${cours.title} » de la classe ?`}
           description="Le cours n'est pas supprimé. Ses déblocages pour cette classe sont effacés."
           confirmLabel="Retirer"
+          successMessage={`« ${cours.title} » retiré de la classe.`}
         />
       </div>
       {cours.thematiques.length === 0 ? (
@@ -175,7 +176,8 @@ function ThematiqueBlock({
   const allUnlocked =
     unlockedRessources === ressources.length && unlockedQuiz === quiz.length;
   const isEmpty = ressources.length === 0 && quiz.length === 0;
-  // Déplier d'office la thématique en cours de déblocage.
+  // Tout est replié pour gagner de la place : un badge signale la thématique
+  // en cours de déblocage.
   const inProgress = unlockedRessources + unlockedQuiz > 0 && !allUnlocked;
 
   function run(action: () => Promise<{ error?: string } | void>) {
@@ -186,7 +188,7 @@ function ThematiqueBlock({
   }
 
   return (
-    <details open={inProgress} className="group">
+    <details className="group">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2 hover:bg-muted/50">
         <span className="flex min-w-0 items-center gap-2">
           <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
@@ -194,7 +196,8 @@ function ThematiqueBlock({
             {thematique.title}
           </span>
         </span>
-        <span className="shrink-0 text-xs text-muted-foreground">
+        <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+          {inProgress && <Badge variant="outline">En cours</Badge>}
           {isEmpty
             ? "Vide"
             : `Ressources ${unlockedRessources}/${ressources.length}${
