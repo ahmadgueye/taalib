@@ -150,6 +150,7 @@ export function QuizAttempt({
             <Button
               variant="ghost"
               render={<Link href={`/quiz/${quizId}/historique`} />}
+              nativeButton={false}
             >
               Voir l&apos;historique
             </Button>
@@ -161,8 +162,13 @@ export function QuizAttempt({
 
   return (
     <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-4">
+      {/* Reste visible au défilement, sous l'en-tête du site (ou en haut du
+          dialogue de l'aperçu du dashboard). */}
       <div
-        className="flex items-center gap-3 py-2 text-sm text-muted-foreground"
+        className={cn(
+          "sticky z-20 flex items-center gap-3 border-b py-2 text-sm text-muted-foreground backdrop-blur",
+          previewGrade ? "top-0 bg-popover" : "top-16 bg-background/95"
+        )}
         aria-live="polite"
       >
         <span className="shrink-0 tabular-nums">
