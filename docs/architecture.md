@@ -71,8 +71,9 @@ deux layouts et deux publics différents :
   exception : `createQuiz` redirige vers une cinquième page,
   `dashboard/quiz/[id]/questions/page.tsx`, dédiée à la gestion des questions
   et choix imbriqués. `classes` (admin seulement) n'a pas de page `edit` :
-  `dashboard/classes/[id]/page.tsx` réunit le formulaire, le code
-  d'invitation et la liste des étudiants. Voir [`how-to.md`](./how-to.md) pour dupliquer ce
+  `dashboard/classes/[id]/page.tsx` réunit le formulaire, le suivi des
+  étudiants, les cours, le code d'invitation et la liste des étudiants ;
+  `dashboard/classes/[id]/etudiants/[userId]/page.tsx` détaille un étudiant. Voir [`how-to.md`](./how-to.md) pour dupliquer ce
   pattern sur une nouvelle entité.
 
 Chaque groupe a son propre `layout.tsx` — pas de layout racine partagé au-delà
@@ -141,7 +142,8 @@ Le lecteur du Coran (`components/public/quran-reader.tsx`) fait plus de 1200
 lignes car il gère : pagination façon mushaf, police QCF spécifique
 (`lib/quran/qcf-font.ts`), coloration tajweed, navigation surah-à-surah,
 reprise de la dernière position lue (`localStorage`), mode Zen plein écran
-(`@base-ui/react/dialog`), suivi de mémorisation verset par verset (menu
+(`@base-ui/react/dialog`), réglages regroupés dans un tiroir sur mobile
+(`quran-reader-settings.tsx`), suivi de mémorisation verset par verset (menu
 contextuel + `lib/actions/memorization.ts`), et un lecteur audio
 (`quran-audio-player.tsx`) branché sur `api/quran/chapter-audio/[chapter]` et
 `api/quran/verse-audio/[chapter]` (timing mot-à-mot pour la surbrillance

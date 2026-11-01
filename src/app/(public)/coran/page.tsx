@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { QuranReader } from "@/components/public/quran-reader";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { getMemorizationStatus } from "@/lib/db/queries/quran-memorization";
-import { getChapters, getVersePage } from "@/lib/quran/queries";
+import { getChapters } from "@/lib/quran/queries";
+import { getVersePageNumber } from "@/lib/quran/verse-page";
 
 export const metadata: Metadata = {
   title: "Le Coran — Taalib",
@@ -34,13 +35,12 @@ export default async function CoranPage({ searchParams }: Props) {
       ? requestedVerseNumber
       : 1;
 
-  const initialPage =
-    verseNumber > 1
-      ? await getVersePage(chapter.id, verseNumber)
-      : chapter.firstPage;
+  const initialPage = getVersePageNumber(chapter.id, verseNumber);
 
   return (
-    <div className="animate-in fade-in -mt-4 duration-300 sm:-mt-6">
+    // -mt-12 annule le padding haut de <main> : la barre d'outils du lecteur
+    // est collée sous l'en-tête dès le départ, comme une fois la page défilée.
+    <div className="animate-in fade-in -mt-12 duration-300">
       <h1 className="sr-only">Le Coran</h1>
       <QuranReader
         chapters={chapters}

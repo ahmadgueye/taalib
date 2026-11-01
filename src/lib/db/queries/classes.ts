@@ -144,6 +144,7 @@ export async function getClassCoursOutline(classId: string) {
         quiz: t.quiz.map((q) => ({
           id: q.id,
           title: q.title,
+          passingScore: q.passingScore,
           unlockedAt: quizUnlockedAt.get(q.id) ?? null,
         })),
       })),

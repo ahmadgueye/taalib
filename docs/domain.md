@@ -219,13 +219,31 @@ sur l'API externe Quran Foundation).
   `apis.quran.foundation/content/api/v4`. Les routes internes
   `api/quran/pages/[page]`, `api/quran/chapter-audio/[chapter]`,
   `api/quran/verse-audio/[chapter]`, `api/quran/verse-timings/[chapter]`,
-  `api/quran/recitations`, `api/quran/verse-location` exposent ces données au
-  client sans jamais lui donner les credentials (`QURAN_CLIENT_ID`/`SECRET`
-  restent server-only).
+  `api/quran/recitations` exposent ces données au client sans jamais lui
+  donner les credentials (`QURAN_CLIENT_ID`/`SECRET` restent server-only).
+- **Rapidité du lecteur** — la page d'un verset est connue sans appel
+  réseau : `lib/quran/page-starts.ts` donne le premier verset de chacune des
+  604 pages (table générée une fois depuis `verses/by_page`, la pagination
+  qu'affiche le lecteur) et `getVersePageNumber` (`lib/quran/verse-page.ts`)
+  en déduit la page. Le texte d'une page et sa police QCF sont demandés en
+  même temps, la page suivante est préchargée dès que la dernière s'affiche,
+  et `api/quran/pages/[page]` est mis en cache (navigateur une semaine, CDN
+  Vercel un an) : le texte du Coran ne change pas.
+- **Page qui n'arrive pas** — une requête de page abandonne au bout de 15 s.
+  Après un échec (réseau coupé, PWA rouverte, API en erreur), le lecteur
+  affiche « La page n'a pas pu être chargée » avec un bouton « Réessayer
+  maintenant », et réessaie seul : 2 s, 4 s… jusqu'à 30 s d'écart, et tout
+  de suite quand le réseau revient ou que l'app repasse au premier plan.
+  Côté serveur, un 401 de l'API Quran Foundation fait redemander un jeton
+  et rejouer la requête une fois.
 - **Rendu mushaf** — `components/public/quran-reader.tsx` reconstitue une
   page de mushaf authentique (pagination fixe façon Coran papier, pas un flux
-  continu), avec la police QCF officielle (`lib/quran/qcf-font.ts`) pour un
+  continu), avec la police QCF officielle (`lib/quran/qcf-font.ts`, une
+  police par page servie en woff2 par le CDN de Quran Foundation) pour un
   rendu du texte arabe fidèle glyphe par glyphe.
+- **Affichage** — « Lecture » (pages du mushaf, par défaut) ou « Ayah par
+  ayah » (chaque verset suivi de sa traduction française). Le choix est
+  retenu dans le `localStorage` (`deenshare:quran-view-mode`).
 - **Taille du texte** — réglée avec les boutons − / + et retenue dans le
   `localStorage` (`deenshare:quran-font-size-rem`). Sans choix enregistré,
   elle part de 2.25rem sur ordinateur et de 1.5rem sur mobile (moins de
@@ -243,11 +261,24 @@ sur l'API externe Quran Foundation).
   (`audioPlayer.activeWordPosition`) : `api/quran/verse-audio` expose les
   `segments` (triplets position/timestamp de début/fin) fournis par l'API
   Quran Foundation pour chaque verset, comparés au temps de lecture courant.
-- **Navigation** — passage direct à une sourate (`surah-command.tsx`,
-  palette de commande) et navigation page suivante/précédente en gardant la
-  continuité de lecture. La dernière page/sourate lue est mémorisée dans le
+- **Navigation** — un bouton « sourate · verset » ouvre un tiroir
+  (`quran-navigator.tsx`) : recherche de sourate par nom (translittéré,
+  français ou arabe) ou numéro (`lib/quran/chapter-search.ts`), liste des
+  114 sourates et grille des versets de la sourate en cours. Choisir une
+  sourate y mène tout de suite, choisir un verset y mène et ferme le
+  tiroir. Pour un utilisateur connecté, une pastille marque les sourates
+  commencées (verte si toutes maîtrisées) et chaque verset prend la couleur
+  de son statut de mémorisation. Tiroir à gauche avec les deux colonnes
+  côte à côte sur desktop ; depuis le bas en deux étapes sur mobile.
+  Navigation page suivante/précédente en gardant la continuité de lecture. La dernière page/sourate lue est mémorisée dans le
   `localStorage` du navigateur (pas en base) et reprise automatiquement à
   l'ouverture de `/coran` sans paramètre d'URL explicite.
+- **Réglages sur mobile** — sous `md`, la barre collée en haut ne garde que
+  le bouton de navigation et un bouton « Réglages de lecture » : affichage,
+  taille du texte, tajwid (avec sa légende), progression de mémorisation
+  avec « Gérer mon parcours », et mode Zen passent dans un tiroir ouvert
+  par le bas (`quran-reader-settings.tsx`). La progression reste visible
+  sous la barre en un simple trait. Sur desktop, la barre est inchangée.
 - **Mode Zen** — bascule plein écran (`ZenDialog`, `@base-ui/react/dialog`)
   qui masque tout sauf le texte et une barre minimale (retour, audio) ; l'état
   activé/désactivé est persisté en `localStorage` (`deenshare:quran-zen-mode`)
@@ -348,6 +379,31 @@ elle qui détermine ce qu'un étudiant voit, voir
     suivi par plusieurs classes à des rythmes différents.
   - Retirer un cours (`removeClassCours`) efface ses déblocages pour cette
     classe : le remettre repart d'un cours entièrement verrouillé.
+- **Suivi des étudiants** — sur la page de la classe, un tableau
+  (`class-progress-table.tsx`, données de `getClassProgress` dans
+  `lib/db/queries/class-progress.ts`, calcul pur dans `lib/class-progress.ts`)
+  donne pour chaque étudiant :
+  - **Leçons** : ressources lues parmi celles débloquées pour la classe
+    (publiées, d'un cours encore suivi), pas sur tout le cours ;
+  - **Quiz** : quiz réussis (meilleure tentative ≥ seuil du quiz) parmi ceux
+    débloqués, et moyenne des meilleurs scores des quiz tentés ;
+  - **Coran** : pourcentage mémorisé, même calcul que `/memorisation` (au
+    prorata des mots), et versets à renforcer ; c'est la mémorisation
+    globale de l'étudiant, pas propre à la classe ;
+  - **Dernière activité** : la plus récente entre une leçon lue, un quiz
+    passé et un verset marqué, toutes classes confondues ; signalée au-delà
+    de 7 jours (`INACTIVE_AFTER_DAYS`) ou en l'absence d'activité.
+  Tri par colonne, les moins avancés en leçons d'abord. Les anciens élèves
+  sont repliés à part et jugés sur ce qui était débloqué avant leur départ.
+  Réservé à l'admin, comme le reste de la page.
+  - **Détail d'un étudiant** — le nom ouvre
+    `/dashboard/classes/[id]/etudiants/[userId]` (`notFound()` si l'étudiant
+    n'est pas membre de la classe, actif ou ancien) : les mêmes chiffres en
+    cartes, puis chaque cours avec ce que l'étudiant voit de la classe
+    (leçons lues avec leur date ou « à lire », quiz avec le meilleur score et
+    le nombre de tentatives ou « pas tenté »), et sa mémorisation : le
+    tableau de bord de `/memorisation` (`memorization-dashboard.tsx`) et une
+    barre par sourate suivie (maîtrisés / à renforcer).
 - **Rejoindre** — `/rejoindre` (saisie du code) et `/rejoindre/[code]`. Le
   code est normalisé (majuscules, sans espaces ni tirets). Un visiteur non
   connecté est envoyé vers `/login?next=/rejoindre/CODE` et revient sur la

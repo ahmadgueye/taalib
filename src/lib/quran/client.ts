@@ -50,20 +50,28 @@ export async function quranFetch<T>(
   revalidate = 3600
 ): Promise<T> {
   const clientId = requiredEnv("QURAN_CLIENT_ID");
-  const accessToken = await getAccessToken();
 
   const url = new URL(`${BASE_URL}${path}`);
   for (const [key, value] of Object.entries(searchParams)) {
     if (value !== undefined) url.searchParams.set(key, String(value));
   }
 
-  const res = await fetch(url, {
-    headers: {
-      "x-auth-token": accessToken,
-      "x-client-id": clientId,
-    },
-    next: { revalidate },
-  });
+  const request = async () =>
+    fetch(url, {
+      headers: {
+        "x-auth-token": await getAccessToken(),
+        "x-client-id": clientId,
+      },
+      next: { revalidate },
+    });
+
+  let res = await request();
+  // Token refused before its announced expiry: without this, every call
+  // from this server instance would fail until the cached token expires.
+  if (res.status === 401) {
+    cachedToken = null;
+    res = await request();
+  }
 
   if (!res.ok) {
     throw new Error(`Quran API request failed (${res.status}): ${path}`);

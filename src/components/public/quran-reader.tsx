@@ -23,11 +23,12 @@ import {
 import { toast } from "sonner";
 
 import { MemorizationProgressBar } from "@/components/public/memorization-progress-bar";
+import { QuranNavigator } from "@/components/public/quran-navigator";
+import { QuranReaderSettings } from "@/components/public/quran-reader-settings";
 import {
   QuranPlayButton,
   useQuranAudioPlayer,
 } from "@/components/public/quran-audio-player";
-import { SurahCommand } from "@/components/public/surah-command";
 import { TajweedLegend } from "@/components/public/tajweed-legend";
 import { setVerseMemorizationStatus } from "@/lib/actions/memorization";
 import type { MemorizationStatus } from "@/lib/db/schema";
@@ -45,17 +46,11 @@ import {
 } from "@/lib/quran/qcf-font";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { QuranChapter, QuranPage, QuranVerse } from "@/lib/quran/types";
+import { getVersePageNumber } from "@/lib/quran/verse-page";
 
 type ViewMode = "arabic" | "arabic-fr";
 
@@ -105,7 +100,7 @@ function createPersistedState<T>(
 
 const viewModeStore = createPersistedState<ViewMode>(
   "deenshare:quran-view-mode",
-  "arabic-fr",
+  "arabic",
   (raw) => (raw === "arabic" || raw === "arabic-fr" ? raw : undefined),
 );
 
@@ -179,27 +174,45 @@ function keepChapterVerses(page: QuranPage, chapterId: number): QuranPage {
 
 const LAST_MUSHAF_PAGE = 604;
 
+// Pages déjà demandées (ou en cours) pendant la visite : la page suivante
+// préchargée en arrière-plan, ou une page relue, ne repart pas sur le réseau.
+const pageRequests = new Map<string, Promise<QuranPage>>();
+
+function requestPage(pageNumber: number, mushafId: MushafId): Promise<QuranPage> {
+  const key = `${mushafId}:${pageNumber}`;
+  const cached = pageRequests.get(key);
+  if (cached) return cached;
+  // Délai maximal : une requête suspendue (app mise en arrière-plan, réseau
+  // perdu en route) échoue au lieu de bloquer le chargement indéfiniment.
+  const request = fetch(`/api/quran/pages/${pageNumber}?mushaf=${mushafId}`, {
+    signal: AbortSignal.timeout(15_000),
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Failed to load page");
+      return res.json() as Promise<QuranPage>;
+    })
+    .catch((error) => {
+      pageRequests.delete(key);
+      throw error;
+    });
+  pageRequests.set(key, request);
+  return request;
+}
+
+// Lance en parallèle le texte d'une page et, en mode Lecture, sa police QCF :
+// sinon la police n'est demandée qu'une fois le texte affiché.
+function preloadPage(pageNumber: number, mushafId: MushafId, viewMode: ViewMode) {
+  requestPage(pageNumber, mushafId).catch(() => {});
+  if (viewMode === "arabic") loadQcfPageFont(pageNumber, mushafId);
+}
+
 async function fetchPage(
   pageNumber: number,
   chapterId: number,
   mushafId: MushafId = 1,
 ): Promise<QuranPage> {
-  const res = await fetch(`/api/quran/pages/${pageNumber}?mushaf=${mushafId}`);
-  if (!res.ok) throw new Error("Failed to load page");
-  const page = (await res.json()) as QuranPage;
+  const page = await requestPage(pageNumber, mushafId);
   return keepChapterVerses(page, chapterId);
-}
-
-async function fetchVersePage(
-  chapterId: number,
-  verseNumber: number,
-): Promise<number> {
-  const res = await fetch(
-    `/api/quran/verse-location?chapter=${chapterId}&verse=${verseNumber}`,
-  );
-  if (!res.ok) throw new Error("Failed to locate verse");
-  const data = (await res.json()) as { pageNumber: number };
-  return data.pageNumber;
 }
 
 // A zero-size virtual anchor at the click point, so the right-click status
@@ -596,6 +609,12 @@ export function QuranReader({
   );
   const [pages, setPages] = useState<QuranPage[]>([]);
   const [loadingNext, setLoadingNext] = useState(false);
+  // Échecs de chargement d'affilée (réseau coupé, API en erreur), remis à
+  // zéro dès qu'une page arrive. Un compteur plutôt qu'un booléen : chaque
+  // nouvel échec relance l'effet de nouvel essai, même s'il survient dans la
+  // foulée d'un essai.
+  const [loadFailures, setLoadFailures] = useState(0);
+  const loadFailed = loadFailures > 0;
   const [visiblePageNumber, setVisiblePageNumber] = useState<number | null>(
     null,
   );
@@ -626,16 +645,6 @@ export function QuranReader({
     [pages, selectedChapterId],
   );
 
-  const verseLabels = useMemo(
-    () =>
-      Object.fromEntries(
-        Array.from({ length: selectedChapter.versesCount }, (_, i) => [
-          String(i + 1),
-          `Verset ${i + 1}`,
-        ]),
-      ),
-    [selectedChapter.versesCount],
-  );
 
   // Load the initial page once on mount. `mushafId` is read once here rather
   // than added to the deps: useSyncExternalStore resolves the restored
@@ -657,9 +666,18 @@ export function QuranReader({
 
     let cancelled = false;
     const token = loadTokenRef.current;
-    fetchPage(initialPage, initialChapterId, mushafId).then((page) => {
-      if (!cancelled && token === loadTokenRef.current) setPages([page]);
-    });
+    preloadPage(initialPage, mushafId, viewMode);
+    fetchPage(initialPage, initialChapterId, mushafId).then(
+      (page) => {
+        if (cancelled || token !== loadTokenRef.current) return;
+        setLoadFailures(0);
+        setPages([page]);
+      },
+      () => {
+        if (!cancelled && token === loadTokenRef.current)
+          setLoadFailures((n) => n + 1);
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -731,10 +749,16 @@ export function QuranReader({
     if (pageNumbers.length === 0) return;
     Promise.all(
       pageNumbers.map((n) => fetchPage(n, selectedChapterId, mushafId)),
-    ).then((refetched) => {
-      if (token !== loadTokenRef.current) return;
-      setPages(refetched);
-    });
+    ).then(
+      (refetched) => {
+        if (token !== loadTokenRef.current) return;
+        setLoadFailures(0);
+        setPages(refetched);
+      },
+      () => {
+        if (token === loadTokenRef.current) setLoadFailures((n) => n + 1);
+      },
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mushafId]);
 
@@ -776,8 +800,18 @@ export function QuranReader({
   const hasMultiplePages =
     selectedChapter.lastPage > selectedChapter.firstPage || !chapterFullyLoaded;
 
+  // Précharge la page suivante (texte et police) dès que la dernière page
+  // chargée est affichée : le défilement continu la trouve déjà prête.
+  useEffect(() => {
+    if (currentChapterPages.length === 0 || chapterFullyLoaded) return;
+    preloadPage(lastLoadedPage + 1, mushafId, viewMode);
+  }, [currentChapterPages.length, chapterFullyLoaded, lastLoadedPage, mushafId, viewMode]);
+
   async function loadNextPage() {
-    if (loadingNext || chapterFullyLoaded) return;
+    // Rien de la sourate n'est encore chargé (changement de sourate en
+    // cours) : la « page suivante » serait calculée sur une page supposée.
+    if (loadingNext || chapterFullyLoaded || currentChapterPages.length === 0)
+      return;
     const token = loadTokenRef.current;
     setLoadingNext(true);
     try {
@@ -787,15 +821,52 @@ export function QuranReader({
         mushafId,
       );
       if (token !== loadTokenRef.current) return;
+      setLoadFailures(0);
       setPages((prev) =>
         prev.some((p) => p.pageNumber === page.pageNumber)
           ? prev
           : [...prev, page],
       );
+    } catch {
+      // Sans ça, rien ne relance la page : l'observateur ne se déclenche
+      // qu'à l'entrée du repère dans l'écran, et il y est déjà.
+      if (token === loadTokenRef.current) setLoadFailures((n) => n + 1);
     } finally {
       setLoadingNext(false);
     }
   }
+
+  // Relance ce qui a échoué : la page du verset visé si rien de la sourate
+  // n'est affiché, sinon la page suivante.
+  function retryLoad() {
+    if (currentChapterPages.length === 0) {
+      goToVerse(selectedChapterId, selectedVerseNumber);
+    } else {
+      loadNextPage();
+    }
+  }
+
+  // Après un échec, nouvel essai automatique de plus en plus espacé (2 s,
+  // 4 s… jusqu'à 30 s), et tout de suite quand le réseau revient ou que
+  // l'app repasse au premier plan : le cas typique de la PWA rouverte.
+  useEffect(() => {
+    if (!loadFailed) return;
+    const retry = () => {
+      if (document.visibilityState === "visible") retryLoad();
+    };
+    const timer = setTimeout(
+      retry,
+      Math.min(2000 * 2 ** (loadFailures - 1), 30_000),
+    );
+    window.addEventListener("online", retry);
+    document.addEventListener("visibilitychange", retry);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("online", retry);
+      document.removeEventListener("visibilitychange", retry);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadFailures]);
 
   // Only surahs spanning several mushaf pages need continuous scroll.
   useEffect(() => {
@@ -820,6 +891,7 @@ export function QuranReader({
     selectedChapterId,
     chapterFullyLoaded,
     mushafId,
+    currentChapterPages.length,
   ]);
 
   // Restores every page from the chapter's start up to the saved one, so
@@ -831,8 +903,8 @@ export function QuranReader({
     const chapter = chaptersById.get(chapterId);
     if (!chapter) return;
     const token = ++loadTokenRef.current;
-    const targetPage = await fetchVersePage(chapterId, verseNumber);
-    if (token !== loadTokenRef.current) return;
+    const targetPage = getVersePageNumber(chapterId, verseNumber);
+    preloadPage(targetPage, mushafId, viewMode);
 
     updateUrl(chapterId, verseNumber);
     pendingVerseKey.current = `${chapterId}:${verseNumber}`;
@@ -841,9 +913,18 @@ export function QuranReader({
       { length: targetPage - chapter.firstPage + 1 },
       (_, i) => chapter.firstPage + i,
     );
-    const fetchedPages = await Promise.all(
-      pageNumbers.map((p) => fetchPage(p, chapterId, mushafId)),
-    );
+    let fetchedPages: QuranPage[];
+    try {
+      fetchedPages = await Promise.all(
+        pageNumbers.map((p) => fetchPage(p, chapterId, mushafId)),
+      );
+    } catch {
+      if (token !== loadTokenRef.current) return;
+      setSelectedChapterId(chapterId);
+      setSelectedVerseNumber(verseNumber);
+      setLoadFailures((n) => n + 1);
+      return;
+    }
     if (token !== loadTokenRef.current) return;
     // Set together in one commit: selectedChapterId must never be visible
     // with a `pages` array from a different chapter, or the infinite-scroll
@@ -852,6 +933,7 @@ export function QuranReader({
     // already part of fetchedPages.
     setSelectedChapterId(chapterId);
     setSelectedVerseNumber(verseNumber);
+    setLoadFailures(0);
     setPages(fetchedPages);
   }
 
@@ -864,8 +946,8 @@ export function QuranReader({
 
   async function goToVerse(chapterId: number, verseNumber: number) {
     const token = ++loadTokenRef.current;
-    const pageNumber = await fetchVersePage(chapterId, verseNumber);
-    if (token !== loadTokenRef.current) return;
+    const pageNumber = getVersePageNumber(chapterId, verseNumber);
+    preloadPage(pageNumber, mushafId, viewMode);
 
     updateUrl(chapterId, verseNumber);
 
@@ -881,28 +963,40 @@ export function QuranReader({
     }
 
     pendingVerseKey.current = `${chapterId}:${verseNumber}`;
-    const page = await fetchPage(pageNumber, chapterId, mushafId);
-    if (token !== loadTokenRef.current) return;
-    setPages([page]);
+    try {
+      const page = await fetchPage(pageNumber, chapterId, mushafId);
+      if (token !== loadTokenRef.current) return;
+      setLoadFailures(0);
+      setPages([page]);
+    } catch {
+      if (token === loadTokenRef.current) setLoadFailures((n) => n + 1);
+    }
+  }
+
+  function handleNavigate(chapterId: number, verseNumber: number) {
+    setLoadFailures(0);
+    setSelectedChapterId(chapterId);
+    setSelectedVerseNumber(verseNumber);
+    goToVerse(chapterId, verseNumber);
   }
 
   function handleChapterSelect(chapterId: number) {
-    setSelectedChapterId(chapterId);
-    setSelectedVerseNumber(1);
-    goToVerse(chapterId, 1);
-  }
-
-  function handleVerseSelect(verseNumberStr: string | null) {
-    if (!verseNumberStr) return;
-    const verseNumber = Number(verseNumberStr);
-    setSelectedVerseNumber(verseNumber);
-    goToVerse(selectedChapterId, verseNumber);
+    handleNavigate(chapterId, 1);
   }
 
   const audioPlayer = useQuranAudioPlayer({
     chapters,
     selectedChapterId,
   });
+
+  const loadErrorNotice = (
+    <div className="flex flex-col items-center gap-3 py-8 text-center text-sm text-muted-foreground">
+      <p>La page n&apos;a pas pu être chargée. Nouvel essai automatique…</p>
+      <Button variant="outline" size="sm" onClick={retryLoad}>
+        Réessayer maintenant
+      </Button>
+    </div>
+  );
 
   // Shared between the normal layout and the Zen overlay below — rendered
   // in exactly one of the two at a time (never both), since MushafLines
@@ -920,7 +1014,8 @@ export function QuranReader({
           viewMode === "arabic" ? "max-w-7xl px-6" : "max-w-3xl",
         )}
       >
-        {currentChapterPages.length === 0 && (
+        {currentChapterPages.length === 0 && loadFailed && loadErrorNotice}
+        {currentChapterPages.length === 0 && !loadFailed && (
           <div className="space-y-4">
             <Skeleton className="h-6 w-2/3" />
             <Skeleton className="h-6 w-full" />
@@ -1070,6 +1165,7 @@ export function QuranReader({
         {hasMultiplePages && (
           <>
             <div ref={sentinelRef} />
+            {loadFailed && currentChapterPages.length > 0 && loadErrorNotice}
             {loadingNext && (
               <div className="space-y-4 pb-8">
                 <Skeleton className="h-6 w-full" />
@@ -1124,31 +1220,15 @@ export function QuranReader({
   );
 
   // Shared between the normal toolbar and the Zen overlay's minimal top
-  // bar — the only two controls kept available in Zen mode.
+  // bar — kept available in Zen mode.
   const chapterVerseSelector = (
-    <>
-      <SurahCommand
-        chapters={chapters}
-        selectedChapter={selectedChapter}
-        onSelect={handleChapterSelect}
-      />
-      <Select
-        value={String(selectedVerseNumber)}
-        onValueChange={handleVerseSelect}
-        items={verseLabels}
-      >
-        <SelectTrigger size="sm" className="w-24">
-          <SelectValue placeholder="Verset" />
-        </SelectTrigger>
-        <SelectContent>
-          {Array.from({ length: selectedChapter.versesCount }, (_, i) => (
-            <SelectItem key={i + 1} value={String(i + 1)}>
-              Verset {i + 1}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </>
+    <QuranNavigator
+      chapters={chapters}
+      selectedChapter={selectedChapter}
+      selectedVerseNumber={selectedVerseNumber}
+      onNavigate={handleNavigate}
+      statusMap={isAuthenticated ? statusMap : undefined}
+    />
   );
 
   const fontSizeControls = (
@@ -1179,9 +1259,30 @@ export function QuranReader({
       {!zenMode && (
         <div className="sticky top-[63px] z-20 w-screen -ml-[calc(50vw-50%)] -mr-[calc(50vw-50%)] border-b bg-background/95 backdrop-blur-sm">
           <div className="mx-auto w-full max-w-5xl">
-            <div className="flex flex-wrap items-center gap-2 px-6 py-3">
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3 md:px-6">
               {chapterVerseSelector}
-              <div className="ml-auto flex items-center gap-1">
+              {/* Sur mobile, les réglages passent dans un tiroir : la barre
+                  collée en haut ne garde que la navigation. */}
+              <div className="contents md:hidden">
+                <QuranReaderSettings
+                  viewMode={viewMode}
+                  onViewModeChange={(mode) => viewModeStore.setStored(mode)}
+                  fontSizeControls={fontSizeControls}
+                  tajweedEnabled={tajweedEnabled}
+                  onTajweedChange={(enabled) => tajweedStore.setStored(enabled)}
+                  onZenMode={() => zenModeStore.setStored(true)}
+                  memorization={
+                    isAuthenticated
+                      ? {
+                          chapterId: selectedChapterId,
+                          statusMap,
+                          totalVerses: selectedChapter.versesCount,
+                        }
+                      : undefined
+                  }
+                />
+              </div>
+              <div className="ml-auto hidden items-center gap-1 md:flex">
                 {fontSizeControls}
                 <Button
                   variant={tajweedEnabled ? "default" : "outline"}
@@ -1211,6 +1312,7 @@ export function QuranReader({
                 onValueChange={(value) =>
                   viewModeStore.setStored(value as ViewMode)
                 }
+                className="hidden md:flex"
               >
                 <TabsList>
                   <TabsTrigger value="arabic">Lecture</TabsTrigger>
@@ -1219,13 +1321,25 @@ export function QuranReader({
               </Tabs>
             </div>
             {isAuthenticated && (
-              <MemorizationProgressBar
-                chapterId={selectedChapterId}
-                statusMap={statusMap}
-                totalVerses={selectedChapter.versesCount}
-              />
+              <>
+                <MemorizationProgressBar
+                  chapterId={selectedChapterId}
+                  statusMap={statusMap}
+                  totalVerses={selectedChapter.versesCount}
+                  className="hidden md:flex"
+                />
+                <MemorizationProgressBar
+                  chapterId={selectedChapterId}
+                  statusMap={statusMap}
+                  totalVerses={selectedChapter.versesCount}
+                  variant="thin"
+                  className="md:hidden"
+                />
+              </>
             )}
-            <TajweedLegend show={tajweedEnabled} />
+            <div className="hidden md:block">
+              <TajweedLegend show={tajweedEnabled} />
+            </div>
           </div>
         </div>
       )}
