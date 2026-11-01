@@ -150,7 +150,10 @@ Règles implicites à connaître :
   `quiz-attempt.tsx` / `quiz-item.tsx` (passage de quiz),
   `roadmap-track.tsx` (feuille de route de l'accueil, voir
   [`domain.md`](./domain.md#feuille-de-route)), recherche (`search-command.tsx`),
-  suivi de progression (`next-chapter-button.tsx`, `progress-ring.tsx`).
+  suivi de progression (`next-chapter-button.tsx`, `progress-ring.tsx`),
+  accueil visiteur (`vitrine-door.tsx` = porte animée du hero,
+  `vitrine-features.tsx` = trois aperçus animés ; leurs animations sont les
+  classes `vitrine-*` de `globals.css`).
 - **`components/layout/`** — header/footer/nav partagés entre pages publiques,
   thème (dark/light via `next-themes`).
 
