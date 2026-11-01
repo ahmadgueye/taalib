@@ -155,7 +155,7 @@ export default async function DashboardHomePage() {
 
   const catalogue = [
     { label: "Cours", value: coursCount.value, href: "/dashboard/cours" },
-    { label: "Thématiques", value: thematiquesCount.value, href: "/dashboard/thematiques" },
+    { label: "Thématiques", value: thematiquesCount.value, href: "/dashboard/cours" },
     { label: "Ressources", value: ressourcesCount.value, href: "/dashboard/ressources" },
     { label: "Quiz", value: quizCount.value, href: "/dashboard/quiz" },
     { label: "Séances", value: seancesCount.value, href: "/dashboard/seances" },
@@ -317,14 +317,14 @@ export default async function DashboardHomePage() {
 
           <section>
             <SectionTitle>Catalogue</SectionTitle>
-            <div className="mt-3 grid grid-cols-3 border">
+            <div className="mt-3 grid grid-cols-2 border xl:grid-cols-3">
               {catalogue.map((s) => (
                 <Link
                   key={s.label}
                   href={s.href}
-                  className="flex flex-col gap-0.5 p-3 transition-colors hover:bg-muted"
+                  className="flex min-w-0 flex-col gap-0.5 p-3 transition-colors hover:bg-muted"
                 >
-                  <span className="text-xs text-muted-foreground">{s.label}</span>
+                  <span className="truncate text-xs text-muted-foreground">{s.label}</span>
                   <span className="font-heading text-xl font-semibold">
                     {s.value}
                   </span>

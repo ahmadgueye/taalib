@@ -108,7 +108,12 @@ export function CoursTable({ data }: { data: CoursRow[] }) {
                   className="max-w-xs truncate font-medium"
                   title={c.title}
                 >
-                  {c.title}
+                  <Link
+                    href={`/dashboard/cours/${c.id}`}
+                    className="hover:underline hover:underline-offset-4"
+                  >
+                    {c.title}
+                  </Link>
                 </TableCell>
                 <TableCell
                   className="max-w-md truncate text-muted-foreground"
@@ -130,6 +135,7 @@ export function CoursTable({ data }: { data: CoursRow[] }) {
                     nativeButton={false}
                     variant="ghost"
                     size="icon-sm"
+                    aria-label={`Modifier « ${c.title} »`}
                   >
                     <Pencil className="size-4" />
                   </Button>

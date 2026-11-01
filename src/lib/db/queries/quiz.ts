@@ -35,6 +35,10 @@ export async function getQuizWithQuestions(id: string) {
   const result = await db.query.quiz.findFirst({
     where: eq(quiz.id, id),
     with: {
+      thematique: {
+        columns: { id: true, title: true },
+        with: { cours: { columns: { id: true, title: true } } },
+      },
       questions: {
         orderBy: [asc(quizQuestions.orderIndex)],
         with: {

@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 
 import { requireContributor } from "@/lib/auth/get-session";
 import { db } from "@/lib/db";
-import { quizChoix, quizQuestions } from "@/lib/db/schema";
+import { quiz, quizChoix, quizQuestions } from "@/lib/db/schema";
+import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { questionsSchema } from "@/lib/actions/quiz-questions.schema";
 
 export type ActionState = { error?: string } | undefined;
@@ -67,5 +68,14 @@ export async function saveQuizQuestions(
   revalidatePath(`/dashboard/quiz/${quizId}/questions`);
   revalidatePath("/dashboard/quiz");
   revalidatePath("/thematiques");
-  redirect("/dashboard/quiz");
+  revalidateCoursTree();
+
+  // Retour à la thématique du quiz, où l'on gère tout son contenu.
+  const saved = await db.query.quiz.findFirst({
+    where: eq(quiz.id, quizId),
+    columns: { thematiqueId: true },
+  });
+  redirect(
+    saved ? `/dashboard/thematiques/${saved.thematiqueId}` : "/dashboard/quiz"
+  );
 }

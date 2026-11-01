@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { hadithNarrators, hadiths, narrators } from "@/lib/db/schema";
 import { slugify } from "@/lib/utils";
@@ -122,7 +123,13 @@ export async function createHadith(
   revalidatePath("/dashboard/rapporteurs");
   revalidatePath("/hadiths");
   revalidatePath("/thematiques");
-  redirect("/dashboard/hadiths");
+  revalidateCoursTree();
+  // Ouvert depuis la page d'une thématique : on y revient.
+  redirect(
+    formData.get("backToThematique")
+      ? `/dashboard/thematiques/${parsed.data.thematiqueId}`
+      : "/dashboard/hadiths"
+  );
 }
 
 export async function updateHadith(
@@ -161,7 +168,13 @@ export async function updateHadith(
   revalidatePath("/dashboard/rapporteurs");
   revalidatePath("/hadiths");
   revalidatePath("/thematiques");
-  redirect("/dashboard/hadiths");
+  revalidateCoursTree();
+  // Ouvert depuis la page d'une thématique : on y revient.
+  redirect(
+    formData.get("backToThematique")
+      ? `/dashboard/thematiques/${parsed.data.thematiqueId}`
+      : "/dashboard/hadiths"
+  );
 }
 
 export async function deleteHadith(id: string) {
@@ -171,4 +184,5 @@ export async function deleteHadith(id: string) {
   revalidatePath("/dashboard/rapporteurs");
   revalidatePath("/hadiths");
   revalidatePath("/thematiques");
+  revalidateCoursTree();
 }

@@ -29,10 +29,16 @@ import {
 
 export function HadithForm({
   thematiqueOptions,
+  defaultThematiqueId,
+  backToThematique,
   narratorOptions,
   hadith,
 }: {
   thematiqueOptions: { id: string; title: string; coursTitle: string }[];
+  // Ouvert depuis la page d'une thématique : pré-choisie, et on y revient
+  // après l'enregistrement.
+  defaultThematiqueId?: string;
+  backToThematique?: boolean;
   narratorOptions: { id: string; name: string }[];
   hadith?: {
     id: string;
@@ -53,12 +59,15 @@ export function HadithForm({
 
   return (
     <form action={formAction} className="max-w-lg">
+      {backToThematique && (
+        <input type="hidden" name="backToThematique" value="1" />
+      )}
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="thematiqueId">Thématique</FieldLabel>
           <Select
             name="thematiqueId"
-            defaultValue={hadith?.thematiqueId}
+            defaultValue={hadith?.thematiqueId ?? defaultThematiqueId}
             items={thematiqueOptions.map((t) => ({
               value: t.id,
               label: `${t.coursTitle} · ${t.title}`,

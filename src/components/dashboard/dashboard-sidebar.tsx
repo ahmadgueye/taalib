@@ -9,7 +9,6 @@ import {
   HelpCircle,
   LayoutDashboard,
   Link as LinkIcon,
-  ListTree,
   Quote,
   UserRound,
   Users,
@@ -21,7 +20,14 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { cn, isNavActive } from "@/lib/utils";
 
-type NavItem = { href: string; label: string; icon: LucideIcon };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  // Autres sections rattachées à ce lien (les thématiques vivent dans leur
+  // cours).
+  alsoActiveFor?: string[];
+};
 type NavGroup = { label: string; items: NavItem[]; adminOnly?: boolean };
 
 // Regroupés par usage plutôt qu'une longue liste à plat.
@@ -29,8 +35,12 @@ const navGroups: NavGroup[] = [
   {
     label: "Enseignement",
     items: [
-      { href: "/dashboard/cours", label: "Cours", icon: BookOpen },
-      { href: "/dashboard/thematiques", label: "Thématiques", icon: ListTree },
+      {
+        href: "/dashboard/cours",
+        label: "Cours",
+        icon: BookOpen,
+        alsoActiveFor: ["/dashboard/thematiques"],
+      },
       { href: "/dashboard/ressources", label: "Ressources", icon: LinkIcon },
       { href: "/dashboard/quiz", label: "Quiz", icon: HelpCircle },
       { href: "/dashboard/seances", label: "Séances", icon: Calendar },
@@ -109,7 +119,9 @@ export function DashboardSidebar({ isAdmin }: { isAdmin: boolean }) {
                   <NavLink
                     key={item.href}
                     item={item}
-                    active={isNavActive(pathname, item.href)}
+                    active={[item.href, ...(item.alsoActiveFor ?? [])].some(
+                      (href) => isNavActive(pathname, href)
+                    )}
                   />
                 ))}
               </div>

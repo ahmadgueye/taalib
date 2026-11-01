@@ -87,8 +87,8 @@ export async function getRecentEdits(limit: number): Promise<RecentEdit[]> {
   ]);
 
   const edits: RecentEdit[] = [
-    ...c.map((x) => ({ ...x, kind: "cours" as const, href: `/dashboard/cours/${x.id}/edit` })),
-    ...t.map((x) => ({ ...x, kind: "thematique" as const, href: `/dashboard/thematiques/${x.id}/edit` })),
+    ...c.map((x) => ({ ...x, kind: "cours" as const, href: `/dashboard/cours/${x.id}` })),
+    ...t.map((x) => ({ ...x, kind: "thematique" as const, href: `/dashboard/thematiques/${x.id}` })),
     ...r.map((x) => ({ ...x, kind: "ressource" as const, href: `/dashboard/ressources/${x.id}/edit` })),
     ...q.map((x) => ({ ...x, kind: "quiz" as const, href: `/dashboard/quiz/${x.id}/edit` })),
     ...h.map((x) => ({ ...x, kind: "hadith" as const, href: `/dashboard/hadiths/${x.id}/edit` })),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, useTransition } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -27,6 +28,10 @@ export type SortableReorderItem = {
   id: string;
   label: string;
   sublabel?: string;
+  // Lien sur le libellé, et contenu en fin de ligne (badges, actions) : des
+  // nœuds React passent du serveur au client, contrairement à renderTrailing.
+  href?: string;
+  trailing?: React.ReactNode;
 };
 
 function SortableRow({
@@ -57,12 +62,22 @@ function SortableRow({
       >
         <GripVertical className="size-4" />
       </button>
-      <div className="flex-1">
-        <div className="font-medium">{item.label}</div>
+      <div className="min-w-0 flex-1">
+        {item.href ? (
+          <Link
+            href={item.href}
+            className="block truncate font-medium hover:underline hover:underline-offset-4"
+          >
+            {item.label}
+          </Link>
+        ) : (
+          <div className="truncate font-medium">{item.label}</div>
+        )}
         {item.sublabel && (
           <div className="text-xs text-muted-foreground">{item.sublabel}</div>
         )}
       </div>
+      {item.trailing}
       {trailing}
     </li>
   );
@@ -110,13 +125,7 @@ export function SortableReorderList({
     });
   }
 
-  if (items.length < 2) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Il faut au moins deux éléments pour pouvoir les réordonner.
-      </p>
-    );
-  }
+  if (items.length === 0) return null;
 
   return (
     <DndContext

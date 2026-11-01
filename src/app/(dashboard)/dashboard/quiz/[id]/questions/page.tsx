@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
 
+import {
+  Breadcrumbs,
+  thematiqueCrumbs,
+} from "@/components/dashboard/breadcrumbs";
 import { QuizBuilder } from "@/components/dashboard/quiz-builder";
 import { getQuizWithQuestions } from "@/lib/db/queries/quiz";
 
@@ -22,6 +26,13 @@ export default async function QuizQuestionsPage({ params }: Props) {
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          ...thematiqueCrumbs(quiz.thematique),
+          { label: quiz.title, href: `/dashboard/quiz/${quiz.id}/edit` },
+          { label: "Questions" },
+        ]}
+      />
       <h1 className="font-heading text-2xl font-semibold tracking-tight">
         Questions — {quiz.title}
       </h1>

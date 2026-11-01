@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { quiz } from "@/lib/db/schema";
 
@@ -49,6 +50,7 @@ export async function createQuiz(
 
   revalidatePath("/dashboard/quiz");
   revalidatePath("/thematiques");
+  revalidateCoursTree();
   redirect(`/dashboard/quiz/${created.id}/questions`);
 }
 
@@ -83,7 +85,8 @@ export async function updateQuiz(
 
   revalidatePath("/dashboard/quiz");
   revalidatePath("/thematiques");
-  redirect("/dashboard/quiz");
+  revalidateCoursTree();
+  redirect(`/dashboard/thematiques/${parsed.data.thematiqueId}`);
 }
 
 export async function deleteQuiz(id: string) {
@@ -91,4 +94,5 @@ export async function deleteQuiz(id: string) {
   await db.delete(quiz).where(eq(quiz.id, id));
   revalidatePath("/dashboard/quiz");
   revalidatePath("/thematiques");
+  revalidateCoursTree();
 }

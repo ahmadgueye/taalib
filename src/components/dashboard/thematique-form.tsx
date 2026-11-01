@@ -28,8 +28,11 @@ import {
 export function ThematiqueForm({
   coursOptions,
   thematique,
+  defaultCoursId,
 }: {
   coursOptions: { id: string; title: string }[];
+  // Création depuis la page d'un cours : déjà choisi.
+  defaultCoursId?: string;
   thematique?: {
     id: string;
     title: string;
@@ -52,7 +55,7 @@ export function ThematiqueForm({
           <FieldLabel htmlFor="coursId">Cours</FieldLabel>
           <Select
             name="coursId"
-            defaultValue={thematique?.coursId}
+            defaultValue={thematique?.coursId ?? defaultCoursId}
             items={coursOptions.map((c) => ({ value: c.id, label: c.title }))}
             required
           >

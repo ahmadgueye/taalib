@@ -85,3 +85,23 @@ export async function getCoursOutline(coursId: string) {
 
   return result ?? null;
 }
+
+// Un cours et ses thématiques pour le dashboard, avec ce que contient chaque
+// thématique (tous statuts confondus : le staff voit aussi les brouillons).
+export async function getCoursTree(id: string) {
+  const result = await db.query.cours.findFirst({
+    where: eq(cours.id, id),
+    with: {
+      thematiques: {
+        orderBy: [asc(thematiques.orderIndex), asc(thematiques.title)],
+        with: {
+          ressources: { columns: { id: true } },
+          quiz: { columns: { id: true } },
+          hadiths: { columns: { id: true } },
+        },
+      },
+    },
+  });
+
+  return result ?? null;
+}

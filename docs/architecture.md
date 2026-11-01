@@ -73,7 +73,16 @@ deux layouts et deux publics différents :
   et choix imbriqués. `classes` (admin seulement) n'a pas de page `edit` :
   `dashboard/classes/[id]/page.tsx` réunit le formulaire, le suivi des
   étudiants, les cours, le code d'invitation et la liste des étudiants ;
-  `dashboard/classes/[id]/etudiants/[userId]/page.tsx` détaille un étudiant. L'accueil
+  `dashboard/classes/[id]/etudiants/[userId]/page.tsx` détaille un étudiant.
+  Cours, thématiques et ressources se gèrent en arbre :
+  `dashboard/cours/[id]/page.tsx` liste les thématiques du cours (réordonnables)
+  et `dashboard/thematiques/[id]/page.tsx` les ressources (réordonnables), quiz
+  et hadiths de la thématique, avec un fil d'Ariane (`breadcrumbs.tsx`). Les
+  boutons « Ajouter » passent le parent en paramètre (`?cours=`, `?thematique=`)
+  pour pré-remplir le formulaire, et les actions renvoient ensuite dans l'arbre
+  (les hadiths seulement s'ils ont été ouverts depuis une thématique). Il n'y a
+  plus de liste à plat des thématiques : `dashboard/thematiques` redirige vers
+  les cours. L'accueil
   `dashboard/page.tsx` est orienté tâches : ce qui attend une action
   (brouillons, cours « Bientôt disponible », demandes d'accès pour l'admin),
   les derniers éléments modifiés avec un lien vers leur édition, les

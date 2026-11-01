@@ -28,9 +28,12 @@ const statusOptions = [
 
 export function QuizForm({
   thematiqueOptions,
+  defaultThematiqueId,
   quiz,
 }: {
   thematiqueOptions: { id: string; title: string; coursTitle: string }[];
+  // Création depuis la page d'une thématique : déjà choisie.
+  defaultThematiqueId?: string;
   quiz?: {
     id: string;
     title: string;
@@ -53,7 +56,7 @@ export function QuizForm({
           <FieldLabel htmlFor="thematiqueId">Thématique</FieldLabel>
           <Select
             name="thematiqueId"
-            defaultValue={quiz?.thematiqueId}
+            defaultValue={quiz?.thematiqueId ?? defaultThematiqueId}
             items={thematiqueOptions.map((t) => ({
               value: t.id,
               label: `${t.coursTitle} · ${t.title}`,

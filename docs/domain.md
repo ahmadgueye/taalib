@@ -17,8 +17,10 @@ flowchart TD
   `published` ou `coming_soon` (`lib/cours-status.ts`) : `coming_soon` reste
   visible publiquement (annonce) mais sans contenu accessible.
 - **Thématiques** — sous-sections d'un cours, ordonnées manuellement via
-  `order_index` (drag & drop dans le dashboard, `sortable-reorder-list.tsx` +
-  `@dnd-kit`). Pas de statut propre — visibles dès que le cours parent l'est.
+  `order_index` (drag & drop sur la page du cours dans le dashboard,
+  `sortable-reorder-list.tsx` + `@dnd-kit`). Les ressources d'une thématique
+  s'ordonnent de la même façon, sur la page de la thématique ; un nouvel
+  élément se place en fin de liste. Pas de statut propre — visibles dès que le cours parent l'est.
 - **Ressources** — le contenu consommable dans une thématique : vidéo (URL
   externe), PDF, lien, ou texte libre (markdown, rendu par
   `markdown-content.tsx` / `text-resource-reader.tsx`). Statut

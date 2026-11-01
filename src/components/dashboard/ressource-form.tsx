@@ -33,9 +33,12 @@ const statusOptions = [
 
 export function RessourceForm({
   thematiqueOptions,
+  defaultThematiqueId,
   ressource,
 }: {
   thematiqueOptions: { id: string; title: string; coursTitle: string }[];
+  // Création depuis la page d'une thématique : déjà choisie.
+  defaultThematiqueId?: string;
   ressource?: {
     id: string;
     title: string;
@@ -62,7 +65,7 @@ export function RessourceForm({
           <FieldLabel htmlFor="thematiqueId">Thématique</FieldLabel>
           <Select
             name="thematiqueId"
-            defaultValue={ressource?.thematiqueId}
+            defaultValue={ressource?.thematiqueId ?? defaultThematiqueId}
             items={thematiqueOptions.map((t) => ({
               value: t.id,
               label: `${t.coursTitle} · ${t.title}`,

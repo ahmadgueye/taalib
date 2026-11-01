@@ -1,11 +1,12 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, max } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireContributor } from "@/lib/auth/get-session";
+import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { ressources } from "@/lib/db/schema";
 
@@ -49,7 +50,13 @@ export async function createRessource(
     return { error: parsed.error.issues[0].message };
   }
 
+  // Une ressource ajoutée se place en fin de thématique.
+  const [{ last }] = await db
+    .select({ last: max(ressources.orderIndex) })
+    .from(ressources)
+    .where(eq(ressources.thematiqueId, parsed.data.thematiqueId));
   await db.insert(ressources).values({
+    orderIndex: (last ?? -1) + 1,
     title: parsed.data.title,
     type: parsed.data.type,
     url: parsed.data.type === "texte" ? null : parsed.data.url,
@@ -62,7 +69,8 @@ export async function createRessource(
 
   revalidatePath("/dashboard/ressources");
   revalidatePath("/thematiques");
-  redirect("/dashboard/ressources");
+  revalidateCoursTree();
+  redirect(`/dashboard/thematiques/${parsed.data.thematiqueId}`);
 }
 
 export async function updateRessource(
@@ -100,7 +108,8 @@ export async function updateRessource(
 
   revalidatePath("/dashboard/ressources");
   revalidatePath("/thematiques");
-  redirect("/dashboard/ressources");
+  revalidateCoursTree();
+  redirect(`/dashboard/thematiques/${parsed.data.thematiqueId}`);
 }
 
 export async function deleteRessource(id: string) {
@@ -108,6 +117,7 @@ export async function deleteRessource(id: string) {
   await db.delete(ressources).where(eq(ressources.id, id));
   revalidatePath("/dashboard/ressources");
   revalidatePath("/thematiques");
+  revalidateCoursTree();
 }
 
 export async function reorderRessources(
@@ -127,7 +137,7 @@ export async function reorderRessources(
     )
   );
 
-  revalidatePath("/dashboard/thematiques");
+  revalidateCoursTree();
   revalidatePath("/thematiques");
   return undefined;
 }
