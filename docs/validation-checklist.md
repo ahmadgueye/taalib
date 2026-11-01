@@ -190,7 +190,14 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Utilisateurs : section « Comptes » en lecture seule, recherche par nom
       ou e-mail, liens vers la fiche de l'élève dans chacune de ses classes
 - [ ] Accueil du dashboard : plus de ligne « en attente d'autorisation »
-- [ ] Quiz → icône « Soumissions » : stats (tentatives, étudiants, score
+- [ ] Classe → Suivi s'ouvre sur « Par étudiant » (même après un
+      rechargement) ; « Par quiz » : chaque quiz débloqué avec réussi /
+      effectif, pas tenté, moyenne, bloqués ;
+      un quiz ouvre ses soumissions pour la classe : étudiants de la classe
+      seulement, ceux qui n'ont pas tenté en « Pas tenté », « Accorder une
+      tentative », réussite par question ; le fil d'Ariane ramène à la
+      classe ; un quiz verrouillé pour la classe → 404
+- [ ] Quiz → icône « Soumissions » (« Toutes les soumissions ») : stats (tentatives, étudiants, score
       moyen, taux de réussite), réussite par question, une ligne par étudiant
       (meilleur score, dernière tentative) ; cliquer une ligne ouvre un modal
       avec toutes ses tentatives

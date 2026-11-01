@@ -166,14 +166,30 @@ export async function getQuizAttemptsSummary(userId: string) {
   );
 }
 
-export async function getQuizSubmissionStats(quizId: string) {
-  const tentatives = await db.query.quizTentatives.findMany({
-    where: eq(quizTentatives.quizId, quizId),
-    orderBy: [desc(quizTentatives.completedAt)],
-    with: {
-      user: { columns: { id: true, fullName: true, email: true } },
-    },
-  });
+// `userIds` : limite aux étudiants donnés (ceux d'une classe).
+function tentativesOf(quizId: string, userIds?: string[]) {
+  return userIds
+    ? and(
+        eq(quizTentatives.quizId, quizId),
+        inArray(quizTentatives.userId, userIds)
+      )
+    : eq(quizTentatives.quizId, quizId);
+}
+
+export async function getQuizSubmissionStats(
+  quizId: string,
+  userIds?: string[]
+) {
+  const tentatives =
+    userIds?.length === 0
+      ? []
+      : await db.query.quizTentatives.findMany({
+          where: tentativesOf(quizId, userIds),
+          orderBy: [desc(quizTentatives.completedAt)],
+          with: {
+            user: { columns: { id: true, fullName: true, email: true } },
+          },
+        });
 
   const uniqueUsersCount = new Set(tentatives.map((t) => t.userId)).size;
   const averagePercent =
@@ -248,7 +264,10 @@ export async function getExtraAttempts(quizId: string) {
   return Object.fromEntries(rows.map((r) => [r.userId, r.extra]));
 }
 
-export async function getQuizQuestionStats(quizId: string) {
+export async function getQuizQuestionStats(
+  quizId: string,
+  userIds?: string[]
+) {
   const questions = await db.query.quizQuestions.findMany({
     where: eq(quizQuestions.quizId, quizId),
     orderBy: [asc(quizQuestions.orderIndex)],
@@ -256,12 +275,15 @@ export async function getQuizQuestionStats(quizId: string) {
   });
   if (questions.length === 0) return [];
 
-  const tentativeIds = (
-    await db.query.quizTentatives.findMany({
-      where: eq(quizTentatives.quizId, quizId),
-      columns: { id: true },
-    })
-  ).map((t) => t.id);
+  const tentativeIds =
+    userIds?.length === 0
+      ? []
+      : (
+          await db.query.quizTentatives.findMany({
+            where: tentativesOf(quizId, userIds),
+            columns: { id: true },
+          })
+        ).map((t) => t.id);
 
   if (tentativeIds.length === 0) {
     return questions.map((q) => ({

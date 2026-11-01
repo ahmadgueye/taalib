@@ -294,6 +294,7 @@ export async function grantQuizAttempt(
   revalidatePath(`/dashboard/quiz/${quizId}/soumissions`);
   revalidatePath("/dashboard/classes/[id]", "page");
   revalidatePath("/dashboard/classes/[id]/etudiants/[userId]", "page");
+  revalidatePath("/dashboard/classes/[id]/quiz/[quizId]", "page");
   revalidatePath(`/quiz/${quizId}`);
   return undefined;
 }

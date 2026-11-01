@@ -6,6 +6,8 @@ import { ClassForm } from "@/components/dashboard/class-form";
 import { ClassInvitePanel } from "@/components/dashboard/class-invite-panel";
 import { ClassMembers } from "@/components/dashboard/class-members";
 import { ClassProgressTable } from "@/components/dashboard/class-progress-table";
+import { ClassQuizProgressTable } from "@/components/dashboard/class-quiz-progress-table";
+import { ClassSuiviViews } from "@/components/dashboard/class-suivi-views";
 import { ClassTabs, type ClassTab } from "@/components/dashboard/class-tabs";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import {
@@ -14,7 +16,7 @@ import {
   getClassMembers,
   getCoursNotInClass,
 } from "@/lib/db/queries/classes";
-import { getClassProgress } from "@/lib/db/queries/class-progress";
+import { getClassProgressData } from "@/lib/db/queries/class-progress";
 
 const classTabs: ClassTab[] = ["suivi", "cours", "etudiants", "reglages"];
 
@@ -51,7 +53,7 @@ export default async function ClassPage({ params, searchParams }: Props) {
       getClassMembers(id),
       getClassCoursOutline(id),
       getCoursNotInClass(id),
-      getClassProgress(id),
+      getClassProgressData(id),
     ]);
 
   if (!classe) notFound();
@@ -72,11 +74,22 @@ export default async function ClassPage({ params, searchParams }: Props) {
         defaultTab={classTabs.find((t) => t === onglet) ?? "suivi"}
         studentCount={members.filter((m) => m.leftAt === null).length}
         suivi={
-          <Section hint="Leçons lues et quiz réussis parmi ce qui est débloqué pour la classe, mémorisation du Qur'an et dernière activité (leçon, quiz ou verset).">
-            <ClassProgressTable
-              classId={classe.id}
-              students={progress}
-              now={new Date()}
+          <Section hint="Leçons lues et quiz réussis parmi ce qui est débloqué pour la classe, mémorisation du Qur'an et dernière activité (leçon, quiz ou verset). Par quiz : la réussite de la classe sur chaque quiz débloqué.">
+            <ClassSuiviViews
+              byStudent={
+                <ClassProgressTable
+                  classId={classe.id}
+                  students={progress.students}
+                  now={new Date()}
+                />
+              }
+              byQuiz={
+                <ClassQuizProgressTable
+                  classId={classe.id}
+                  cours={coursOutline}
+                  quizzes={progress.quizzes}
+                />
+              }
             />
           </Section>
         }

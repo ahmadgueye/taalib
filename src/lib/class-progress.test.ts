@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildClassProgress,
+  buildClassQuizProgress,
   isInactive,
   type ClassProgressInput,
 } from "@/lib/class-progress";
@@ -162,5 +163,33 @@ describe("isInactive", () => {
     expect(isInactive(day(1), day(8))).toBe(false);
     expect(isInactive(day(1), day(9))).toBe(true);
     expect(isInactive(null, day(1))).toBe(true);
+  });
+});
+
+describe("buildClassQuizProgress", () => {
+  it("sums up each quiz over the students who can see it", () => {
+    const progress = buildClassQuizProgress(
+      input({
+        members: [
+          { userId: "u1", email: "a@x.test", fullName: null, leftAt: null },
+          { userId: "u2", email: "b@x.test", fullName: null, leftAt: null },
+          { userId: "u3", email: "c@x.test", fullName: null, leftAt: null },
+          // Parti avant le déblocage : ne compte pas.
+          { userId: "u4", email: "d@x.test", fullName: null, leftAt: day(2) },
+        ],
+        quiz: [{ id: "q1", unlockedAt: day(5), passingScore: 80, maxAttempts: 1 }],
+        attempts: [
+          { userId: "u1", quizId: "q1", score: 9, totalQuestions: 10, completedAt: day(6) },
+          { userId: "u2", quizId: "q1", score: 5, totalQuestions: 10, completedAt: day(6) },
+        ],
+      })
+    );
+    expect(progress.q1).toEqual({
+      students: 3,
+      passed: 1,
+      attempted: 2,
+      blocked: 1,
+      averageScore: 70,
+    });
   });
 });

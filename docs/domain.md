@@ -222,7 +222,20 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   `getQuizSubmissionStats` regroupe aussi les tentatives par étudiant (une
   ligne par élève avec son meilleur score et la date de sa dernière
   tentative, via `QuizSubmissionsTable`) ; cliquer une ligne ouvre un modal
-  listant toutes ses tentatives.
+  listant toutes ses tentatives. C'est la vue « Toutes les soumissions »,
+  toutes classes confondues (utile aux Éditeurs, qui n'ont pas accès aux
+  classes, et pour les comptes hors classe).
+- **Soumissions d'une classe (admin)** — dans l'onglet Suivi d'une classe,
+  « Par quiz » (`class-quiz-progress-table.tsx`, calcul pur
+  `buildClassQuizProgress` dans `lib/class-progress.ts`) liste les quiz
+  débloqués : réussi sur l'effectif, pas tenté, moyenne des meilleurs
+  scores, bloqués. Chaque quiz ouvre `/dashboard/classes/[id]/quiz/[quizId]`
+  (`notFound()` s'il n'est pas débloqué pour la classe) : les mêmes
+  statistiques, les étudiants de la classe — y compris ceux qui n'ont pas
+  tenté le quiz — avec « Accorder une tentative », et la réussite par
+  question limitée à la classe (`getQuizSubmissionStats` et
+  `getQuizQuestionStats` acceptent une liste d'étudiants). Le suivi s'ouvre
+  toujours sur « Par étudiant ».
 
 ## Feuille de route
 

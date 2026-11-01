@@ -1,6 +1,10 @@
 import { and, count, eq, inArray, max } from "drizzle-orm";
 
-import { buildClassProgress } from "@/lib/class-progress";
+import {
+  buildClassProgress,
+  buildClassQuizProgress,
+  type ClassProgressInput,
+} from "@/lib/class-progress";
 import { db } from "@/lib/db";
 import {
   classCours,
@@ -21,6 +25,21 @@ import { getChapters } from "@/lib/quran/queries";
 // Suivi des étudiants (actifs et anciens) d'une classe, pour la page de la
 // classe dans le dashboard. Réservé à l'admin : l'appelant vérifie le rôle.
 export async function getClassProgress(classId: string) {
+  const input = await loadClassProgressInput(classId);
+  return input ? buildClassProgress(input) : [];
+}
+
+// Le suivi par étudiant et par quiz, sur les mêmes données.
+export async function getClassProgressData(classId: string) {
+  const input = await loadClassProgressInput(classId);
+  return input
+    ? { students: buildClassProgress(input), quizzes: buildClassQuizProgress(input) }
+    : { students: [], quizzes: {} };
+}
+
+async function loadClassProgressInput(
+  classId: string
+): Promise<ClassProgressInput | null> {
   const members = await db
     .select({
       userId: profiles.id,
@@ -31,7 +50,7 @@ export async function getClassProgress(classId: string) {
     .from(classMembers)
     .innerJoin(profiles, eq(profiles.id, classMembers.userId))
     .where(eq(classMembers.classId, classId));
-  if (members.length === 0) return [];
+  if (members.length === 0) return null;
 
   const userIds = members.map((m) => m.userId);
   // Seuls les éléments publiés des cours encore suivis par la classe
@@ -131,7 +150,7 @@ export async function getClassProgress(classId: string) {
         .where(inArray(quizExtraAttempts.userId, userIds)),
     ]);
 
-  return buildClassProgress({
+  return {
     members,
     ressources: unlockedRessources,
     quiz: unlockedQuiz,
@@ -143,7 +162,7 @@ export async function getClassProgress(classId: string) {
       lastUpdatedAt: new Date(m.lastUpdatedAt ?? 0),
     })),
     chapters,
-  });
+  };
 }
 
 // Date de lecture de chaque ressource lue par l'étudiant, parmi celles

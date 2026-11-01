@@ -66,9 +66,12 @@ export function QuizSubmissionsTable({
   passingScore,
   maxAttempts,
   extras,
+  notAttempted = [],
 }: {
   quizId: string;
   students: StudentRow[];
+  // Étudiants de la classe qui n'ont pas encore tenté le quiz.
+  notAttempted?: { id: string; name: string }[];
   passingScore: number;
   // null : illimité.
   maxAttempts: number | null;
@@ -126,6 +129,16 @@ export function QuizSubmissionsTable({
                   timeStyle: "short",
                 })}
               </TableCell>
+            </TableRow>
+          ))}
+          {notAttempted.map((s) => (
+            <TableRow key={s.id}>
+              <TableCell>{s.name}</TableCell>
+              <TableCell className="text-muted-foreground">Pas tenté</TableCell>
+              <TableCell className="text-muted-foreground">
+                0{maxAttempts !== null && ` / ${maxAttempts + (extras[s.id] ?? 0)}`}
+              </TableCell>
+              <TableCell className="text-muted-foreground">—</TableCell>
             </TableRow>
           ))}
         </TableBody>

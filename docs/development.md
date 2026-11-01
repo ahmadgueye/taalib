@@ -89,7 +89,7 @@ simulés.
 | `lib/actions/quiz.test.ts` | Enregistrement d'un quiz : questions et choix gardés mis à jour en place (pas recréés), choix retirés supprimés, id d'un autre quiz traité comme nouveau, erreur qui nomme la question fautive |
 | `lib/quiz-import.test.ts` | Import de questions depuis un texte : QCM à une ou plusieurs réponses, Vrai/Faux reconnu et normalisé, décorations Markdown (gras, italique, puces) et texte autour ignorés, énoncé sur plusieurs lignes, blocs mal formés signalés |
 | `lib/quiz-grading.test.ts` | Calcul du score : une question n'est juste qu'avec exactement les bons choix, correction rendue pour chaque question |
-| `lib/class-progress.test.ts` | Suivi des étudiants : leçons et quiz comptés sur ce que la classe a débloqué, meilleure tentative et moyenne, quiz bloqués (tentatives épuisées, tentatives accordées déduites), ancien élève jugé sur ce qui était débloqué avant son départ, mémorisation au prorata des mots, dernière activité, seuil d'inactivité de 7 jours |
+| `lib/class-progress.test.ts` | Suivi des étudiants : leçons et quiz comptés sur ce que la classe a débloqué, meilleure tentative et moyenne, quiz bloqués (tentatives épuisées, tentatives accordées déduites), bilan par quiz sur les étudiants qui le voient, ancien élève jugé sur ce qui était débloqué avant son départ, mémorisation au prorata des mots, dernière activité, seuil d'inactivité de 7 jours |
 | `lib/db/queries/roadmap.test.ts` | Feuille de route : ordre des cours, états `upcoming` / `active` / `completed`, classe terminée réduite aux étapes débloquées, liste « À faire » (quiz après les leçons de sa thématique), badge « Nouveau » |
 | `lib/content-access.test.ts`, `lib/auth/content-access.test.ts` | Ce que voit un visiteur, un étudiant, le staff |
 

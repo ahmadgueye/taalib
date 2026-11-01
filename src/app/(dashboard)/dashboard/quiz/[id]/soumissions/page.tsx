@@ -71,14 +71,16 @@ export default async function QuizSoumissionsPage({ params }: Props) {
             label: quiz.title,
             href: `/dashboard/quiz/${quiz.id}`,
           },
-          { label: "Soumissions" },
+          { label: "Toutes les soumissions" },
         ]}
       />
       <h1 className="font-heading text-2xl font-semibold tracking-tight">
-        Soumissions — {quiz.title}
+        Toutes les soumissions — {quiz.title}
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Seuil de réussite : {quiz.passingScore}%.
+        Tous les étudiants, toutes classes confondues : le suivi d&apos;une
+        classe se trouve dans l&apos;onglet Suivi de sa page. Seuil de
+        réussite : {quiz.passingScore}%.
         {quiz.maxAttempts !== null &&
           ` ${quiz.maxAttempts} tentative${quiz.maxAttempts > 1 ? "s" : ""} par étudiant.`}
       </p>
