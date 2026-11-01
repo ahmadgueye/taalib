@@ -40,7 +40,9 @@ export default async function CoranPage({ searchParams }: Props) {
       : chapter.firstPage;
 
   return (
-    <div className="animate-in fade-in -mt-4 duration-300 sm:-mt-6">
+    // -mt-12 annule le padding haut de <main> : la barre d'outils du lecteur
+    // est collée sous l'en-tête dès le départ, comme une fois la page défilée.
+    <div className="animate-in fade-in -mt-12 duration-300">
       <h1 className="sr-only">Le Coran</h1>
       <QuranReader
         chapters={chapters}
