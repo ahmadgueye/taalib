@@ -182,7 +182,11 @@ function requestPage(pageNumber: number, mushafId: MushafId): Promise<QuranPage>
   const key = `${mushafId}:${pageNumber}`;
   const cached = pageRequests.get(key);
   if (cached) return cached;
-  const request = fetch(`/api/quran/pages/${pageNumber}?mushaf=${mushafId}`)
+  // Délai maximal : une requête suspendue (app mise en arrière-plan, réseau
+  // perdu en route) échoue au lieu de bloquer le chargement indéfiniment.
+  const request = fetch(`/api/quran/pages/${pageNumber}?mushaf=${mushafId}`, {
+    signal: AbortSignal.timeout(15_000),
+  })
     .then((res) => {
       if (!res.ok) throw new Error("Failed to load page");
       return res.json() as Promise<QuranPage>;
@@ -605,6 +609,12 @@ export function QuranReader({
   );
   const [pages, setPages] = useState<QuranPage[]>([]);
   const [loadingNext, setLoadingNext] = useState(false);
+  // Échecs de chargement d'affilée (réseau coupé, API en erreur), remis à
+  // zéro dès qu'une page arrive. Un compteur plutôt qu'un booléen : chaque
+  // nouvel échec relance l'effet de nouvel essai, même s'il survient dans la
+  // foulée d'un essai.
+  const [loadFailures, setLoadFailures] = useState(0);
+  const loadFailed = loadFailures > 0;
   const [visiblePageNumber, setVisiblePageNumber] = useState<number | null>(
     null,
   );
@@ -657,9 +667,17 @@ export function QuranReader({
     let cancelled = false;
     const token = loadTokenRef.current;
     preloadPage(initialPage, mushafId, viewMode);
-    fetchPage(initialPage, initialChapterId, mushafId).then((page) => {
-      if (!cancelled && token === loadTokenRef.current) setPages([page]);
-    });
+    fetchPage(initialPage, initialChapterId, mushafId).then(
+      (page) => {
+        if (cancelled || token !== loadTokenRef.current) return;
+        setLoadFailures(0);
+        setPages([page]);
+      },
+      () => {
+        if (!cancelled && token === loadTokenRef.current)
+          setLoadFailures((n) => n + 1);
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -731,10 +749,16 @@ export function QuranReader({
     if (pageNumbers.length === 0) return;
     Promise.all(
       pageNumbers.map((n) => fetchPage(n, selectedChapterId, mushafId)),
-    ).then((refetched) => {
-      if (token !== loadTokenRef.current) return;
-      setPages(refetched);
-    });
+    ).then(
+      (refetched) => {
+        if (token !== loadTokenRef.current) return;
+        setLoadFailures(0);
+        setPages(refetched);
+      },
+      () => {
+        if (token === loadTokenRef.current) setLoadFailures((n) => n + 1);
+      },
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mushafId]);
 
@@ -797,15 +821,52 @@ export function QuranReader({
         mushafId,
       );
       if (token !== loadTokenRef.current) return;
+      setLoadFailures(0);
       setPages((prev) =>
         prev.some((p) => p.pageNumber === page.pageNumber)
           ? prev
           : [...prev, page],
       );
+    } catch {
+      // Sans ça, rien ne relance la page : l'observateur ne se déclenche
+      // qu'à l'entrée du repère dans l'écran, et il y est déjà.
+      if (token === loadTokenRef.current) setLoadFailures((n) => n + 1);
     } finally {
       setLoadingNext(false);
     }
   }
+
+  // Relance ce qui a échoué : la page du verset visé si rien de la sourate
+  // n'est affiché, sinon la page suivante.
+  function retryLoad() {
+    if (currentChapterPages.length === 0) {
+      goToVerse(selectedChapterId, selectedVerseNumber);
+    } else {
+      loadNextPage();
+    }
+  }
+
+  // Après un échec, nouvel essai automatique de plus en plus espacé (2 s,
+  // 4 s… jusqu'à 30 s), et tout de suite quand le réseau revient ou que
+  // l'app repasse au premier plan : le cas typique de la PWA rouverte.
+  useEffect(() => {
+    if (!loadFailed) return;
+    const retry = () => {
+      if (document.visibilityState === "visible") retryLoad();
+    };
+    const timer = setTimeout(
+      retry,
+      Math.min(2000 * 2 ** (loadFailures - 1), 30_000),
+    );
+    window.addEventListener("online", retry);
+    document.addEventListener("visibilitychange", retry);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("online", retry);
+      document.removeEventListener("visibilitychange", retry);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadFailures]);
 
   // Only surahs spanning several mushaf pages need continuous scroll.
   useEffect(() => {
@@ -852,9 +913,18 @@ export function QuranReader({
       { length: targetPage - chapter.firstPage + 1 },
       (_, i) => chapter.firstPage + i,
     );
-    const fetchedPages = await Promise.all(
-      pageNumbers.map((p) => fetchPage(p, chapterId, mushafId)),
-    );
+    let fetchedPages: QuranPage[];
+    try {
+      fetchedPages = await Promise.all(
+        pageNumbers.map((p) => fetchPage(p, chapterId, mushafId)),
+      );
+    } catch {
+      if (token !== loadTokenRef.current) return;
+      setSelectedChapterId(chapterId);
+      setSelectedVerseNumber(verseNumber);
+      setLoadFailures((n) => n + 1);
+      return;
+    }
     if (token !== loadTokenRef.current) return;
     // Set together in one commit: selectedChapterId must never be visible
     // with a `pages` array from a different chapter, or the infinite-scroll
@@ -863,6 +933,7 @@ export function QuranReader({
     // already part of fetchedPages.
     setSelectedChapterId(chapterId);
     setSelectedVerseNumber(verseNumber);
+    setLoadFailures(0);
     setPages(fetchedPages);
   }
 
@@ -892,12 +963,18 @@ export function QuranReader({
     }
 
     pendingVerseKey.current = `${chapterId}:${verseNumber}`;
-    const page = await fetchPage(pageNumber, chapterId, mushafId);
-    if (token !== loadTokenRef.current) return;
-    setPages([page]);
+    try {
+      const page = await fetchPage(pageNumber, chapterId, mushafId);
+      if (token !== loadTokenRef.current) return;
+      setLoadFailures(0);
+      setPages([page]);
+    } catch {
+      if (token === loadTokenRef.current) setLoadFailures((n) => n + 1);
+    }
   }
 
   function handleNavigate(chapterId: number, verseNumber: number) {
+    setLoadFailures(0);
     setSelectedChapterId(chapterId);
     setSelectedVerseNumber(verseNumber);
     goToVerse(chapterId, verseNumber);
@@ -911,6 +988,15 @@ export function QuranReader({
     chapters,
     selectedChapterId,
   });
+
+  const loadErrorNotice = (
+    <div className="flex flex-col items-center gap-3 py-8 text-center text-sm text-muted-foreground">
+      <p>La page n&apos;a pas pu être chargée. Nouvel essai automatique…</p>
+      <Button variant="outline" size="sm" onClick={retryLoad}>
+        Réessayer maintenant
+      </Button>
+    </div>
+  );
 
   // Shared between the normal layout and the Zen overlay below — rendered
   // in exactly one of the two at a time (never both), since MushafLines
@@ -928,7 +1014,8 @@ export function QuranReader({
           viewMode === "arabic" ? "max-w-7xl px-6" : "max-w-3xl",
         )}
       >
-        {currentChapterPages.length === 0 && (
+        {currentChapterPages.length === 0 && loadFailed && loadErrorNotice}
+        {currentChapterPages.length === 0 && !loadFailed && (
           <div className="space-y-4">
             <Skeleton className="h-6 w-2/3" />
             <Skeleton className="h-6 w-full" />
@@ -1078,6 +1165,7 @@ export function QuranReader({
         {hasMultiplePages && (
           <>
             <div ref={sentinelRef} />
+            {loadFailed && currentChapterPages.length > 0 && loadErrorNotice}
             {loadingNext && (
               <div className="space-y-4 pb-8">
                 <Skeleton className="h-6 w-full" />

@@ -182,6 +182,9 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] `/coran` : ouvrir une sourate jamais lue s'affiche en moins d'une
       seconde ; en mode Lecture la page suivante est déjà prête au
       défilement ; `/coran?sourate=5&verset=90` arrive bien sur le verset 90
+- [ ] `/coran` en mode avion le temps d'ouvrir une sourate sur plusieurs
+      pages : message « La page n'a pas pu être chargée », puis la suite
+      s'affiche seule une fois le réseau revenu (y compris en PWA)
 
 ## 6. Ce qu'il manque / ce qui frustre (libre)
 Noter tout ce qu'on cherche sans le trouver, tout ce qui demande trop de

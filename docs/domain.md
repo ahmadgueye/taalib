@@ -229,6 +229,13 @@ sur l'API externe Quran Foundation).
   même temps, la page suivante est préchargée dès que la dernière s'affiche,
   et `api/quran/pages/[page]` est mis en cache (navigateur une semaine, CDN
   Vercel un an) : le texte du Coran ne change pas.
+- **Page qui n'arrive pas** — une requête de page abandonne au bout de 15 s.
+  Après un échec (réseau coupé, PWA rouverte, API en erreur), le lecteur
+  affiche « La page n'a pas pu être chargée » avec un bouton « Réessayer
+  maintenant », et réessaie seul : 2 s, 4 s… jusqu'à 30 s d'écart, et tout
+  de suite quand le réseau revient ou que l'app repasse au premier plan.
+  Côté serveur, un 401 de l'API Quran Foundation fait redemander un jeton
+  et rejouer la requête une fois.
 - **Rendu mushaf** — `components/public/quran-reader.tsx` reconstitue une
   page de mushaf authentique (pagination fixe façon Coran papier, pas un flux
   continu), avec la police QCF officielle (`lib/quran/qcf-font.ts`, une
