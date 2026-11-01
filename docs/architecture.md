@@ -71,8 +71,9 @@ deux layouts et deux publics différents :
   exception : `createQuiz` redirige vers une cinquième page,
   `dashboard/quiz/[id]/questions/page.tsx`, dédiée à la gestion des questions
   et choix imbriqués. `classes` (admin seulement) n'a pas de page `edit` :
-  `dashboard/classes/[id]/page.tsx` réunit le formulaire, le code
-  d'invitation et la liste des étudiants. Voir [`how-to.md`](./how-to.md) pour dupliquer ce
+  `dashboard/classes/[id]/page.tsx` réunit le formulaire, le suivi des
+  étudiants, les cours, le code d'invitation et la liste des étudiants ;
+  `dashboard/classes/[id]/etudiants/[userId]/page.tsx` détaille un étudiant. Voir [`how-to.md`](./how-to.md) pour dupliquer ce
   pattern sur une nouvelle entité.
 
 Chaque groupe a son propre `layout.tsx` — pas de layout racine partagé au-delà
