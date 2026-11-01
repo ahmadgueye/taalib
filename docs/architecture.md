@@ -63,7 +63,8 @@ deux layouts et deux publics différents :
 - **`(dashboard)/dashboard/`** — l'admin, protégé par `proxy.ts` +
   une double vérification de rôle dans
   `src/app/(dashboard)/dashboard/layout.tsx` (un `viewer` qui y accède est
-  renvoyé vers `/?welcome=1`, jamais informé de l'existence du dashboard). Une entité "Foo" y a
+  renvoyé vers `/?welcome=1`, jamais informé de l'existence du dashboard). Sur
+  mobile, la sidebar se replie dans un menu latéral (`dashboard-sidebar.tsx`). Une entité "Foo" y a
   systématiquement le même quatuor de pages :
   `dashboard/foo/page.tsx` (liste), `dashboard/foo/new/page.tsx` (création),
   `dashboard/foo/[id]/edit/page.tsx` (édition), plus un composant `foo-form.tsx`

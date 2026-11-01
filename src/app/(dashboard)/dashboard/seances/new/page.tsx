@@ -1,3 +1,4 @@
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { SeanceForm } from "@/components/dashboard/seance-form";
 import { getAllRessources } from "@/lib/db/queries/ressources";
 import { getAllThematiques } from "@/lib/db/queries/thematiques";
@@ -23,6 +24,12 @@ export default async function NewSeancePage() {
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Séances", href: "/dashboard/seances" },
+          { label: "Nouvelle séance" },
+        ]}
+      />
       <h1 className="font-heading text-2xl font-semibold tracking-tight">
         Nouvelle séance
       </h1>

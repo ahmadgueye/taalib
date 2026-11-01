@@ -161,7 +161,12 @@ export function QuizTable({
                   className="max-w-xs truncate font-medium"
                   title={quiz.title}
                 >
-                  {quiz.title}
+                  <Link
+                    href={`/dashboard/quiz/${quiz.id}/questions`}
+                    className="hover:underline hover:underline-offset-4"
+                  >
+                    {quiz.title}
+                  </Link>
                 </TableCell>
                 <TableCell
                   className="max-w-xs truncate text-muted-foreground"
@@ -192,6 +197,7 @@ export function QuizTable({
                     variant="ghost"
                     size="icon-sm"
                     title="Questions"
+                    aria-label={`Questions de « ${quiz.title} »`}
                   >
                     <HelpCircle className="size-4" />
                   </Button>
@@ -203,6 +209,7 @@ export function QuizTable({
                     variant="ghost"
                     size="icon-sm"
                     title="Soumissions"
+                    aria-label={`Soumissions de « ${quiz.title} »`}
                   >
                     <BarChart3 className="size-4" />
                   </Button>
@@ -212,6 +219,7 @@ export function QuizTable({
                     variant="ghost"
                     size="icon-sm"
                     title="Modifier"
+                    aria-label={`Modifier « ${quiz.title} »`}
                   >
                     <Pencil className="size-4" />
                   </Button>

@@ -105,7 +105,12 @@ export function NarratorsTable({ data }: { data: NarratorRow[] }) {
                   className="max-w-xs truncate font-medium"
                   title={n.name}
                 >
-                  {n.name}
+                  <Link
+                    href={`/dashboard/rapporteurs/${n.id}/edit`}
+                    className="hover:underline hover:underline-offset-4"
+                  >
+                    {n.name}
+                  </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {n.hadithCount}
@@ -121,6 +126,7 @@ export function NarratorsTable({ data }: { data: NarratorRow[] }) {
                     nativeButton={false}
                     variant="ghost"
                     size="icon-sm"
+                    aria-label={`Modifier « ${n.name} »`}
                   >
                     <Pencil className="size-4" />
                   </Button>
@@ -129,7 +135,12 @@ export function NarratorsTable({ data }: { data: NarratorRow[] }) {
                     <span
                       title={`Cité par ${n.hadithCount} hadith${n.hadithCount > 1 ? "s" : ""} — fusionnez-le plutôt depuis la page d'édition.`}
                     >
-                      <Button variant="ghost" size="icon-sm" disabled>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        disabled
+                        aria-label={`Suppression impossible : « ${n.name} » est encore cité`}
+                      >
                         <Trash2 className="size-4" />
                       </Button>
                     </span>

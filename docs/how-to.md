@@ -57,6 +57,9 @@ Fichiers à créer/modifier, dans l'ordre :
      sans props.
    - `src/app/(dashboard)/dashboard/foo/[id]/edit/page.tsx` — `await params`,
      `getFooById(id)`, `notFound()` si absent, rend `<FooForm foo={f} />`.
+   - Mettre un `<Breadcrumbs>` (`src/components/dashboard/breadcrumbs.tsx`)
+     en haut des pages `new` et `edit`, et dans la table lier le titre de
+     chaque ligne vers sa page avec un `aria-label` sur chaque bouton icône.
    - Ajouter l'entrée dans le bon groupe de `navGroups` de
      `src/components/dashboard/dashboard-sidebar.tsx` (Enseignement,
      Hadiths, ou Gestion pour ce qui est réservé à l'admin).

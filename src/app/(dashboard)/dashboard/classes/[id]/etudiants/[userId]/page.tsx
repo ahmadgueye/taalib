@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Check, ChevronLeft, TriangleAlert } from "lucide-react";
+import { Check, TriangleAlert } from "lucide-react";
 
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { MemorizationDashboard } from "@/components/public/memorization-dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,15 +115,15 @@ export default async function ClassStudentPage({ params }: Props) {
 
   return (
     <div>
-      <Link
-        href={`/dashboard/classes/${classe.id}`}
-        className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="size-4" />
-        {classe.name}
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: "Classes", href: "/dashboard/classes" },
+          { label: classe.name, href: `/dashboard/classes/${classe.id}` },
+          { label: student.name },
+        ]}
+      />
 
-      <h1 className="mt-4 font-heading text-2xl font-semibold tracking-tight">
+      <h1 className="font-heading text-2xl font-semibold tracking-tight">
         {student.name}
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">

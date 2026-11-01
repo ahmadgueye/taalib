@@ -231,7 +231,12 @@ export function RessourcesTable({
                   className="max-w-xs truncate font-medium"
                   title={r.title}
                 >
-                  {r.title}
+                  <Link
+                    href={`/dashboard/ressources/${r.id}/edit`}
+                    className="hover:underline hover:underline-offset-4"
+                  >
+                    {r.title}
+                  </Link>
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary">{typeLabels[r.type]}</Badge>
@@ -258,6 +263,7 @@ export function RessourcesTable({
                     nativeButton={false}
                     variant="ghost"
                     size="icon-sm"
+                    aria-label={`Modifier « ${r.title} »`}
                   >
                     <Pencil className="size-4" />
                   </Button>

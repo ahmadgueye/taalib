@@ -78,6 +78,7 @@ export function ClassesTable({ data }: { data: ClassRow[] }) {
                 nativeButton={false}
                 variant="ghost"
                 size="icon-sm"
+                aria-label={`Gérer « ${c.name} »`}
               >
                 <Settings className="size-4" />
               </Button>

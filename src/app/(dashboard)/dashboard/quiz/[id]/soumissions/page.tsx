@@ -9,8 +9,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Breadcrumbs,
+  thematiqueCrumbs,
+} from "@/components/dashboard/breadcrumbs";
 import { QuizSubmissionsTable } from "@/components/dashboard/quiz-submissions-table";
-import { getQuizById } from "@/lib/db/queries/quiz";
+import { getQuizWithThematique } from "@/lib/db/queries/quiz";
 import {
   getQuizQuestionStats,
   getQuizSubmissionStats,
@@ -22,7 +26,7 @@ type Props = {
 
 export default async function QuizSoumissionsPage({ params }: Props) {
   const { id } = await params;
-  const quiz = await getQuizById(id);
+  const quiz = await getQuizWithThematique(id);
   if (!quiz) notFound();
 
   const [
@@ -54,6 +58,16 @@ export default async function QuizSoumissionsPage({ params }: Props) {
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          ...thematiqueCrumbs(quiz.thematique),
+          {
+            label: quiz.title,
+            href: `/dashboard/quiz/${quiz.id}/questions`,
+          },
+          { label: "Soumissions" },
+        ]}
+      />
       <h1 className="font-heading text-2xl font-semibold tracking-tight">
         Soumissions — {quiz.title}
       </h1>

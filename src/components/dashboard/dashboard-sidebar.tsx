@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,6 +9,7 @@ import {
   GraduationCap,
   HelpCircle,
   LayoutDashboard,
+  Menu,
   Link as LinkIcon,
   Quote,
   UserRound,
@@ -15,6 +17,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { StaffModeSwitch } from "@/components/layout/staff-mode-switch";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
@@ -85,11 +94,11 @@ function NavLink({
   );
 }
 
-export function DashboardSidebar({ isAdmin }: { isAdmin: boolean }) {
+function SidebarContent({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 flex h-screen w-56 shrink-0 flex-col justify-between overflow-y-auto border-r p-4">
+    <>
       <div>
         <Link
           href="/"
@@ -132,6 +141,51 @@ export function DashboardSidebar({ isAdmin }: { isAdmin: boolean }) {
         <SignOutButton className="flex-1" />
         <ThemeToggle />
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function DashboardSidebar({ isAdmin }: { isAdmin: boolean }) {
+  const pathname = usePathname();
+  // Le menu mobile est ouvert pour une page donnée : il se referme dès que
+  // l'on navigue, sans effet à synchroniser.
+  const [openOn, setOpenOn] = useState<string | null>(null);
+
+  return (
+    <>
+      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col justify-between overflow-y-auto border-r p-4 md:flex">
+        <SidebarContent isAdmin={isAdmin} />
+      </aside>
+
+      {/* Sur mobile, la navigation se replie dans un menu latéral. */}
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b bg-background px-4 py-2 md:hidden">
+        <Link
+          href="/"
+          lang="ar"
+          className="font-logo-arabic text-xl font-bold tracking-tight"
+        >
+          طالب
+        </Link>
+        <Sheet
+          open={openOn === pathname}
+          onOpenChange={(open) => setOpenOn(open ? pathname : null)}
+        >
+          <SheetTrigger
+            render={
+              <Button variant="ghost" size="icon" aria-label="Ouvrir le menu" />
+            }
+          >
+            <Menu className="size-5" />
+          </SheetTrigger>
+          <SheetContent
+            side="left"
+            className="w-64 justify-between overflow-y-auto p-4"
+          >
+            <SheetTitle className="sr-only">Menu du dashboard</SheetTitle>
+            <SidebarContent isAdmin={isAdmin} />
+          </SheetContent>
+        </Sheet>
+      </header>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { ClassCours } from "@/components/dashboard/class-cours";
 import { ClassForm } from "@/components/dashboard/class-form";
 import { ClassInvitePanel } from "@/components/dashboard/class-invite-panel";
@@ -36,6 +37,12 @@ export default async function ClassPage({ params }: Props) {
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Classes", href: "/dashboard/classes" },
+          { label: classe.name },
+        ]}
+      />
       <h1 className="font-heading text-2xl font-semibold tracking-tight">
         {classe.name}
       </h1>

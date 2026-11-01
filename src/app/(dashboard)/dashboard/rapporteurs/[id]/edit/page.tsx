@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { NarratorForm } from "@/components/dashboard/narrator-form";
 import { NarratorMergeForm } from "@/components/dashboard/narrator-merge-form";
 import { getAllNarrators, getNarratorById } from "@/lib/db/queries/narrators";
@@ -23,6 +24,12 @@ export default async function EditRapporteurPage({ params }: Props) {
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Rapporteurs", href: "/dashboard/rapporteurs" },
+          { label: n.name },
+        ]}
+      />
       <h1 className="font-heading text-2xl font-semibold tracking-tight">
         Modifier le rapporteur
       </h1>

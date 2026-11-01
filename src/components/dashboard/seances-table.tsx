@@ -110,7 +110,12 @@ export function SeancesTable({ data }: { data: SeanceRow[] }) {
                   className="max-w-xs truncate font-medium"
                   title={s.title}
                 >
-                  {s.title}
+                  <Link
+                    href={`/dashboard/seances/${s.id}/edit`}
+                    className="hover:underline hover:underline-offset-4"
+                  >
+                    {s.title}
+                  </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {s.sessionDate
@@ -126,6 +131,7 @@ export function SeancesTable({ data }: { data: SeanceRow[] }) {
                     nativeButton={false}
                     variant="ghost"
                     size="icon-sm"
+                    aria-label={`Modifier « ${s.title} »`}
                   >
                     <Pencil className="size-4" />
                   </Button>
