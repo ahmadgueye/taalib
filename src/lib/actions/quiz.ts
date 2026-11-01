@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, notInArray } from "drizzle-orm";
+import { and, eq, inArray, max, notInArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -162,9 +162,15 @@ export async function createQuiz(
   const { meta, questions } = parsed;
 
   const quizId = await db.transaction(async (tx) => {
+    // Un quiz ajouté se place en fin de thématique.
+    const [{ last }] = await tx
+      .select({ last: max(quiz.orderIndex) })
+      .from(quiz)
+      .where(eq(quiz.thematiqueId, meta.thematiqueId));
     const [created] = await tx
       .insert(quiz)
       .values({
+        orderIndex: (last ?? -1) + 1,
         title: meta.title,
         description: meta.description || null,
         thematiqueId: meta.thematiqueId,
@@ -223,4 +229,24 @@ export async function deleteQuiz(id: string) {
   revalidatePath("/dashboard/quiz");
   revalidatePath("/thematiques");
   revalidateCoursTree();
+}
+
+export async function reorderQuiz(
+  thematiqueId: string,
+  orderedIds: string[]
+): Promise<{ error?: string } | undefined> {
+  await requireContributor();
+
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      db
+        .update(quiz)
+        .set({ orderIndex: index, updatedAt: new Date() })
+        .where(and(eq(quiz.id, id), eq(quiz.thematiqueId, thematiqueId)))
+    )
+  );
+
+  revalidateCoursTree();
+  revalidatePath("/thematiques");
+  return undefined;
 }

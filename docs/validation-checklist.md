@@ -134,6 +134,10 @@ Passer le compte en `contributor` puis `admin` dans Studio
       formulaire d'un hadith, en créer un nouveau en tapant son nom ;
       `/dashboard/rapporteurs` : renommer, fusionner deux orthographes (les
       hadiths suivent), suppression refusée tant qu'il est cité
+- [ ] Quiz : sur la page d'une thématique, glisser-déposer un quiz change
+      son ordre (toast « Ordre mis à jour. »), repris dans la feuille de
+      route et la page publique de la thématique ; un nouveau quiz se place
+      en dernier
 - [ ] Quiz : onglets « Questions » (par défaut) et « Réglages », l'URL suit
       (`?onglet=reglages`) ; un nouveau quiz s'ouvre sur « Réglages » ;
       modifier un réglage puis enregistrer depuis l'onglet Questions le garde

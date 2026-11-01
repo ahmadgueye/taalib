@@ -79,8 +79,8 @@ deux layouts et deux publics différents :
   `dashboard/classes/[id]/etudiants/[userId]/page.tsx` détaille un étudiant.
   Cours, thématiques et ressources se gèrent en arbre :
   `dashboard/cours/[id]/page.tsx` liste les thématiques du cours (réordonnables)
-  et `dashboard/thematiques/[id]/page.tsx` les ressources (réordonnables), quiz
-  et hadiths de la thématique, avec un fil d'Ariane (`breadcrumbs.tsx`). Les
+  et `dashboard/thematiques/[id]/page.tsx` les ressources et quiz
+  (réordonnables) et les hadiths de la thématique, avec un fil d'Ariane (`breadcrumbs.tsx`). Les
   boutons « Ajouter » passent le parent en paramètre (`?cours=`, `?thematique=`)
   pour pré-remplir le formulaire, et les actions renvoient ensuite dans l'arbre
   (les hadiths seulement s'ils ont été ouverts depuis une thématique). Il n'y a

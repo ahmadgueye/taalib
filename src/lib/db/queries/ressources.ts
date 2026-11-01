@@ -39,7 +39,7 @@ export async function getPublishedRessourceById(id: string) {
           },
           quiz: {
             where: eq(quiz.status, "published"),
-            orderBy: [asc(quiz.orderIndex)],
+            orderBy: [asc(quiz.orderIndex), asc(quiz.createdAt)],
           },
         },
       },

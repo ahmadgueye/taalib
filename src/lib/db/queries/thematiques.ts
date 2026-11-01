@@ -35,7 +35,7 @@ export async function getThematiqueBySlug(slug: string) {
       hadiths: true,
       quiz: {
         where: eq(quiz.status, "published"),
-        orderBy: [asc(quiz.orderIndex)],
+        orderBy: [asc(quiz.orderIndex), asc(quiz.createdAt)],
         with: { questions: { columns: { id: true } } },
       },
     },
@@ -55,7 +55,7 @@ export async function getThematiqueTree(id: string) {
         orderBy: [asc(ressources.orderIndex), asc(ressources.title)],
       },
       quiz: {
-        orderBy: [asc(quiz.orderIndex), asc(quiz.title)],
+        orderBy: [asc(quiz.orderIndex), asc(quiz.createdAt)],
         with: { questions: { columns: { id: true } } },
       },
       hadiths: {

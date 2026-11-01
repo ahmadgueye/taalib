@@ -46,11 +46,14 @@ vi.mock("@/lib/db", () => {
     }),
   };
   return {
-    db: { transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) },
+    db: {
+      transaction: async (fn: (t: typeof tx) => unknown) => fn(tx),
+      update: tx.update,
+    },
   };
 });
 
-import { updateQuiz } from "@/lib/actions/quiz";
+import { reorderQuiz, updateQuiz } from "@/lib/actions/quiz";
 
 const Q1 = "11111111-1111-4111-8111-111111111111";
 const C1 = "22222222-2222-4222-8222-222222222222";
@@ -188,5 +191,15 @@ describe("updateQuiz", () => {
       error: "Question 2 : Chaque question doit avoir un énoncé.",
     });
     expect(mocks.ops).toHaveLength(0);
+  });
+});
+
+describe("reorderQuiz", () => {
+  it("saves the quiz order given by the list", async () => {
+    await reorderQuiz("t1", ["quiz-b", "quiz-a"]);
+    expect(opsOn(quiz, "update").map((o) => o.values)).toMatchObject([
+      { orderIndex: 0 },
+      { orderIndex: 1 },
+    ]);
   });
 });

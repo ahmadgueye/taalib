@@ -99,7 +99,7 @@ export async function getClassCoursOutline(classId: string) {
                 },
                 quiz: {
                   where: eq(quiz.status, "published"),
-                  orderBy: [asc(quiz.orderIndex), asc(quiz.title)],
+                  orderBy: [asc(quiz.orderIndex), asc(quiz.createdAt)],
                 },
               },
             },

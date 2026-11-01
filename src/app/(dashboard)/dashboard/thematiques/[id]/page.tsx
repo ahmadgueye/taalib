@@ -8,7 +8,7 @@ import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { DeleteButton } from "@/components/dashboard/delete-button";
 import { SortableReorderList } from "@/components/dashboard/sortable-reorder-list";
 import { deleteHadith } from "@/lib/actions/hadiths";
-import { deleteQuiz } from "@/lib/actions/quiz";
+import { deleteQuiz, reorderQuiz } from "@/lib/actions/quiz";
 import { deleteRessource, reorderRessources } from "@/lib/actions/ressources";
 import { getThematiqueTree } from "@/lib/db/queries/thematiques";
 
@@ -176,6 +176,11 @@ export default async function ThematiquePage({ params }: Props) {
       <section className="mt-10">
         <SectionHeader
           title="Quiz"
+          hint={
+            t.quiz.length > 1
+              ? "Glisse-dépose pour choisir l'ordre d'affichage."
+              : undefined
+          }
           addHref={`/dashboard/quiz/new?thematique=${t.id}`}
           addLabel="Ajouter un quiz"
         />
@@ -183,32 +188,33 @@ export default async function ThematiquePage({ params }: Props) {
           {t.quiz.length === 0 ? (
             <EmptyState>Aucun quiz dans cette thématique.</EmptyState>
           ) : (
-            <ul className="flex flex-col gap-2">
-              {t.quiz.map((q) => (
-                <li key={q.id} className={rowClass}>
-                  <div className="min-w-0 flex-1">
-                    <Link
+            <SortableReorderList
+              key={t.quiz.map((q) => q.id).join(",")}
+              items={t.quiz.map((q) => ({
+                id: q.id,
+                label: q.title,
+                sublabel: `${q.questions.length} question${
+                  q.questions.length > 1 ? "s" : ""
+                }`,
+                href: `/dashboard/quiz/${q.id}`,
+                trailing: (
+                  <div className="flex shrink-0 items-center gap-1">
+                    {q.status === "draft" && (
+                      <Badge variant="outline">Brouillon</Badge>
+                    )}
+                    <EditButton
                       href={`/dashboard/quiz/${q.id}`}
-                      className="block truncate font-medium hover:underline hover:underline-offset-4"
-                    >
-                      {q.title}
-                    </Link>
-                    <div className="text-xs text-muted-foreground">
-                      {q.questions.length} question
-                      {q.questions.length > 1 ? "s" : ""}
-                    </div>
+                      label={q.title}
+                    />
+                    <DeleteButton
+                      action={deleteQuiz.bind(null, q.id)}
+                      itemLabel={q.title}
+                    />
                   </div>
-                  {q.status === "draft" && (
-                    <Badge variant="outline">Brouillon</Badge>
-                  )}
-                  <EditButton href={`/dashboard/quiz/${q.id}`} label={q.title} />
-                  <DeleteButton
-                    action={deleteQuiz.bind(null, q.id)}
-                    itemLabel={q.title}
-                  />
-                </li>
-              ))}
-            </ul>
+                ),
+              }))}
+              onReorder={reorderQuiz.bind(null, t.id)}
+            />
           )}
         </div>
       </section>
