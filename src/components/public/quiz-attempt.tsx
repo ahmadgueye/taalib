@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,6 +48,7 @@ export function QuizAttempt({
   const [missing, setMissing] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const router = useRouter();
 
   const answeredCount = questions.filter(
     (q) => (answers[q.id]?.size ?? 0) > 0
@@ -113,6 +115,8 @@ export function QuizAttempt({
         return;
       }
       setResult(res);
+      // Met à jour le résumé des tentatives en haut de la page.
+      router.refresh();
     });
   }
 

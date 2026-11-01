@@ -171,7 +171,10 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   question de QCM à Vrai/Faux remplace ses choix). Un score déjà obtenu
   n'est pas recalculé si une bonne réponse change.
 
-- **Passage** — `/quiz/[id]` (`quiz-attempt.tsx`) affiche les questions,
+- **Passage** — `/quiz/[id]` (`quiz-attempt.tsx`) rappelle en haut le
+  nombre de tentatives et le meilleur score de l'élève, avec un lien vers
+  son historique (`/quiz/[id]/historique`), s'il a déjà tenté le quiz ;
+  il affiche les questions,
   collecte les réponses côté client puis les soumet à `submitQuizAttempt`
   (`lib/actions/quiz-tentatives.ts`).
 - **Correction côté serveur uniquement** — le calcul est dans

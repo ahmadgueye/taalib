@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { History } from "lucide-react";
 
 import { BackButton } from "@/components/public/back-button";
 import { QuizAttempt } from "@/components/public/quiz-attempt";
@@ -8,6 +9,7 @@ import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { canSeeQuiz } from "@/lib/content-access";
 import { getQuizForAttempt } from "@/lib/db/queries/quiz";
+import { getQuizScores } from "@/lib/db/queries/quiz-tentatives";
 import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 
 type Props = {
@@ -42,6 +44,9 @@ export default async function QuizPage({ params }: Props) {
   ]);
   if (!quiz || !canSeeQuiz(access, quiz.id)) notFound();
 
+  // Déjà tenté : un accès direct aux tentatives précédentes.
+  const score = (await getQuizScores(profile.id, [quiz.id])).get(quiz.id);
+
   return (
     <div className="animate-in fade-in duration-300">
       <BackButton />
@@ -60,6 +65,17 @@ export default async function QuizPage({ params }: Props) {
       </h1>
       {quiz.description && (
         <p className="mt-2 text-muted-foreground">{quiz.description}</p>
+      )}
+      {score && (
+        <Link
+          href={`/quiz/${quiz.id}/historique`}
+          className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:underline hover:underline-offset-4"
+        >
+          <History className="size-4" />
+          {score.attemptsCount} tentative{score.attemptsCount > 1 ? "s" : ""} ·
+          meilleur score {score.bestScore}/{score.bestTotal} · voir mes
+          tentatives
+        </Link>
       )}
 
       <QuizAttempt quizId={quiz.id} questions={quiz.questions} />
