@@ -4,17 +4,15 @@ import { db } from "@/lib/db";
 import {
   cours,
   hadiths,
-  profiles,
   quiz,
   ressources,
   seances,
   thematiques,
 } from "@/lib/db/schema";
 
-// Ce qui attend une action du staff, pour l'accueil du dashboard. Les
-// demandes d'accès ne concernent que l'admin : l'appelant le précise.
-export async function getDashboardTodo({ isAdmin }: { isAdmin: boolean }) {
-  const [[draftRessources], [draftQuiz], [comingSoonCours], [pendingViewers]] =
+// Ce qui attend une action du staff, pour l'accueil du dashboard.
+export async function getDashboardTodo() {
+  const [[draftRessources], [draftQuiz], [comingSoonCours]] =
     await Promise.all([
       db
         .select({ value: count() })
@@ -25,19 +23,12 @@ export async function getDashboardTodo({ isAdmin }: { isAdmin: boolean }) {
         .select({ value: count() })
         .from(cours)
         .where(eq(cours.status, "coming_soon")),
-      isAdmin
-        ? db
-            .select({ value: count() })
-            .from(profiles)
-            .where(eq(profiles.role, "viewer"))
-        : Promise.resolve([{ value: 0 }]),
     ]);
 
   return {
     draftRessources: draftRessources.value,
     draftQuiz: draftQuiz.value,
     comingSoonCours: comingSoonCours.value,
-    pendingViewers: pendingViewers.value,
   };
 }
 

@@ -1,18 +1,9 @@
-import { asc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { UserRoleSelect } from "@/components/dashboard/user-role-select";
+import { AccountsTable } from "@/components/dashboard/accounts-table";
+import { TeamSection } from "@/components/dashboard/team-section";
 import { getCurrentProfile } from "@/lib/auth/get-session";
-import { db } from "@/lib/db";
-import { profiles } from "@/lib/db/schema";
+import { getAccounts, getTeam } from "@/lib/db/queries/users";
 
 export default async function DashboardUtilisateursPage() {
   const currentProfile = await getCurrentProfile();
@@ -20,42 +11,39 @@ export default async function DashboardUtilisateursPage() {
     notFound();
   }
 
-  const usersList = await db
-    .select()
-    .from(profiles)
-    .orderBy(asc(profiles.email));
+  const [team, accounts] = await Promise.all([getTeam(), getAccounts()]);
 
   return (
     <div>
       <h1 className="font-heading text-2xl font-semibold tracking-tight">
         Utilisateurs
       </h1>
-      <p className="mt-1 text-muted-foreground">
-        Autorise les personnes qui peuvent ajouter des ressources.
-      </p>
 
-      <Table className="mt-6">
-        <TableHeader>
-          <TableRow>
-            <TableHead>Email</TableHead>
-            <TableHead>Nom</TableHead>
-            <TableHead className="w-44">Rôle</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {usersList.map((u) => (
-            <TableRow key={u.id}>
-              <TableCell className="font-medium">{u.email}</TableCell>
-              <TableCell className="text-muted-foreground">
-                {u.fullName ?? "—"}
-              </TableCell>
-              <TableCell>
-                <UserRoleSelect userId={u.id} role={u.role} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <section className="mt-6">
+        <h2 className="font-heading text-lg font-semibold tracking-tight">
+          Équipe ({team.length})
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Les personnes qui ont accès au dashboard. Pour en ajouter une, saisis
+          l&apos;e-mail de son compte : elle doit s&apos;être connectée au moins
+          une fois sur Taalib.
+        </p>
+        <div className="mt-4">
+          <TeamSection members={team} currentUserId={currentProfile.id} />
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="font-heading text-lg font-semibold tracking-tight">
+          Comptes ({accounts.length})
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Élèves et visiteurs du site, sans accès au dashboard.
+        </p>
+        <div className="mt-4">
+          <AccountsTable data={accounts} />
+        </div>
+      </section>
     </div>
   );
 }

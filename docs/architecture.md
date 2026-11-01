@@ -86,7 +86,7 @@ deux layouts et deux publics différents :
   plus de liste à plat des thématiques : `dashboard/thematiques` redirige vers
   les cours. L'accueil
   `dashboard/page.tsx` est orienté tâches : ce qui attend une action
-  (brouillons, cours « Bientôt disponible », demandes d'accès pour l'admin),
+  (brouillons, cours « Bientôt disponible »),
   les derniers éléments modifiés avec un lien vers leur édition, les
   prochaines séances et les classes (requêtes dans
   `src/lib/db/queries/dashboard.ts`) ; ses liens « À traiter » ouvrent les

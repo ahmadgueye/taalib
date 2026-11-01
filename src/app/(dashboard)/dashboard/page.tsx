@@ -118,7 +118,7 @@ export default async function DashboardHomePage() {
     [seancesCount],
     [hadithsCount],
   ] = await Promise.all([
-    getDashboardTodo({ isAdmin }),
+    getDashboardTodo(),
     getRecentEdits(8),
     getUpcomingSeances(3),
     isAdmin ? getAllClasses() : Promise.resolve([]),
@@ -131,11 +131,6 @@ export default async function DashboardHomePage() {
   ]);
 
   const todoItems = [
-    {
-      count: todo.pendingViewers,
-      label: `${plural(todo.pendingViewers, "personne")} en attente d'autorisation`,
-      href: "/dashboard/utilisateurs",
-    },
     {
       count: todo.draftRessources,
       label: `${plural(todo.draftRessources, "ressource")} en brouillon`,

@@ -142,8 +142,15 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Page d'une classe : s'ouvre sur l'onglet « Suivi » ; changer d'onglet
       met à jour l'URL (`?onglet=cours`…) et un rechargement le conserve ;
       ajouter un étudiant ou enregistrer les réglages garde l'onglet ouvert
-- [ ] Utilisateurs (admin) : changer un rôle ; impossible de retirer le
-      dernier admin
+- [ ] Utilisateurs (admin) : section « Équipe » ; ajouter par e-mail un
+      compte existant (Contributeur ou Admin) → il passe dans l'équipe ; un
+      e-mail inconnu ou déjà dans l'équipe donne un message clair ; changer
+      un rôle ; impossible de retirer le dernier admin ; « Retirer l'accès »
+      absent sur sa propre ligne, et sur une autre le compte repasse dans
+      « Comptes »
+- [ ] Utilisateurs : section « Comptes » en lecture seule, recherche par nom
+      ou e-mail, liens vers la fiche de l'élève dans chacune de ses classes
+- [ ] Accueil du dashboard : plus de ligne « en attente d'autorisation »
 - [ ] Quiz → icône « Soumissions » : stats (tentatives, étudiants, score
       moyen, taux de réussite), réussite par question, une ligne par étudiant
       (meilleur score, dernière tentative) ; cliquer une ligne ouvre un modal
