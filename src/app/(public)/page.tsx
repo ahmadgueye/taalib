@@ -4,6 +4,8 @@ import { CourseCard } from "@/components/public/course-card";
 import { CourseProgress } from "@/components/public/course-progress";
 import { RoadmapTrack } from "@/components/public/roadmap-track";
 import { TodoList } from "@/components/public/todo-list";
+import { VitrineDoor } from "@/components/public/vitrine-door";
+import { VitrineFeatures } from "@/components/public/vitrine-features";
 import { WelcomeToast } from "@/components/public/welcome-toast";
 import { Button } from "@/components/ui/button";
 import { getContentAccess } from "@/lib/auth/content-access";
@@ -113,49 +115,109 @@ export default async function Home({ searchParams }: Props) {
   );
 }
 
+const BAYAN_STEPS = [
+  { title: "Inscris-toi au programme Bayān", detail: "Sur bayanun.com." },
+  {
+    title: "Reçois le code de ta classe",
+    detail: "Ton enseignant te le transmet.",
+  },
+  { title: "Entre sur Taalib", detail: "Ta feuille de route t'y attend." },
+];
+
 function Vitrine() {
   return (
-    <div className="flex flex-col gap-10 animate-in fade-in duration-300">
-      <section className="max-w-2xl">
-        <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
-          Taalib
-        </h1>
-        <p className="mt-2 text-lg sm:text-xl">
-          La plateforme de cours du programme{" "}
-          <span className="font-semibold">Bayān</span>.
-        </p>
-        <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-          Les cours, ressources et quiz sont réservés aux étudiants
-          du programme, au rythme de leur classe. Le Qur&apos;an reste ouvert à
-          tous.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-2">
-          <Button render={<Link href="/login" />} nativeButton={false}>
-            Se connecter
-          </Button>
-          <Button
-            render={<Link href="/rejoindre" />}
-            nativeButton={false}
-            variant="outline"
-          >
-            Rejoindre une classe
-          </Button>
-          <Button
-            render={<Link href="/coran" />}
-            nativeButton={false}
-            variant="ghost"
-          >
-            Lire le Qur&apos;an →
-          </Button>
+    <div className="flex flex-col gap-16 animate-in fade-in duration-300">
+      <section className="grid items-center gap-6 sm:grid-cols-[1.1fr_0.9fr] sm:gap-10">
+        <VitrineDoor className="mx-auto w-full max-w-48 sm:order-last sm:max-w-72" />
+        <div className="flex flex-col gap-5">
+          <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl lg:text-5xl">
+            Apprends avec ta classe, étape par étape.
+          </h1>
+          <p className="max-w-md text-base text-muted-foreground sm:text-lg">
+            Taalib est la plateforme d&apos;apprentissage du programme{" "}
+            <span className="font-semibold text-foreground">Bayān</span>. Tes
+            cours, tes ressources et tes quiz s&apos;ouvrent au rythme de ta
+            classe.
+          </p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Button
+              render={<Link href="/rejoindre" />}
+              nativeButton={false}
+              size="lg"
+            >
+              Rejoindre une classe
+            </Button>
+            <Link
+              href="/login"
+              className="text-sm font-medium underline decoration-border underline-offset-4 hover:decoration-foreground"
+            >
+              Se connecter
+            </Link>
+          </div>
         </div>
-        <a
-          href="https://bayanun.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-8 inline-block text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-        >
-          Découvrir le programme Bayān → bayanun.com
-        </a>
+      </section>
+
+      <VitrineFeatures />
+
+      <section className="grid gap-8 bg-foreground p-6 text-background sm:grid-cols-2 sm:gap-10 sm:p-10 dark:bg-card dark:text-foreground">
+        <div className="flex flex-col gap-4">
+          <h2 className="font-heading text-2xl font-semibold leading-tight text-balance sm:text-3xl">
+            Taalib, la porte d&apos;entrée de Bayān
+          </h2>
+          <p className="text-background/70 dark:text-muted-foreground">
+            <span className="font-semibold text-background dark:text-foreground">
+              Bayān
+            </span>{" "}
+            est le programme.{" "}
+            <span className="font-semibold text-background dark:text-foreground">
+              Taalib
+            </span>{" "}
+            est l&apos;endroit où ses étudiants suivent leurs cours, d&apos;une
+            leçon à l&apos;autre, avec leur classe.
+          </p>
+        </div>
+        <div className="flex flex-col gap-6">
+          <ol className="border-t border-background/15 dark:border-border">
+            {BAYAN_STEPS.map((step, index) => (
+              <li
+                key={step.title}
+                className="grid grid-cols-[2rem_1fr] gap-3 border-b border-background/15 py-3 dark:border-border"
+              >
+                <span className="font-heading text-lg text-chart-1">
+                  {index + 1}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold">{step.title}</p>
+                  <p className="text-sm text-background/70 dark:text-muted-foreground">
+                    {step.detail}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Button
+              render={
+                <a
+                  href="https://bayanun.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+              nativeButton={false}
+              variant="secondary"
+              size="lg"
+            >
+              Découvrir Bayān
+            </Button>
+            <Link
+              href="/rejoindre"
+              className="text-sm font-medium underline decoration-background/30 underline-offset-4 hover:decoration-background dark:decoration-border dark:hover:decoration-foreground"
+            >
+              J&apos;ai déjà un code
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   );
