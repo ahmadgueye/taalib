@@ -243,13 +243,20 @@ sur l'API externe Quran Foundation).
   (`audioPlayer.activeWordPosition`) : `api/quran/verse-audio` expose les
   `segments` (triplets position/timestamp de début/fin) fournis par l'API
   Quran Foundation pour chaque verset, comparés au temps de lecture courant.
-- **Navigation** — passage direct à une sourate (`surah-command.tsx`,
-  palette de commande) et navigation page suivante/précédente en gardant la
-  continuité de lecture. La dernière page/sourate lue est mémorisée dans le
+- **Navigation** — un bouton « sourate · verset » ouvre un tiroir
+  (`quran-navigator.tsx`) : recherche de sourate par nom (translittéré,
+  français ou arabe) ou numéro (`lib/quran/chapter-search.ts`), liste des
+  114 sourates et grille des versets de la sourate en cours. Choisir une
+  sourate y mène tout de suite, choisir un verset y mène et ferme le
+  tiroir. Pour un utilisateur connecté, une pastille marque les sourates
+  commencées (verte si toutes maîtrisées) et chaque verset prend la couleur
+  de son statut de mémorisation. Tiroir à gauche avec les deux colonnes
+  côte à côte sur desktop ; depuis le bas en deux étapes sur mobile.
+  Navigation page suivante/précédente en gardant la continuité de lecture. La dernière page/sourate lue est mémorisée dans le
   `localStorage` du navigateur (pas en base) et reprise automatiquement à
   l'ouverture de `/coran` sans paramètre d'URL explicite.
 - **Réglages sur mobile** — sous `md`, la barre collée en haut ne garde que
-  la sourate, le verset et un bouton « Réglages de lecture » : affichage,
+  le bouton de navigation et un bouton « Réglages de lecture » : affichage,
   taille du texte, tajwid (avec sa légende), progression de mémorisation
   avec « Gérer mon parcours », et mode Zen passent dans un tiroir ouvert
   par le bas (`quran-reader-settings.tsx`). La progression reste visible

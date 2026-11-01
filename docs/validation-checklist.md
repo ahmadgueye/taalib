@@ -175,6 +175,10 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] `/coran` sur mobile : la barre du haut tient sur une ligne ; le bouton
       Réglages ouvre un tiroir (affichage, taille, tajwid et sa légende,
       progression et « Gérer mon parcours » si connecté, mode Zen)
+- [ ] `/coran` : le bouton « sourate · verset » ouvre le tiroir de
+      navigation (à gauche sur desktop, en bas sur mobile) ; recherche par
+      nom, numéro ou en arabe ; choisir un verset y mène et ferme le tiroir ;
+      couleurs de mémorisation sur les versets si connecté
 
 ## 6. Ce qu'il manque / ce qui frustre (libre)
 Noter tout ce qu'on cherche sans le trouver, tout ce qui demande trop de

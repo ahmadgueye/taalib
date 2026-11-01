@@ -23,12 +23,12 @@ import {
 import { toast } from "sonner";
 
 import { MemorizationProgressBar } from "@/components/public/memorization-progress-bar";
+import { QuranNavigator } from "@/components/public/quran-navigator";
 import { QuranReaderSettings } from "@/components/public/quran-reader-settings";
 import {
   QuranPlayButton,
   useQuranAudioPlayer,
 } from "@/components/public/quran-audio-player";
-import { SurahCommand } from "@/components/public/surah-command";
 import { TajweedLegend } from "@/components/public/tajweed-legend";
 import { setVerseMemorizationStatus } from "@/lib/actions/memorization";
 import type { MemorizationStatus } from "@/lib/db/schema";
@@ -46,13 +46,6 @@ import {
 } from "@/lib/quran/qcf-font";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -627,16 +620,6 @@ export function QuranReader({
     [pages, selectedChapterId],
   );
 
-  const verseLabels = useMemo(
-    () =>
-      Object.fromEntries(
-        Array.from({ length: selectedChapter.versesCount }, (_, i) => [
-          String(i + 1),
-          `Verset ${i + 1}`,
-        ]),
-      ),
-    [selectedChapter.versesCount],
-  );
 
   // Load the initial page once on mount. `mushafId` is read once here rather
   // than added to the deps: useSyncExternalStore resolves the restored
@@ -887,17 +870,14 @@ export function QuranReader({
     setPages([page]);
   }
 
-  function handleChapterSelect(chapterId: number) {
+  function handleNavigate(chapterId: number, verseNumber: number) {
     setSelectedChapterId(chapterId);
-    setSelectedVerseNumber(1);
-    goToVerse(chapterId, 1);
+    setSelectedVerseNumber(verseNumber);
+    goToVerse(chapterId, verseNumber);
   }
 
-  function handleVerseSelect(verseNumberStr: string | null) {
-    if (!verseNumberStr) return;
-    const verseNumber = Number(verseNumberStr);
-    setSelectedVerseNumber(verseNumber);
-    goToVerse(selectedChapterId, verseNumber);
+  function handleChapterSelect(chapterId: number) {
+    handleNavigate(chapterId, 1);
   }
 
   const audioPlayer = useQuranAudioPlayer({
@@ -1125,31 +1105,15 @@ export function QuranReader({
   );
 
   // Shared between the normal toolbar and the Zen overlay's minimal top
-  // bar — the only two controls kept available in Zen mode.
+  // bar — kept available in Zen mode.
   const chapterVerseSelector = (
-    <>
-      <SurahCommand
-        chapters={chapters}
-        selectedChapter={selectedChapter}
-        onSelect={handleChapterSelect}
-      />
-      <Select
-        value={String(selectedVerseNumber)}
-        onValueChange={handleVerseSelect}
-        items={verseLabels}
-      >
-        <SelectTrigger size="sm" className="w-24">
-          <SelectValue placeholder="Verset" />
-        </SelectTrigger>
-        <SelectContent>
-          {Array.from({ length: selectedChapter.versesCount }, (_, i) => (
-            <SelectItem key={i + 1} value={String(i + 1)}>
-              Verset {i + 1}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </>
+    <QuranNavigator
+      chapters={chapters}
+      selectedChapter={selectedChapter}
+      selectedVerseNumber={selectedVerseNumber}
+      onNavigate={handleNavigate}
+      statusMap={isAuthenticated ? statusMap : undefined}
+    />
   );
 
   const fontSizeControls = (
