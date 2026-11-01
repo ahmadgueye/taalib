@@ -141,7 +141,8 @@ Le lecteur du Coran (`components/public/quran-reader.tsx`) fait plus de 1200
 lignes car il gère : pagination façon mushaf, police QCF spécifique
 (`lib/quran/qcf-font.ts`), coloration tajweed, navigation surah-à-surah,
 reprise de la dernière position lue (`localStorage`), mode Zen plein écran
-(`@base-ui/react/dialog`), suivi de mémorisation verset par verset (menu
+(`@base-ui/react/dialog`), réglages regroupés dans un tiroir sur mobile
+(`quran-reader-settings.tsx`), suivi de mémorisation verset par verset (menu
 contextuel + `lib/actions/memorization.ts`), et un lecteur audio
 (`quran-audio-player.tsx`) branché sur `api/quran/chapter-audio/[chapter]` et
 `api/quran/verse-audio/[chapter]` (timing mot-à-mot pour la surbrillance

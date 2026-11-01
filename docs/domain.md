@@ -248,6 +248,12 @@ sur l'API externe Quran Foundation).
   continuité de lecture. La dernière page/sourate lue est mémorisée dans le
   `localStorage` du navigateur (pas en base) et reprise automatiquement à
   l'ouverture de `/coran` sans paramètre d'URL explicite.
+- **Réglages sur mobile** — sous `md`, la barre collée en haut ne garde que
+  la sourate, le verset et un bouton « Réglages de lecture » : affichage,
+  taille du texte, tajwid (avec sa légende), progression de mémorisation
+  avec « Gérer mon parcours », et mode Zen passent dans un tiroir ouvert
+  par le bas (`quran-reader-settings.tsx`). La progression reste visible
+  sous la barre en un simple trait. Sur desktop, la barre est inchangée.
 - **Mode Zen** — bascule plein écran (`ZenDialog`, `@base-ui/react/dialog`)
   qui masque tout sauf le texte et une barre minimale (retour, audio) ; l'état
   activé/désactivé est persisté en `localStorage` (`deenshare:quran-zen-mode`)

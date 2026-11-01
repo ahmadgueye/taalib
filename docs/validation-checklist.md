@@ -172,6 +172,9 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Textes en français sans faute, messages d'erreur compréhensibles
 - [ ] Navigation clavier de base (Tab, Entrée, Échap dans les dialogues)
 - [ ] Passe étroite ≈ 400 px : menu, tab bar, lecteur Coran, quiz utilisables
+- [ ] `/coran` sur mobile : la barre du haut tient sur une ligne ; le bouton
+      Réglages ouvre un tiroir (affichage, taille, tajwid et sa légende,
+      progression et « Gérer mon parcours » si connecté, mode Zen)
 
 ## 6. Ce qu'il manque / ce qui frustre (libre)
 Noter tout ce qu'on cherche sans le trouver, tout ce qui demande trop de

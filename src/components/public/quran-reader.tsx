@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 
 import { MemorizationProgressBar } from "@/components/public/memorization-progress-bar";
+import { QuranReaderSettings } from "@/components/public/quran-reader-settings";
 import {
   QuranPlayButton,
   useQuranAudioPlayer,
@@ -1179,9 +1180,30 @@ export function QuranReader({
       {!zenMode && (
         <div className="sticky top-[63px] z-20 w-screen -ml-[calc(50vw-50%)] -mr-[calc(50vw-50%)] border-b bg-background/95 backdrop-blur-sm">
           <div className="mx-auto w-full max-w-5xl">
-            <div className="flex flex-wrap items-center gap-2 px-6 py-3">
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3 md:px-6">
               {chapterVerseSelector}
-              <div className="ml-auto flex items-center gap-1">
+              {/* Sur mobile, les réglages passent dans un tiroir : la barre
+                  collée en haut ne garde que la navigation. */}
+              <div className="contents md:hidden">
+                <QuranReaderSettings
+                  viewMode={viewMode}
+                  onViewModeChange={(mode) => viewModeStore.setStored(mode)}
+                  fontSizeControls={fontSizeControls}
+                  tajweedEnabled={tajweedEnabled}
+                  onTajweedChange={(enabled) => tajweedStore.setStored(enabled)}
+                  onZenMode={() => zenModeStore.setStored(true)}
+                  memorization={
+                    isAuthenticated
+                      ? {
+                          chapterId: selectedChapterId,
+                          statusMap,
+                          totalVerses: selectedChapter.versesCount,
+                        }
+                      : undefined
+                  }
+                />
+              </div>
+              <div className="ml-auto hidden items-center gap-1 md:flex">
                 {fontSizeControls}
                 <Button
                   variant={tajweedEnabled ? "default" : "outline"}
@@ -1211,6 +1233,7 @@ export function QuranReader({
                 onValueChange={(value) =>
                   viewModeStore.setStored(value as ViewMode)
                 }
+                className="hidden md:flex"
               >
                 <TabsList>
                   <TabsTrigger value="arabic">Lecture</TabsTrigger>
@@ -1219,13 +1242,25 @@ export function QuranReader({
               </Tabs>
             </div>
             {isAuthenticated && (
-              <MemorizationProgressBar
-                chapterId={selectedChapterId}
-                statusMap={statusMap}
-                totalVerses={selectedChapter.versesCount}
-              />
+              <>
+                <MemorizationProgressBar
+                  chapterId={selectedChapterId}
+                  statusMap={statusMap}
+                  totalVerses={selectedChapter.versesCount}
+                  className="hidden md:flex"
+                />
+                <MemorizationProgressBar
+                  chapterId={selectedChapterId}
+                  statusMap={statusMap}
+                  totalVerses={selectedChapter.versesCount}
+                  variant="thin"
+                  className="md:hidden"
+                />
+              </>
             )}
-            <TajweedLegend show={tajweedEnabled} />
+            <div className="hidden md:block">
+              <TajweedLegend show={tajweedEnabled} />
+            </div>
           </div>
         </div>
       )}
