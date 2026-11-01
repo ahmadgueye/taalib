@@ -232,6 +232,13 @@
       "when": 1793502693592,
       "tag": "0032_hadith_narrators",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793548337646,
+      "tag": "0033_quiz_attempt_limit",
+      "breakpoints": true
     }
   ]
 }

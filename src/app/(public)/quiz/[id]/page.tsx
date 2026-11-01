@@ -9,7 +9,10 @@ import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { canSeeQuiz } from "@/lib/content-access";
 import { getQuizForAttempt } from "@/lib/db/queries/quiz";
-import { getQuizScores } from "@/lib/db/queries/quiz-tentatives";
+import {
+  getAttemptStatus,
+  getQuizScores,
+} from "@/lib/db/queries/quiz-tentatives";
 import { defaultDescription, siteOpenGraph } from "@/lib/metadata";
 
 type Props = {
@@ -45,7 +48,11 @@ export default async function QuizPage({ params }: Props) {
   if (!quiz || !canSeeQuiz(access, quiz.id)) notFound();
 
   // Déjà tenté : un accès direct aux tentatives précédentes.
-  const score = (await getQuizScores(profile.id, [quiz.id])).get(quiz.id);
+  const [scores, status] = await Promise.all([
+    getQuizScores(profile.id, [quiz.id]),
+    getAttemptStatus(quiz, profile.id),
+  ]);
+  const score = scores.get(quiz.id);
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -77,8 +84,22 @@ export default async function QuizPage({ params }: Props) {
           tentatives
         </Link>
       )}
+      {status.left !== null && status.left > 0 && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          {status.used === 0
+            ? `Ce quiz est limité à ${status.left} tentative${status.left > 1 ? "s" : ""}.`
+            : `Il te reste ${status.left} tentative${status.left > 1 ? "s" : ""}.`}
+          {quiz.hideCorrections &&
+            !status.passed &&
+            " La correction détaillée s'affichera quand tu auras réussi le quiz ou utilisé toutes tes tentatives."}
+        </p>
+      )}
 
-      <QuizAttempt quizId={quiz.id} questions={quiz.questions} />
+      <QuizAttempt
+        quizId={quiz.id}
+        questions={quiz.questions}
+        locked={status.left === 0}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, max, notInArray } from "drizzle-orm";
+import { and, eq, inArray, max, notInArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -11,7 +11,12 @@ import { questionsSchema } from "@/lib/actions/quiz-questions.schema";
 import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { getQuizWithQuestions } from "@/lib/db/queries/quiz";
-import { quiz, quizChoix, quizQuestions } from "@/lib/db/schema";
+import {
+  quiz,
+  quizChoix,
+  quizExtraAttempts,
+  quizQuestions,
+} from "@/lib/db/schema";
 import { toQuestionDrafts, type QuestionDraft } from "@/lib/quiz-drafts";
 
 export type ActionState =
@@ -23,6 +28,16 @@ const quizSchema = z.object({
   thematiqueId: z.string().trim().min(1, "La thématique est requise."),
   status: z.enum(["draft", "published"]),
   passingScore: z.coerce.number().int().min(0).max(100),
+  maxAttempts: z.preprocess(
+    (v) => (v === "" || v == null ? null : v),
+    z.coerce
+      .number()
+      .int()
+      .min(1, "Au moins 1 tentative.")
+      .max(100, "100 tentatives au maximum.")
+      .nullable()
+  ),
+  hideCorrections: z.preprocess((v) => v === "true", z.boolean()),
 });
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -37,6 +52,8 @@ function parseQuizForm(formData: FormData) {
     thematiqueId: formData.get("thematiqueId"),
     status: formData.get("status"),
     passingScore: formData.get("passingScore"),
+    maxAttempts: formData.get("maxAttempts"),
+    hideCorrections: formData.get("hideCorrections"),
   });
   if (!meta.success) return { error: meta.error.issues[0].message };
 
@@ -176,6 +193,8 @@ export async function createQuiz(
         thematiqueId: meta.thematiqueId,
         status: meta.status,
         passingScore: meta.passingScore,
+        maxAttempts: meta.maxAttempts,
+        hideCorrections: meta.maxAttempts !== null && meta.hideCorrections,
         addedBy: profile.id,
       })
       .returning({ id: quiz.id });
@@ -209,6 +228,8 @@ export async function updateQuiz(
         thematiqueId: meta.thematiqueId,
         status: meta.status,
         passingScore: meta.passingScore,
+        maxAttempts: meta.maxAttempts,
+        hideCorrections: meta.maxAttempts !== null && meta.hideCorrections,
         updatedAt: new Date(),
       })
       .where(eq(quiz.id, id));
@@ -248,5 +269,29 @@ export async function reorderQuiz(
 
   revalidateCoursTree();
   revalidatePath("/thematiques");
+  return undefined;
+}
+
+// Une tentative de plus pour un étudiant qui a épuisé la limite du quiz.
+export async function grantQuizAttempt(
+  quizId: string,
+  userId: string
+): Promise<{ error?: string } | undefined> {
+  const profile = await requireContributor();
+
+  await db
+    .insert(quizExtraAttempts)
+    .values({ quizId, userId, extra: 1, grantedBy: profile.id })
+    .onConflictDoUpdate({
+      target: [quizExtraAttempts.quizId, quizExtraAttempts.userId],
+      set: {
+        extra: sql`${quizExtraAttempts.extra} + 1`,
+        grantedBy: profile.id,
+        updatedAt: new Date(),
+      },
+    });
+
+  revalidatePath(`/dashboard/quiz/${quizId}/soumissions`);
+  revalidatePath(`/quiz/${quizId}`);
   return undefined;
 }

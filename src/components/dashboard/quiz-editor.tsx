@@ -80,6 +80,9 @@ type Meta = {
   thematiqueId: string;
   status: "draft" | "published";
   passingScore: number;
+  // Vide : illimité.
+  maxAttempts: string;
+  hideCorrections: boolean;
 };
 
 function newKey() {
@@ -165,6 +168,8 @@ export function QuizEditor({
     thematiqueId: string;
     status: "draft" | "published";
     passingScore: number;
+    maxAttempts: number | null;
+    hideCorrections: boolean;
   };
   thematiqueOptions: { id: string; title: string; coursTitle: string }[];
   // Création depuis la page d'une thématique : déjà choisie.
@@ -180,6 +185,8 @@ export function QuizEditor({
     thematiqueId: quiz?.thematiqueId ?? defaultThematiqueId ?? "",
     status: quiz?.status ?? "published",
     passingScore: quiz?.passingScore ?? 80,
+    maxAttempts: quiz?.maxAttempts ? String(quiz.maxAttempts) : "",
+    hideCorrections: quiz?.hideCorrections ?? false,
   }));
   const [questions, setQuestions] = useState<QuestionDraft[]>(() =>
     initialQuestions.length > 0 ? initialQuestions : [emptyQuestion("new")]
@@ -565,6 +572,57 @@ export function QuizEditor({
               <FieldDescription>
                 Un étudiant doit atteindre le score minimum pour que
                 l&apos;étape soit terminée sur sa feuille de route.
+              </FieldDescription>
+              <Field>
+                <FieldLabel htmlFor="maxAttempts">
+                  Nombre de tentatives maximum
+                </FieldLabel>
+                <Input
+                  id="maxAttempts"
+                  name="maxAttempts"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={meta.maxAttempts}
+                  onChange={(e) =>
+                    setMeta((m) => ({ ...m, maxAttempts: e.target.value }))
+                  }
+                  placeholder="Illimité"
+                  className="max-w-32"
+                />
+                <FieldDescription>
+                  Laisse vide pour un nombre illimité. Tu peux accorder une
+                  tentative de plus à un étudiant depuis les soumissions.
+                </FieldDescription>
+              </Field>
+              <Field orientation="horizontal">
+                <input
+                  type="hidden"
+                  name="hideCorrections"
+                  value={String(meta.hideCorrections && !!meta.maxAttempts)}
+                />
+                <Checkbox
+                  id="hideCorrections"
+                  checked={meta.hideCorrections && !!meta.maxAttempts}
+                  disabled={!meta.maxAttempts}
+                  onCheckedChange={(checked) =>
+                    setMeta((m) => ({
+                      ...m,
+                      hideCorrections: checked === true,
+                    }))
+                  }
+                />
+                <FieldLabel
+                  htmlFor="hideCorrections"
+                  className={cn(!meta.maxAttempts && "text-muted-foreground")}
+                >
+                  Masquer la correction tant qu&apos;il reste des tentatives
+                </FieldLabel>
+              </Field>
+              <FieldDescription className="-mt-4">
+                L&apos;étudiant voit son score, mais pas les bonnes réponses,
+                jusqu&apos;à ce qu&apos;il réussisse le quiz ou n&apos;ait plus
+                de tentative.
               </FieldDescription>
             </FieldGroup>
           </TabsContent>

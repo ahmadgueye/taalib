@@ -34,9 +34,13 @@ export function QuizAttempt({
   quizId,
   questions,
   previewGrade,
+  locked = false,
 }: {
   quizId: string;
   questions: Question[];
+  // Plus de tentative : le résultat de la dernière reste affiché s'il vient
+  // d'être obtenu, sinon un message remplace le quiz.
+  locked?: boolean;
   // Aperçu du dashboard : corrige sur place, sans rien enregistrer.
   previewGrade?: (
     answers: Map<string, Set<string>>
@@ -100,7 +104,13 @@ export function QuizAttempt({
 
     if (previewGrade) {
       const graded = previewGrade(new Map(Object.entries(answers)));
-      setResult({ ...graded, tentativeId: "", total: questions.length });
+      setResult({
+        ...graded,
+        tentativeId: "",
+        total: questions.length,
+        showCorrections: true,
+        attemptsLeft: null,
+      });
       return;
     }
 
@@ -140,16 +150,34 @@ export function QuizAttempt({
           <p className="mt-2 text-sm font-medium">
             {encouragement(result.score, result.total)}
           </p>
+          {result.attemptsLeft !== null && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {result.attemptsLeft === 0
+                ? "Tu as utilisé toutes tes tentatives pour ce quiz."
+                : `Il te reste ${result.attemptsLeft} tentative${
+                    result.attemptsLeft > 1 ? "s" : ""
+                  }.`}
+            </p>
+          )}
         </div>
 
         <div className="mt-6">
-          <QuizCorrections corrections={result.corrections} />
+          {result.showCorrections ? (
+            <QuizCorrections corrections={result.corrections} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              La correction détaillée sera disponible quand tu auras réussi le
+              quiz ou utilisé toutes tes tentatives.
+            </p>
+          )}
         </div>
 
         <div className="mt-6 flex gap-3">
-          <Button variant="outline" onClick={restart}>
-            Recommencer
-          </Button>
+          {result.attemptsLeft !== 0 && (
+            <Button variant="outline" onClick={restart}>
+              Recommencer
+            </Button>
+          )}
           {!previewGrade && (
             <Button
               variant="ghost"
@@ -160,6 +188,20 @@ export function QuizAttempt({
             </Button>
           )}
         </div>
+      </div>
+    );
+  }
+
+  if (locked) {
+    return (
+      <div className="mt-8 rounded-lg border p-4 text-sm">
+        <p className="font-medium">
+          Tu as utilisé toutes tes tentatives pour ce quiz.
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          Si tu as besoin d&apos;une tentative supplémentaire, demande-la à ton
+          enseignant.
+        </p>
       </div>
     );
   }

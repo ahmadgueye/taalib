@@ -1,7 +1,18 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { quizQuestions, quizReponses, quizTentatives } from "@/lib/db/schema";
+import {
+  quizExtraAttempts,
+  quizQuestions,
+  quizReponses,
+  quizTentatives,
+} from "@/lib/db/schema";
+import {
+  attemptsLeft,
+  canSeeCorrections,
+  isPassing,
+  type AttemptRules,
+} from "@/lib/quiz-attempts";
 
 export type QuizScore = {
   lastScore: number;
@@ -52,6 +63,50 @@ export async function getQuizScores(userId: string, quizIds: string[]) {
 
   return scores;
 }
+
+type Executor = Pick<typeof db, "select" | "query">;
+
+// Où en est un étudiant avec un quiz : tentatives utilisées et restantes,
+// réussite, et s'il peut voir la correction détaillée. `exec` : une
+// transaction, pour compter au moment d'enregistrer une tentative.
+export async function getAttemptStatus(
+  quiz: AttemptRules & { id: string; passingScore: number },
+  userId: string,
+  exec: Executor = db
+) {
+  const [tentatives, extraRow] = await Promise.all([
+    exec
+      .select({
+        score: quizTentatives.score,
+        totalQuestions: quizTentatives.totalQuestions,
+      })
+      .from(quizTentatives)
+      .where(
+        and(eq(quizTentatives.quizId, quiz.id), eq(quizTentatives.userId, userId))
+      ),
+    exec.query.quizExtraAttempts.findFirst({
+      where: and(
+        eq(quizExtraAttempts.quizId, quiz.id),
+        eq(quizExtraAttempts.userId, userId)
+      ),
+    }),
+  ]);
+  const used = tentatives.length;
+  const extra = extraRow?.extra ?? 0;
+  const left = attemptsLeft(quiz.maxAttempts, extra, used);
+  const passed = tentatives.some((t) =>
+    isPassing(t.score, t.totalQuestions, quiz.passingScore)
+  );
+  return {
+    used,
+    extra,
+    left,
+    passed,
+    showCorrections: canSeeCorrections(quiz, { left, passed }),
+  };
+}
+
+export type AttemptStatus = Awaited<ReturnType<typeof getAttemptStatus>>;
 
 export async function getTentativesForQuiz(quizId: string, userId: string) {
   return db.query.quizTentatives.findMany({
@@ -171,6 +226,14 @@ export async function getQuizSubmissionStats(quizId: string) {
       (a, b) => b.lastCompletedAt.getTime() - a.lastCompletedAt.getTime()
     ),
   };
+}
+
+// Tentatives accordées en plus de la limite, par étudiant.
+export async function getExtraAttempts(quizId: string) {
+  const rows = await db.query.quizExtraAttempts.findMany({
+    where: eq(quizExtraAttempts.quizId, quizId),
+  });
+  return Object.fromEntries(rows.map((r) => [r.userId, r.extra]));
 }
 
 export async function getQuizQuestionStats(quizId: string) {

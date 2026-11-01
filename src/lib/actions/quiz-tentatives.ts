@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { getContentAccess } from "@/lib/auth/content-access";
@@ -13,7 +13,11 @@ import {
   quizReponses,
   quizTentatives,
 } from "@/lib/db/schema";
-import type { QuizCorrection } from "@/lib/db/queries/quiz-tentatives";
+import {
+  getAttemptStatus,
+  type QuizCorrection,
+} from "@/lib/db/queries/quiz-tentatives";
+import { canSeeCorrections, isPassing } from "@/lib/quiz-attempts";
 import { gradeQuestions } from "@/lib/quiz-grading";
 
 const submitSchema = z.object({
@@ -32,8 +36,14 @@ export type SubmitQuizResult =
       tentativeId: string;
       score: number;
       total: number;
+      // Vide si la correction est masquée (voir canSeeCorrections).
       corrections: QuizCorrection[];
+      showCorrections: boolean;
+      // null : quiz illimité.
+      attemptsLeft: number | null;
     };
+
+const NO_ATTEMPT_LEFT = "Tu as utilisé toutes tes tentatives pour ce quiz.";
 
 // La correction ne fait jamais confiance au client : on recharge les
 // `isCorrect` réels depuis la base à partir des questions du quiz, jamais
@@ -55,7 +65,12 @@ export async function submitQuizAttempt(
   // Un quiz en brouillon n'est jamais visible côté public : on refuse aussi
   // sa soumission, sinon la correction en révélerait les bonnes réponses.
   const publishedQuiz = await db.query.quiz.findFirst({
-    columns: { id: true },
+    columns: {
+      id: true,
+      passingScore: true,
+      maxAttempts: true,
+      hideCorrections: true,
+    },
     where: and(eq(quiz.id, parsed.data.quizId), eq(quiz.status, "published")),
   });
   // Idem pour un quiz pas encore débloqué pour la classe de l'étudiant.
@@ -94,7 +109,15 @@ export async function submitQuizAttempt(
   );
   const safeRows = rowsToInsert.filter((r) => validChoixIds.has(r.choixId));
 
-  const tentativeId = await db.transaction(async (tx) => {
+  const saved = await db.transaction(async (tx) => {
+    // Deux soumissions simultanées du même étudiant passent l'une après
+    // l'autre : la limite est comptée avant chaque enregistrement.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext(${`${profile.id}:${publishedQuiz.id}`}))`
+    );
+    const status = await getAttemptStatus(publishedQuiz, profile.id, tx);
+    if (status.left === 0) return null;
+
     const [tentative] = await tx
       .insert(quizTentatives)
       .values({
@@ -115,8 +138,25 @@ export async function submitQuizAttempt(
       );
     }
 
-    return tentative.id;
+    return { tentativeId: tentative.id, status };
+  });
+  if (!saved) return { error: NO_ATTEMPT_LEFT };
+
+  const { status } = saved;
+  const attemptsLeft = status.left === null ? null : status.left - 1;
+  const showCorrections = canSeeCorrections(publishedQuiz, {
+    left: attemptsLeft,
+    passed:
+      status.passed ||
+      isPassing(score, questions.length, publishedQuiz.passingScore),
   });
 
-  return { tentativeId, score, total: questions.length, corrections };
+  return {
+    tentativeId: saved.tentativeId,
+    score,
+    total: questions.length,
+    corrections: showCorrections ? corrections : [],
+    showCorrections,
+    attemptsLeft,
+  };
 }

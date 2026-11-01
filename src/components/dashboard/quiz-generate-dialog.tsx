@@ -201,7 +201,7 @@ export function GenerateDialog({
                 max={20}
                 value={count}
                 onChange={(e) => setCount(Number(e.target.value))}
-                className="w-24"
+                className="max-w-24"
               />
               <FieldDescription>Entre 3 et 20.</FieldDescription>
             </Field>

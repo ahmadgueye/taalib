@@ -16,6 +16,7 @@ import {
 import { QuizSubmissionsTable } from "@/components/dashboard/quiz-submissions-table";
 import { getQuizWithThematique } from "@/lib/db/queries/quiz";
 import {
+  getExtraAttempts,
   getQuizQuestionStats,
   getQuizSubmissionStats,
 } from "@/lib/db/queries/quiz-tentatives";
@@ -32,7 +33,12 @@ export default async function QuizSoumissionsPage({ params }: Props) {
   const [
     { tentatives, attemptsCount, uniqueUsersCount, averagePercent, students },
     questionStats,
-  ] = await Promise.all([getQuizSubmissionStats(id), getQuizQuestionStats(id)]);
+    extras,
+  ] = await Promise.all([
+    getQuizSubmissionStats(id),
+    getQuizQuestionStats(id),
+    getExtraAttempts(id),
+  ]);
 
   const passRate =
     attemptsCount === 0
@@ -73,6 +79,8 @@ export default async function QuizSoumissionsPage({ params }: Props) {
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Seuil de réussite : {quiz.passingScore}%.
+        {quiz.maxAttempts !== null &&
+          ` ${quiz.maxAttempts} tentative${quiz.maxAttempts > 1 ? "s" : ""} par étudiant.`}
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -128,7 +136,13 @@ export default async function QuizSoumissionsPage({ params }: Props) {
           Aucune tentative pour ce quiz.
         </p>
       ) : (
-        <QuizSubmissionsTable students={students} passingScore={quiz.passingScore} />
+        <QuizSubmissionsTable
+          quizId={quiz.id}
+          students={students}
+          passingScore={quiz.passingScore}
+          maxAttempts={quiz.maxAttempts}
+          extras={extras}
+        />
       )}
     </div>
   );

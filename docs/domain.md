@@ -187,6 +187,17 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   ligne `quiz_tentatives` (score, total) et des `quiz_reponses` (choix
   cochés par question) — l'historique complet est gardé, pas seulement le
   meilleur score.
+- **Limite de tentatives** — facultative, dans les Réglages du quiz
+  (`quiz.maxAttempts`, vide = illimité). `submitQuizAttempt` compte les
+  tentatives dans la transaction (verrou par étudiant et par quiz) et refuse
+  au-delà ; la page du quiz affiche les tentatives restantes, puis se
+  verrouille. Dans les Soumissions, « Accorder une tentative » en ajoute une
+  à un étudiant (`grantQuizAttempt`, table `quiz_extra_attempts`) :
+  indispensable, car un quiz non réussi bloque l'étape de la feuille de
+  route. Avec une limite, l'option « Masquer la correction »
+  (`quiz.hideCorrections`) ne montre que le score tant que l'étudiant n'a ni
+  réussi ni épuisé ses tentatives, à la soumission comme dans l'historique
+  (`canSeeCorrections`, `lib/quiz-attempts.ts`).
 - **Score et seuil** — `quiz.passingScore` (0-100, défaut 80) est un seuil en
   pourcentage. `getQuizScores()` (`lib/db/queries/quiz-tentatives.ts`) calcule
   le meilleur score obtenu par un utilisateur sur un quiz ; c'est ce meilleur
