@@ -241,37 +241,39 @@ export default async function ComptePage({ searchParams }: Props) {
       {resume && (
         <section
           aria-labelledby="reprendre"
-          className="flex flex-wrap items-center justify-between gap-6 bg-[#21140f] p-6 text-[#f5f5ed] sm:p-7 dark:bg-card"
+          className="flex flex-wrap items-center justify-between gap-4 bg-[#21140f] p-4 text-[#f5f5ed] sm:px-5 dark:bg-card"
         >
-          <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-2">
-            <p className="text-xs font-bold tracking-[0.1em] uppercase opacity-75">
+          <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-1">
+            <p className="text-[11px] font-bold tracking-[0.1em] uppercase opacity-75">
               Reprendre
             </p>
             <h2
               id="reprendre"
-              className="font-heading text-2xl leading-tight font-semibold sm:text-3xl"
+              className="font-heading text-xl leading-tight font-semibold"
             >
               {resume.coursTitle}
             </h2>
-            <p className="opacity-80">
-              {resume.kind === "quiz" ? "Quiz" : resume.thematiqueTitle} ·{" "}
-              {resume.title}
-            </p>
-            {resumeCours && resumeCours.total > 0 && (
-              <div className="mt-1 flex max-w-md items-center gap-3">
-                <div aria-hidden className="h-1.5 flex-1 bg-[#f5f5ed]/20">
-                  <div
-                    className="h-full bg-chart-1"
-                    style={{
-                      width: `${percentOf(resumeCours.completed, resumeCours.total)}%`,
-                    }}
-                  />
-                </div>
-                <span className="text-sm tabular-nums opacity-80">
-                  {resumeCours.completed} / {resumeCours.total} leçons
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+              <span className="min-w-0 opacity-80">
+                {resume.kind === "quiz" ? "Quiz" : resume.thematiqueTitle} ·{" "}
+                {resume.title}
+              </span>
+              {resumeCours && resumeCours.total > 0 && (
+                <span className="flex items-center gap-2">
+                  <span aria-hidden className="h-1.5 w-20 bg-[#f5f5ed]/20">
+                    <span
+                      className="block h-full bg-chart-1"
+                      style={{
+                        width: `${percentOf(resumeCours.completed, resumeCours.total)}%`,
+                      }}
+                    />
+                  </span>
+                  <span className="tabular-nums opacity-80">
+                    {resumeCours.completed} / {resumeCours.total} leçons
+                  </span>
                 </span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
           {/* Orange dans les deux thèmes : le bouton par défaut est marron en
               clair, invisible sur la carte. */}
