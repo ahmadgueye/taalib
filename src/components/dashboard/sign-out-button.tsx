@@ -16,13 +16,16 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/actions/auth";
 
-// `menu` : une ligne de menu (menu du compte), avec son icône.
+// `menu` : une ligne de menu (menu du compte), avec son icône. `icon` ajoute
+// l'icône au bouton à bordure.
 export function SignOutButton({
   className,
   variant = "outline",
+  icon = variant === "menu",
 }: {
   className?: string;
   variant?: "outline" | "menu";
+  icon?: boolean;
 }) {
   return (
     <AlertDialog>
@@ -35,7 +38,7 @@ export function SignOutButton({
           />
         }
       >
-        {variant === "menu" && <LogOut />}
+        {icon && <LogOut />}
         Se déconnecter
       </AlertDialogTrigger>
       <AlertDialogContent>

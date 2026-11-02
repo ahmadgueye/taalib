@@ -342,11 +342,8 @@ function AccountSheet({ account }: { account: Account }) {
           ))}
         </nav>
 
-        <div className="mx-4 mt-3 border-t pt-1">
-          <SignOutButton
-            variant="menu"
-            className="h-12 w-full justify-start gap-3 rounded-none px-0 text-[15px] font-medium hover:bg-transparent"
-          />
+        <div className="mx-4 mt-3 border-t pt-3">
+          <SignOutButton icon className="h-11 w-full text-sm" />
         </div>
       </SheetContent>
     </Sheet>
