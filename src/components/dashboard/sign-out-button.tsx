@@ -11,15 +11,34 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { LogOut } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/actions/auth";
 
-export function SignOutButton({ className }: { className?: string }) {
+// `menu` : une ligne de menu (menu du compte), avec son icône. `icon` ajoute
+// l'icône au bouton à bordure.
+export function SignOutButton({
+  className,
+  variant = "outline",
+  icon = variant === "menu",
+}: {
+  className?: string;
+  variant?: "outline" | "menu";
+  icon?: boolean;
+}) {
   return (
     <AlertDialog>
       <AlertDialogTrigger
-        render={<Button variant="outline" size="sm" className={className} />}
+        render={
+          <Button
+            variant={variant === "menu" ? "ghost" : "outline"}
+            size={variant === "menu" ? "lg" : "sm"}
+            className={className}
+          />
+        }
       >
+        {icon && <LogOut />}
         Se déconnecter
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -32,8 +51,10 @@ export function SignOutButton({ className }: { className?: string }) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Rester</AlertDialogCancel>
+          {/* Le form s'étire avec le pied de la fenêtre sur mobile ; le
+              bouton doit suivre, comme « Rester ». */}
           <form action={signOutAction}>
-            <AlertDialogAction type="submit">
+            <AlertDialogAction type="submit" className="w-full sm:w-auto">
               Se déconnecter
             </AlertDialogAction>
           </form>
