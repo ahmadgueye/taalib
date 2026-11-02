@@ -1,4 +1,4 @@
-import { and, asc, count, eq, isNull, notInArray } from "drizzle-orm";
+import { and, asc, count, eq, isNull, notInArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -54,6 +54,23 @@ export async function getClassMembers(classId: string) {
     .innerJoin(profiles, eq(profiles.id, classMembers.userId))
     .where(eq(classMembers.classId, classId))
     .orderBy(asc(profiles.fullName), asc(profiles.email));
+}
+
+// Les classes d'un étudiant, côté étudiant : en cours d'abord, puis celles
+// qu'il a terminées (ancien élève). Une classe dont il a été retiré n'a plus
+// de ligne : elle n'apparaît pas.
+export async function getStudentClasses(userId: string) {
+  return db
+    .select({
+      id: classes.id,
+      name: classes.name,
+      joinedAt: classMembers.joinedAt,
+      leftAt: classMembers.leftAt,
+    })
+    .from(classMembers)
+    .innerJoin(classes, eq(classes.id, classMembers.classId))
+    .where(eq(classMembers.userId, userId))
+    .orderBy(sql`${classMembers.leftAt} is not null`, asc(classes.name));
 }
 
 export async function getClassByInviteCode(code: string) {

@@ -90,18 +90,32 @@ avec le nombre de thématiques, de leçons et de quiz publiés
 
 ## Page compte
 
-`/compte` a deux onglets (`account-tabs.tsx`), reflétés dans l'URL
-(`?onglet=parametres`) :
+`/compte` s'ouvre sur « Salam, {prénom} » et les classes de l'étudiant
+(`getStudentClasses`) : « En cours depuis le … » ou « Ancien élève depuis
+le … » (`left_at` renseigné). Une classe dont il a été retiré n'a plus de
+ligne dans `class_members` et n'apparaît donc pas ; sans aucune classe, un
+lien vers `/rejoindre`. Le staff ne voit pas ce bloc. Viennent ensuite deux
+onglets
+(`account-tabs.tsx`), reflétés dans l'URL (`?onglet=parametres`) :
 
-- **Progression** (par défaut) : les cours suivis (« x/y leçons lues »), tirés
-  de la feuille de route pour un étudiant (tous les cours de ses classes,
-  même ordre et même décompte que l'accueil ; le staff, sans feuille de
-  route, voit les cours où il a lu quelque chose), un
-  résumé de la mémorisation du Coran (`quran-progress-card.tsx` : même
-  pourcentage que `/memorisation`, versets maîtrisés / en cours / à
-  renforcer) et les quiz tentés
-  (score en vert si réussi, neutre sinon).
-- **Paramètres** : le nom, modifiable à tout moment, l'e-mail, le thème et la
+- **Progression** (par défaut) :
+  - trois chiffres : leçons lues, versets maîtrisés, quiz réussis / tentés ;
+  - une carte **Reprendre** : le prochain élément « à faire » de la feuille
+    de route dans le cours de la dernière leçon lue (`getLastReadCoursId`),
+    sinon le premier de la feuille de route. On ne connaît que les leçons
+    lues, pas celles seulement ouvertes. Absente quand tout est fait, et pour
+    le staff (pas de feuille de route) ;
+  - les cours suivis en grille (« x / y leçons », badge « Terminé »), tirés
+    de la feuille de route pour un étudiant (tous les cours de ses classes,
+    même ordre et même décompte que l'accueil ; le staff voit les cours où il
+    a lu quelque chose) ;
+  - les quiz tentés, « À retenter » d'abord (score neutre) puis « Réussis »
+    (score en vert), sous les cours ;
+  - un résumé de la mémorisation du Coran (`quran-progress-card.tsx` : même
+    pourcentage que `/memorisation`, répartition maîtrisés / en cours / à
+    renforcer, dernière sourate travaillée), seul dans la colonne de droite.
+- **Paramètres** : le nom, modifiable à tout moment, l'e-mail, le thème
+  (clair, sombre ou celui de l'appareil, `theme-choice.tsx`) et la
   déconnexion. Un compte sans nom (onboarding) arrive directement sur cet
   onglet.
 

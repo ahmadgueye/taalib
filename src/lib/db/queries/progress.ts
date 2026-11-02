@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 import {
   canSeeCours,
@@ -7,7 +7,11 @@ import {
 } from "@/lib/content-access";
 import { db } from "@/lib/db";
 import { getCoursOutline } from "@/lib/db/queries/cours";
-import { ressourceProgress } from "@/lib/db/schema";
+import {
+  ressourceProgress,
+  ressources,
+  thematiques,
+} from "@/lib/db/schema";
 
 export async function getCompletedRessourceIds(
   userId: string,
@@ -26,6 +30,20 @@ export async function getCompletedRessourceIds(
     );
 
   return new Set(rows.map((row) => row.ressourceId));
+}
+
+// Le cours de la dernière leçon lue : c'est là que l'étudiant « reprend ».
+// On ne garde que la date de lecture, pas les leçons simplement ouvertes.
+export async function getLastReadCoursId(userId: string) {
+  const [row] = await db
+    .select({ coursId: thematiques.coursId })
+    .from(ressourceProgress)
+    .innerJoin(ressources, eq(ressources.id, ressourceProgress.ressourceId))
+    .innerJoin(thematiques, eq(thematiques.id, ressources.thematiqueId))
+    .where(eq(ressourceProgress.userId, userId))
+    .orderBy(desc(ressourceProgress.completedAt))
+    .limit(1);
+  return row?.coursId ?? null;
 }
 
 // Progression par cours, calculée sur les seules ressources visibles : une
