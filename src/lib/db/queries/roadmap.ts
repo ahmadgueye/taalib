@@ -218,3 +218,13 @@ export async function getStudentRoadmap(
     todo,
   };
 }
+
+// L'étudiant reprend dans le cours de sa dernière leçon lue, sinon au début
+// de sa feuille de route.
+export function pickResume(todo: RoadmapTodo[], lastCoursId: string | null) {
+  return todo.find((t) => t.coursId === lastCoursId) ?? todo[0] ?? null;
+}
+
+export function todoHref(item: RoadmapTodo) {
+  return item.kind === "quiz" ? `/quiz/${item.id}` : `/ressources/${item.id}`;
+}
