@@ -30,7 +30,7 @@ export function AccountTabs({
       onValueChange={(value) => handleChange(value as AccountTab)}
       className="mt-8 gap-8"
     >
-      <TabsList variant="line">
+      <TabsList>
         <TabsTrigger value="progression" className="px-3">
           Progression
         </TabsTrigger>

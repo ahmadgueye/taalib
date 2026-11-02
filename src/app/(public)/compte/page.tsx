@@ -113,18 +113,11 @@ function ClassBadges({
     );
   }
   return (
-    <ul aria-label="Mes classes" className="mt-4 flex flex-wrap gap-2">
+    <ul aria-label="Mes classes" className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
       {classes.map((c) => {
         const former = c.leftAt !== null;
         return (
-          <li
-            key={c.id}
-            className={
-              former
-                ? "flex items-center gap-2 border border-dashed px-3 py-1.5 text-sm"
-                : "flex items-center gap-2 border bg-card px-3 py-1.5 text-sm"
-            }
-          >
+          <li key={c.id} className="flex items-center gap-2 text-sm">
             <span
               aria-hidden
               className={
