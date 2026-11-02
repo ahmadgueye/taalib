@@ -48,8 +48,10 @@ export function SignOutButton({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Rester</AlertDialogCancel>
+          {/* Le form s'étire avec le pied de la fenêtre sur mobile ; le
+              bouton doit suivre, comme « Rester ». */}
           <form action={signOutAction}>
-            <AlertDialogAction type="submit">
+            <AlertDialogAction type="submit" className="w-full sm:w-auto">
               Se déconnecter
             </AlertDialogAction>
           </form>
