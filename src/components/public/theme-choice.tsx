@@ -36,7 +36,7 @@ export function ThemeChoice() {
             aria-checked={selected}
             onClick={() => setTheme(option.value)}
             className={cn(
-              "min-h-10 px-3.5 text-sm font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+              "h-8 px-2.5 text-sm font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
               selected
                 ? "bg-foreground text-background"
                 : "hover:bg-muted"

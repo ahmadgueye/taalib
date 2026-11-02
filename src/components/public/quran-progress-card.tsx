@@ -102,7 +102,6 @@ export function QuranProgressCard({
       <Button
         render={<Link href={started ? "/memorisation" : "/coran"} />}
         nativeButton={false}
-        className="min-h-11"
       >
         {started ? "Voir ma mémorisation" : "Ouvrir le Qur'an"}
         <MoveRight />

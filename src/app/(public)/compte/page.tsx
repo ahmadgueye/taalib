@@ -8,6 +8,7 @@ import { AccountTabs, type AccountTab } from "@/components/public/account-tabs";
 import { FullNameForm } from "@/components/public/full-name-form";
 import { QuranProgressCard } from "@/components/public/quran-progress-card";
 import { ThemeChoice } from "@/components/public/theme-choice";
+import { Button } from "@/components/ui/button";
 import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { type ContentAccess } from "@/lib/content-access";
@@ -272,13 +273,17 @@ export default async function ComptePage({ searchParams }: Props) {
               </div>
             )}
           </div>
-          <Link
-            href={todoHref(resume)}
-            className="inline-flex min-h-12 items-center gap-2.5 bg-chart-1 px-5 font-bold text-[#21140f] transition-opacity hover:opacity-90"
+          {/* Orange dans les deux thèmes : le bouton par défaut est marron en
+              clair, invisible sur la carte. */}
+          <Button
+            size="lg"
+            render={<Link href={todoHref(resume)} />}
+            nativeButton={false}
+            className="bg-chart-1 text-white hover:bg-chart-1/80"
           >
             {resume.kind === "quiz" ? "Passer le quiz" : "Continuer la leçon"}
-            <MoveRight className="size-4" />
-          </Link>
+            <MoveRight />
+          </Button>
         </section>
       )}
 
