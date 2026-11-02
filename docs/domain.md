@@ -119,6 +119,18 @@ onglets
   déconnexion. Un compte sans nom (onboarding) arrive directement sur cet
   onglet.
 
+### Menu du compte
+
+L'avatar du header ouvre le menu du compte (`account-menu.tsx`) : un menu
+déroulant sur ordinateur, un tiroir qui monte du bas sur mobile (la barre
+d'onglets du bas n'a pas d'accès au compte). On y trouve le nom, l'e-mail
+(ordinateur), les classes et leur statut, la même carte **Reprendre** que sur
+`/compte`, des raccourcis (progression, mémorisation avec son pourcentage,
+paramètres) et la déconnexion. Le thème reste sur l'interrupteur du header.
+
+Le header étant sur toutes les pages, ces données ne sont chargées qu'à
+l'ouverture du menu, par `GET /api/compte/menu`.
+
 ## Quiz
 
 Un quiz (`quiz`) appartient à une thématique et contient des questions

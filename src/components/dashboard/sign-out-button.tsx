@@ -11,15 +11,31 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { LogOut } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/actions/auth";
 
-export function SignOutButton({ className }: { className?: string }) {
+// `menu` : une ligne de menu (menu du compte), avec son icône.
+export function SignOutButton({
+  className,
+  variant = "outline",
+}: {
+  className?: string;
+  variant?: "outline" | "menu";
+}) {
   return (
     <AlertDialog>
       <AlertDialogTrigger
-        render={<Button variant="outline" size="sm" className={className} />}
+        render={
+          <Button
+            variant={variant === "menu" ? "ghost" : "outline"}
+            size={variant === "menu" ? "lg" : "sm"}
+            className={className}
+          />
+        }
       >
+        {variant === "menu" && <LogOut />}
         Se déconnecter
       </AlertDialogTrigger>
       <AlertDialogContent>

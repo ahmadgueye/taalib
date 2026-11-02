@@ -7,7 +7,7 @@ d'API REST/GraphQL séparée pour les écritures : les mutations passent par des
 **Server Actions** (`"use server"`) appelées directement depuis les
 formulaires. Les seules routes API (`src/app/api/**`) exposent des ressources
 qui doivent être fetchées côté client ou par un service externe (audio Coran,
-cron).
+cron, données du menu du compte chargées à son ouverture).
 
 ```mermaid
 flowchart LR

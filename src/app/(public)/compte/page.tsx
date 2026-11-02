@@ -18,7 +18,12 @@ import {
   getRecentChapterActivity,
 } from "@/lib/db/queries/quran-memorization";
 import { getQuizAttemptsSummary } from "@/lib/db/queries/quiz-tentatives";
-import { getStudentRoadmap, type RoadmapTodo } from "@/lib/db/queries/roadmap";
+import {
+  getStudentRoadmap,
+  pickResume,
+  todoHref,
+  type RoadmapTodo,
+} from "@/lib/db/queries/roadmap";
 import { getChapters } from "@/lib/quran/queries";
 
 export const metadata: Metadata = {
@@ -66,12 +71,6 @@ async function getCoursSuivis(
     })),
     todo,
   };
-}
-
-// L'étudiant reprend dans le cours de sa dernière leçon lue, sinon au début
-// de sa feuille de route.
-function pickResume(todo: RoadmapTodo[], lastCoursId: string | null) {
-  return todo.find((t) => t.coursId === lastCoursId) ?? todo[0] ?? null;
 }
 
 function initialsOf(name: string | null, email: string) {
@@ -281,11 +280,7 @@ export default async function ComptePage({ searchParams }: Props) {
             )}
           </div>
           <Link
-            href={
-              resume.kind === "quiz"
-                ? `/quiz/${resume.id}`
-                : `/ressources/${resume.id}`
-            }
+            href={todoHref(resume)}
             className="inline-flex min-h-12 items-center gap-2.5 bg-chart-1 px-5 font-bold text-[#21140f] transition-opacity hover:opacity-90"
           >
             {resume.kind === "quiz" ? "Passer le quiz" : "Continuer la leçon"}
@@ -513,7 +508,10 @@ export default async function ComptePage({ searchParams }: Props) {
         Content de te revoir. Voici où tu en es.
       </p>
       {!access.all && <ClassBadges classes={studentClasses} />}
+      {/* Remonté quand ?onglet= change, pour qu'un lien vers les paramètres
+          (menu du compte) ouvre l'onglet même depuis /compte. */}
       <AccountTabs
+        key={defaultTab}
         defaultTab={defaultTab}
         progression={progression}
         parametres={parametres}

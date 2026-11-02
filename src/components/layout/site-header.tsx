@@ -1,18 +1,10 @@
 import Link from "next/link";
 
-import { SignOutButton } from "@/components/dashboard/sign-out-button";
+import { AccountMenu } from "@/components/layout/account-menu";
 import { SiteNavLinks } from "@/components/layout/site-nav-links";
 import { StaffModeSwitch } from "@/components/layout/staff-mode-switch";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { getCurrentProfile } from "@/lib/auth/get-session";
 
 // « Ahmad Test » → « AT » ; un seul mot → sa première lettre ; sans nom, la
@@ -54,42 +46,11 @@ export async function SiteHeader({
           )}
           <ThemeToggle />
           {profile ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={<Button variant="ghost" size="icon" />}
-                aria-label="Mon compte"
-                title={profile.fullName ?? profile.email}
-              >
-                <span
-                  className="flex size-7 items-center justify-center bg-primary text-[11px] font-semibold tracking-wide text-primary-foreground"
-                  aria-hidden
-                >
-                  {initialsOf(profile.fullName, profile.email)}
-                </span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>
-                    {profile.fullName ?? profile.email}
-                  </DropdownMenuLabel>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <div className="px-1.5 py-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start"
-                    render={<Link href="/compte" />}
-                    nativeButton={false}
-                  >
-                    Mon compte
-                  </Button>
-                </div>
-                <div className="px-1.5 py-1">
-                  <SignOutButton className="w-full" />
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <AccountMenu
+              name={profile.fullName}
+              email={profile.email}
+              initials={initialsOf(profile.fullName, profile.email)}
+            />
           ) : (
             <Button
               variant="outline"
