@@ -122,26 +122,13 @@ function Identity({
           </span>
         )}
         {data === null && (
-          <Skeleton aria-hidden className="h-5 w-36 rounded-none" />
+          <Skeleton aria-hidden className="mt-0.5 h-3 w-32 rounded-none" />
         )}
         {data && data.classes.length > 0 && (
-          <ul aria-label="Mes classes" className="flex flex-wrap gap-1.5">
+          <ul aria-label="Mes classes" className="flex flex-col">
             {data.classes.map((c) => (
-              <li
-                key={c.id}
-                className="flex items-center gap-1.5 bg-muted px-2 py-0.5 text-xs"
-              >
-                <span
-                  aria-hidden
-                  className={cn(
-                    "size-1.5",
-                    c.former ? "bg-muted-foreground" : "bg-emerald-600",
-                  )}
-                />
-                <span className="font-semibold">{c.name}</span>
-                <span className="text-muted-foreground">
-                  · {c.former ? "Ancien élève" : "En cours"}
-                </span>
+              <li key={c.id} className="truncate text-xs text-muted-foreground">
+                {c.name} · {c.former ? "Ancien élève" : "En cours"}
               </li>
             ))}
           </ul>
