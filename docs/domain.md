@@ -90,7 +90,7 @@ avec le nombre de thématiques, de leçons et de quiz publiés
 
 ## Page compte
 
-`/compte` s'ouvre sur « Salam, {prénom} » et les classes de l'étudiant
+`/compte` s'ouvre sur « Salam, {prénom} » avec, à sa droite, les classes de l'étudiant
 (`getStudentClasses`) : « En cours depuis le … » ou « Ancien élève depuis
 le … » (`left_at` renseigné). Une classe dont il a été retiré n'a plus de
 ligne dans `class_members` et n'apparaît donc pas ; sans aucune classe, un

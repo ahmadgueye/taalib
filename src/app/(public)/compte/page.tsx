@@ -93,7 +93,7 @@ const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   year: "numeric",
 });
 
-// Sous le titre : les classes de l'étudiant et où il en est dans chacune.
+// À droite du titre : les classes de l'étudiant et où il en est dans chacune.
 // Le staff, qui n'est dans aucune classe, ne voit rien.
 function ClassBadges({
   classes,
@@ -102,7 +102,7 @@ function ClassBadges({
 }) {
   if (classes.length === 0) {
     return (
-      <p className="mt-4 text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground sm:text-right">
         Tu ne fais partie d&apos;aucune classe pour l&apos;instant.{" "}
         <Link
           href="/rejoindre"
@@ -114,7 +114,7 @@ function ClassBadges({
     );
   }
   return (
-    <ul aria-label="Mes classes" className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
+    <ul aria-label="Mes classes" className="flex flex-col gap-1 sm:items-end">
       {classes.map((c) => {
         const former = c.leftAt !== null;
         return (
@@ -498,14 +498,19 @@ export default async function ComptePage({ searchParams }: Props) {
 
   return (
     <div className="animate-in fade-in duration-300">
-      <Eyebrow>Mon espace</Eyebrow>
-      <h1 className="mt-1.5 font-heading text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-        {firstName ? `Salam, ${firstName}` : "Salam"}
-      </h1>
-      <p className="mt-1.5 text-muted-foreground">
-        Content de te revoir. Voici où tu en es.
-      </p>
-      {!access.all && <ClassBadges classes={studentClasses} />}
+      {/* La classe à droite du titre (en dessous sur mobile). */}
+      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+        <div>
+          <Eyebrow>Mon espace</Eyebrow>
+          <h1 className="mt-1.5 font-heading text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+            {firstName ? `Salam, ${firstName}` : "Salam"}
+          </h1>
+          <p className="mt-1.5 text-muted-foreground">
+            Content de te revoir. Voici où tu en es.
+          </p>
+        </div>
+        {!access.all && <ClassBadges classes={studentClasses} />}
+      </div>
       {/* Remonté quand ?onglet= change, pour qu'un lien vers les paramètres
           (menu du compte) ouvre l'onglet même depuis /compte. */}
       <AccountTabs
