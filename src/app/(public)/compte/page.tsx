@@ -429,7 +429,7 @@ export default async function ComptePage({ searchParams }: Props) {
   );
 
   const parametres = (
-    <div className="flex max-w-2xl flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <section
         aria-labelledby="profil"
         className="flex flex-col gap-5 bg-card p-6"
