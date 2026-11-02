@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import {
   BookMarked,
   ChartNoAxesColumn,
@@ -91,7 +92,7 @@ function Avatar({ initials, large }: { initials: string; large?: boolean }) {
         "flex shrink-0 items-center justify-center bg-primary font-semibold text-primary-foreground",
         large
           ? "size-12 font-heading text-lg"
-          : "size-7 text-[11px] tracking-wide"
+          : "size-7 text-[11px] tracking-wide",
       )}
     >
       {initials}
@@ -120,6 +121,9 @@ function Identity({
             {account.email}
           </span>
         )}
+        {data === null && (
+          <Skeleton aria-hidden className="h-5 w-36 rounded-none" />
+        )}
         {data && data.classes.length > 0 && (
           <ul aria-label="Mes classes" className="flex flex-wrap gap-1.5">
             {data.classes.map((c) => (
@@ -131,7 +135,7 @@ function Identity({
                   aria-hidden
                   className={cn(
                     "size-1.5",
-                    c.former ? "bg-muted-foreground" : "bg-emerald-600"
+                    c.former ? "bg-muted-foreground" : "bg-emerald-600",
                   )}
                 />
                 <span className="font-semibold">{c.name}</span>
@@ -175,7 +179,7 @@ function ResumeCard({
         aria-hidden
         className={cn(
           "flex shrink-0 items-center justify-center bg-chart-1 text-[#21140f]",
-          large ? "size-11" : "size-9"
+          large ? "size-11" : "size-9",
         )}
       >
         <MoveRight className="size-4" />
@@ -186,6 +190,33 @@ function ResumeCard({
 
 const resumeClassName =
   "flex items-center gap-3 bg-[#21140f] p-3.5 text-left text-[#f5f5ed] dark:bg-card dark:text-card-foreground";
+
+// Pendant le chargement : la carte « Reprendre » vide, à la même taille, pour
+// que le menu ne saute pas quand elle arrive.
+function ResumeSkeleton({
+  className,
+  large,
+}: {
+  className?: string;
+  large?: boolean;
+}) {
+  return (
+    <div
+      role="status"
+      aria-label="Chargement"
+      className={cn(resumeClassName, "animate-pulse", className)}
+    >
+      <span className="flex flex-1 flex-col gap-2 py-0.5">
+        <span className="h-2.5 w-16 bg-current/20" />
+        <span className={cn("h-3.5 bg-current/25", large ? "w-48" : "w-40")} />
+        <span className="h-3 w-52 max-w-full bg-current/15" />
+      </span>
+      <span
+        className={cn("shrink-0 bg-chart-1/40", large ? "size-11" : "size-9")}
+      />
+    </div>
+  );
+}
 
 // Ordinateur : un menu déroulant sous l'avatar.
 function AccountDropdown({ account }: { account: Account }) {
@@ -201,28 +232,27 @@ function AccountDropdown({ account }: { account: Account }) {
       >
         <Avatar initials={account.initials} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-[340px] rounded-none p-0"
-      >
+      <DropdownMenuContent align="end" className="w-[340px] rounded-none p-0">
         <div className="p-4">
           <Identity account={account} data={data} showEmail />
         </div>
 
         {data === null ? (
-          <Skeleton className="mx-2.5 h-[76px] rounded-none" />
+          <ResumeSkeleton className="mx-2.5 dark:bg-muted" />
         ) : (
           data.resume && (
-            <DropdownMenuItem
+            // Item nu plutôt que DropdownMenuItem, dont le survol recolore tout
+            // le texte en foncé (illisible sur le marron). En sombre, le menu a
+            // déjà la couleur des cartes : un cran plus clair.
+            <MenuPrimitive.Item
               render={<Link href={data.resume.href} />}
               className={cn(
                 resumeClassName,
-                // En sombre, le menu a déjà la couleur des cartes : un cran plus clair.
-                "mx-2.5 rounded-none focus:bg-[#21140f] focus:text-[#f5f5ed] dark:bg-muted dark:focus:bg-muted/80 dark:focus:text-card-foreground"
+                "mx-2.5 outline-none transition-opacity data-highlighted:opacity-90 dark:bg-muted",
               )}
             >
               <ResumeCard resume={data.resume} />
-            </DropdownMenuItem>
+            </MenuPrimitive.Item>
           )
         )}
 
@@ -235,12 +265,11 @@ function AccountDropdown({ account }: { account: Account }) {
             >
               <Icon className="size-[18px]" />
               <span className="flex-1">{label}</span>
-              {href === "/memorisation" &&
-                data?.memorizedPercent != null && (
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {formatPercent(data.memorizedPercent)}
-                  </span>
-                )}
+              {href === "/memorisation" && data?.memorizedPercent != null && (
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {formatPercent(data.memorizedPercent)}
+                </span>
+              )}
             </DropdownMenuItem>
           ))}
         </div>
@@ -296,7 +325,7 @@ function AccountSheet({ account }: { account: Account }) {
         </div>
 
         {data === null ? (
-          <Skeleton className="mx-4 h-[84px] rounded-none" />
+          <ResumeSkeleton large className="mx-4 p-4" />
         ) : (
           data.resume && (
             <Link
