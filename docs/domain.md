@@ -294,19 +294,23 @@ En haut de la page, une liste dépliable **« À faire »** (`todo-list.tsx`,
 élément `<details>` natif) récapitule tout ce que l'étudiant a à faire.
 Fermée, elle tient en une ligne : « À faire · 3 leçons et 1 quiz », avec le
 nombre de nouveautés. Elle est ouverte d'office quand il y a du nouveau.
-Ouverte, elle liste, groupés par cours (plusieurs cours peuvent avancer en
-parallèle) et dans l'ordre de la feuille de route :
+Ouverte, elle montre une ligne par thématique, dans l'ordre de la feuille
+de route (plusieurs cours peuvent avancer en parallèle) : le titre de la
+thématique et son cours, ce qu'il y reste à faire (« 9 leçons · 8
+nouveaux ») et l'élément suivant. Toute la ligne mène à cet élément
+(« Continuer », ou « Passer le quiz »). Débloquer une sourate entière
+n'ajoute donc qu'une ligne. Sont comptés :
 
 - chaque leçon débloquée et pas encore lue ;
-- chaque quiz débloqué et pas encore réussi (« Quiz : … »), mais seulement
-  une fois toutes les leçons ouvertes de sa thématique lues.
+- chaque quiz débloqué et pas encore réussi, mais seulement une fois toutes
+  les leçons ouvertes de sa thématique lues.
 
 Si tout ce qui est ouvert est fait, la ligne affiche « Tu es à jour ».
 
 Un élément débloqué depuis moins de 7 jours (`NEW_FOR_DAYS`) et pas encore
 fait est signalé **« Nouveau »**. Le résumé « À faire » compte les
-nouveautés en toutes lettres, et chaque ligne concernée porte une petite
-pastille carrée qui pulse trois fois. Sur la feuille de route, le carré
+nouveautés en toutes lettres, et chaque thématique qui en contient porte
+une petite pastille carrée qui pulse trois fois. Sur la feuille de route, le carré
 numéroté de son étape passe à la couleur principale et un halo pulse trois
 fois à l'arrivée (rien si l'étudiant a demandé moins d'animations). La date
 retenue est celle du plus ancien déblocage pour les classes de l'étudiant

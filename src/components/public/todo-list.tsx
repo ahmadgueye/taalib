@@ -15,7 +15,7 @@ function plural(n: number, singular: string, pluralForm: string) {
 }
 
 // En tête de l'accueil étudiant : tout ce qu'il a à faire, résumé en une
-// ligne et dépliable. Ouverte d'office quand il y a du nouveau, pour qu'une
+// ligne et dépliable, une ligne par thématique. Ouverte d'office quand il y a du nouveau, pour qu'une
 // leçon tout juste débloquée ne passe pas inaperçue.
 export function TodoList({ todo }: { todo: RoadmapTodo[] }) {
   if (todo.length === 0) {
@@ -40,18 +40,13 @@ export function TodoList({ todo }: { todo: RoadmapTodo[] }) {
     .filter(Boolean)
     .join(" et ");
 
-  // Regroupé par cours, dans l'ordre de la feuille de route.
-  const groups: { coursId: string; coursTitle: string; items: RoadmapTodo[] }[] =
-    [];
+  // Une ligne par thématique, dans l'ordre de la feuille de route : débloquer
+  // une sourate entière ajoute une ligne, pas dix.
+  const groups: RoadmapTodo[][] = [];
   for (const item of todo) {
     const last = groups.at(-1);
-    if (last?.coursId === item.coursId) last.items.push(item);
-    else
-      groups.push({
-        coursId: item.coursId,
-        coursTitle: item.coursTitle,
-        items: [item],
-      });
+    if (last?.[0].thematiqueId === item.thematiqueId) last.push(item);
+    else groups.push([item]);
   }
 
   return (
@@ -66,45 +61,62 @@ export function TodoList({ todo }: { todo: RoadmapTodo[] }) {
         )}
         <ChevronDown className="ml-auto size-4 shrink-0 text-muted-foreground transition-transform group-open/todo:rotate-180" />
       </summary>
-      <div className="pb-2">
-        {groups.map((group) => (
-          <div key={group.coursId}>
-            {groups.length > 1 && (
-              <h3 className="pt-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {group.coursTitle}
-              </h3>
-            )}
-            <ul className="divide-y border-t">
-              {group.items.map((item) => (
-                <TodoRow key={item.id} item={item} />
-              ))}
-            </ul>
-          </div>
+      <ul className="divide-y border-t">
+        {groups.map((items) => (
+          <TodoGroupRow key={items[0].thematiqueId} items={items} />
         ))}
-      </div>
+      </ul>
     </details>
   );
 }
 
-function TodoRow({ item }: { item: RoadmapTodo }) {
-  const Icon = item.kind === "quiz" ? ClipboardCheck : BookOpen;
+// Une thématique : ce qu'il reste à y faire, et un lien droit vers l'élément
+// suivant (leçons dans l'ordre, puis quiz).
+function TodoGroupRow({ items }: { items: RoadmapTodo[] }) {
+  const next = items[0];
+  const lessons = items.filter((t) => t.kind === "ressource").length;
+  const quizzes = items.length - lessons;
+  const fresh = items.filter((t) => t.isNew).length;
+  const counts = [
+    lessons > 0 && plural(lessons, "leçon", "leçons"),
+    quizzes > 0 && plural(quizzes, "quiz", "quiz"),
+    fresh > 0 && plural(fresh, "nouveau", "nouveaux"),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const Icon = next.kind === "quiz" ? ClipboardCheck : BookOpen;
+
   return (
     <li>
       <Link
-        href={item.kind === "quiz" ? `/quiz/${item.id}` : `/ressources/${item.id}`}
+        href={next.kind === "quiz" ? `/quiz/${next.id}` : `/ressources/${next.id}`}
         className="group flex items-center gap-3 py-2.5 text-sm"
       >
-        {/* Emplacement réservé : les icônes restent alignées d'une ligne à l'autre. */}
-        {item.isNew ? <NewDot /> : <span className="size-2 shrink-0" aria-hidden />}
-        <Icon className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
-        <span className="min-w-0 flex-1 truncate">
-          <span className="font-medium group-hover:underline group-hover:underline-offset-4">
-            {item.kind === "quiz" && "Quiz : "}
-            {item.title}
+        {/* Emplacement réservé : les titres restent alignés d'une ligne à l'autre. */}
+        {fresh > 0 ? <NewDot /> : <span className="size-2 shrink-0" aria-hidden />}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate">
+            <span className="font-medium group-hover:underline group-hover:underline-offset-4">
+              {next.thematiqueTitle}
+            </span>
+            <span className="text-muted-foreground"> · {next.coursTitle}</span>
           </span>
-          <span className="text-muted-foreground"> · {item.thematiqueTitle}</span>
+          <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="shrink-0">{counts}</span>
+            <span aria-hidden>·</span>
+            <Icon className="size-3 shrink-0" />
+            <span className="truncate">
+              {next.kind === "quiz" && "Quiz : "}
+              {next.title}
+            </span>
+          </span>
         </span>
-        <MoveRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+        <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground group-hover:text-foreground">
+          <span className="hidden sm:inline">
+            {next.kind === "quiz" ? "Passer le quiz" : "Continuer"}
+          </span>
+          <MoveRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </span>
       </Link>
     </li>
   );

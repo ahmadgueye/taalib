@@ -53,6 +53,8 @@ export type RoadmapTodo = {
   coursId: string;
   title: string;
   coursTitle: string;
+  thematiqueId: string;
+  thematiqueSlug: string;
   thematiqueTitle: string;
   isNew: boolean;
 };
@@ -194,6 +196,8 @@ export async function getStudentRoadmap(
           coursId: c.id,
           title: item.title,
           coursTitle: c.title,
+          thematiqueId: t.id,
+          thematiqueSlug: t.slug,
           thematiqueTitle: t.title,
           isNew: isRecent(item.id),
         });
