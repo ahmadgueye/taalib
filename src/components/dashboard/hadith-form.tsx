@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MarkdownEditorField } from "@/components/dashboard/markdown-editor-field";
 import { NarratorMultiSelect } from "@/components/dashboard/narrator-multi-select";
 import { SubmitButton } from "@/components/dashboard/submit-button";
+import { useFormLeaveGuard } from "@/components/dashboard/use-leave-guard";
 import {
   Field,
   FieldDescription,
@@ -56,9 +57,10 @@ export function HadithForm({
     action,
     undefined
   );
+  const { formRef, leaveDialog } = useFormLeaveGuard();
 
   return (
-    <form action={formAction} className="max-w-lg">
+    <form ref={formRef} action={formAction} className="max-w-lg">
       {backToThematique && (
         <input type="hidden" name="backToThematique" value="1" />
       )}
@@ -150,6 +152,7 @@ export function HadithForm({
         {state?.error && <FieldError>{state.error}</FieldError>}
         <SubmitButton>{hadith ? "Enregistrer" : "Créer"}</SubmitButton>
       </FieldGroup>
+      {leaveDialog}
     </form>
   );
 }

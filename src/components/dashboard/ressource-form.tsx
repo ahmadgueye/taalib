@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { RessourceUrlField } from "@/components/dashboard/ressource-url-field";
 import { SubmitButton } from "@/components/dashboard/submit-button";
+import { useFormLeaveGuard } from "@/components/dashboard/use-leave-guard";
 import {
   Field,
   FieldDescription,
@@ -57,9 +58,10 @@ export function RessourceForm({
     action,
     undefined
   );
+  const { formRef, leaveDialog } = useFormLeaveGuard();
 
   return (
-    <form action={formAction} className="max-w-lg">
+    <form ref={formRef} action={formAction} className="max-w-lg">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="thematiqueId">Thématique</FieldLabel>
@@ -133,6 +135,7 @@ export function RessourceForm({
         {state?.error && <FieldError>{state.error}</FieldError>}
         <SubmitButton>{ressource ? "Enregistrer" : "Créer"}</SubmitButton>
       </FieldGroup>
+      {leaveDialog}
     </form>
   );
 }

@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 
 import { MarkdownEditorField } from "@/components/dashboard/markdown-editor-field";
 import { SubmitButton } from "@/components/dashboard/submit-button";
+import { useFormLeaveGuard } from "@/components/dashboard/use-leave-guard";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -59,12 +60,13 @@ export function SeanceForm({
     action,
     undefined
   );
+  const { formRef, leaveDialog } = useFormLeaveGuard();
 
   const [thematiqueSearch, setThematiqueSearch] = useState("");
   const [ressourceSearch, setRessourceSearch] = useState("");
 
   return (
-    <form action={formAction} className="max-w-lg">
+    <form ref={formRef} action={formAction} className="max-w-lg">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="title">Titre</FieldLabel>
@@ -181,6 +183,7 @@ export function SeanceForm({
         {state?.error && <FieldError>{state.error}</FieldError>}
         <SubmitButton>{seance ? "Enregistrer" : "Créer"}</SubmitButton>
       </FieldGroup>
+      {leaveDialog}
     </form>
   );
 }

@@ -4,6 +4,7 @@ import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { SubmitButton } from "@/components/dashboard/submit-button";
+import { useFormLeaveGuard } from "@/components/dashboard/use-leave-guard";
 import {
   Field,
   FieldDescription,
@@ -29,13 +30,14 @@ export function ClassForm({
     action,
     undefined
   );
+  const { formRef, leaveDialog } = useFormLeaveGuard();
 
   useEffect(() => {
     if (state?.success) toast.success(state.success);
   }, [state]);
 
   return (
-    <form action={formAction} className="max-w-lg">
+    <form ref={formRef} action={formAction} className="max-w-lg">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="name">Nom</FieldLabel>
@@ -60,6 +62,7 @@ export function ClassForm({
         {state?.error && <FieldError>{state.error}</FieldError>}
         <SubmitButton>{classe ? "Enregistrer" : "Créer"}</SubmitButton>
       </FieldGroup>
+      {leaveDialog}
     </form>
   );
 }

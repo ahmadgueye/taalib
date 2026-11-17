@@ -127,6 +127,10 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Cours : créer, modifier, supprimer ; statut `coming_soon` ↔ `published` ;
       champ « Nom en arabe » (facultatif) affiché en ruq'a sur `/cours`
 - [ ] Thématiques : créer, glisser-déposer pour réordonner, supprimer
+- [ ] Éditeurs (cours, thématique, ressource, hadith, rapporteur, séance,
+      classe, quiz) : modifier un champ puis cliquer un lien de la sidebar
+      ouvre « Quitter sans enregistrer ? » ; « Rester sur la page » garde la
+      saisie ; sans modification, aucune question
 - [ ] Ressources : créer chaque type (vidéo, PDF upload, lien, texte
       markdown), brouillon invisible côté public, réordonner
 - [ ] Hadiths : créer avec arabe + FR obligatoire, wolof optionnel

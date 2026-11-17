@@ -58,6 +58,15 @@ flowchart TD
   n'est pas un conteneur qui possède du contenu : elle pointe vers du contenu
   qui existe déjà ailleurs.
 
+Dans le dashboard, chaque formulaire d'édition (cours, thématique, ressource,
+hadith, rapporteur, séance, réglages d'une classe, quiz) prévient avant de
+quitter la page avec des modifications non enregistrées
+(`use-leave-guard.tsx`) : un lien interne ouvre la boîte « Quitter sans
+enregistrer ? », la fermeture ou le rechargement de l'onglet l'alerte du
+navigateur (la seule permise à ce moment-là). Un clic avec Cmd/Ctrl, qui
+ouvre un nouvel onglet, passe sans question. Le bouton « retour » du
+navigateur n'est pas intercepté.
+
 ## Progression utilisateur
 
 `ressource_progress` (table pivot `user_id` + `ressource_id`) enregistre

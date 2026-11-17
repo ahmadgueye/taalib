@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import { SubmitButton } from "@/components/dashboard/submit-button";
+import { useFormLeaveGuard } from "@/components/dashboard/use-leave-guard";
 import {
   Field,
   FieldError,
@@ -28,9 +29,10 @@ export function NarratorForm({
     action,
     undefined
   );
+  const { formRef, leaveDialog } = useFormLeaveGuard();
 
   return (
-    <form action={formAction} className="max-w-lg">
+    <form ref={formRef} action={formAction} className="max-w-lg">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="name">Nom</FieldLabel>
@@ -45,6 +47,7 @@ export function NarratorForm({
         {state?.error && <FieldError>{state.error}</FieldError>}
         <SubmitButton>{narrator ? "Enregistrer" : "Créer"}</SubmitButton>
       </FieldGroup>
+      {leaveDialog}
     </form>
   );
 }

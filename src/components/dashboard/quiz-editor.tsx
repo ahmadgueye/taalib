@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -20,6 +20,7 @@ import {
   ImportedQuestionList,
 } from "@/components/dashboard/quiz-generate-dialog";
 import { SubmitButton } from "@/components/dashboard/submit-button";
+import { useLeaveGuard } from "@/components/dashboard/use-leave-guard";
 import { QuizAttempt } from "@/components/public/quiz-attempt";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -124,35 +125,6 @@ function snapshot(meta: Meta, questions: QuestionDraft[]) {
   return JSON.stringify({ meta, questions });
 }
 
-// Prévient avant de quitter la page avec des modifications non enregistrées :
-// fermeture de l'onglet, et clic sur un lien interne (sidebar, fil d'Ariane).
-function useLeaveGuard(dirty: boolean) {
-  useEffect(() => {
-    if (!dirty) return;
-    const message =
-      "Tu as des modifications non enregistrées. Quitter quand même ?";
-
-    function onBeforeUnload(event: BeforeUnloadEvent) {
-      event.preventDefault();
-    }
-    function onClick(event: MouseEvent) {
-      const link = (event.target as Element).closest?.("a[href]");
-      if (!link || link.getAttribute("target") === "_blank") return;
-      if (!window.confirm(message)) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    }
-
-    window.addEventListener("beforeunload", onBeforeUnload);
-    document.addEventListener("click", onClick, true);
-    return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload);
-      document.removeEventListener("click", onClick, true);
-    };
-  }, [dirty]);
-}
-
 export function QuizEditor({
   quiz,
   thematiqueOptions,
@@ -219,7 +191,7 @@ export function QuizEditor({
   const [importOpen, setImportOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
   const dirty = snapshot(meta, questions) !== saved;
-  useLeaveGuard(dirty);
+  const leaveDialog = useLeaveGuard(() => dirty);
 
   function updateQuestion(key: string, patch: Partial<QuestionDraft>) {
     setQuestions((qs) =>
@@ -670,6 +642,7 @@ export function QuizEditor({
         title={meta.title}
         questions={questions}
       />
+      {leaveDialog}
     </>
   );
 }
