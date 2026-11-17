@@ -75,13 +75,21 @@ Toutes documentées avec leur provenance exacte dans `.env.example`. Résumé :
 | `QURAN_CLIENT_ID` / `QURAN_CLIENT_SECRET` | Console développeur Quran Foundation | OAuth2 client-credentials pour l'API Coran (server-only) |
 | `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys | Génération de questions de quiz par IA (server-only). Facultative : absente, le bouton « Générer avec l'IA » est masqué |
 
-Le client Postgres (`src/lib/db/index.ts`) ferme ses connexions inactives
-après 20 s (`idle_timeout`) et les renouvelle toutes les 5 minutes. Sur
-Vercel (Fluid compute), une instance garde ses connexions entre deux
-requêtes ; sans cela, une connexion coupée au repos par le pooler faisait
-attendre une requête jusqu'au timeout de 5 minutes (symptôme : l'accueil du
-dashboard, qui lance beaucoup de requêtes en parallèle, restait sur son
-squelette de chargement).
+Le client Postgres (`src/lib/db/index.ts`) est réglé pour le pooler
+Supabase en mode transaction :
+
+- `max_pipeline: 0` — une requête à la fois par connexion. Par défaut,
+  postgres-js envoie au-delà de 10 requêtes simultanées plusieurs requêtes à
+  la suite sur une même connexion (pipelining), ce que le pooler ne gère
+  pas : l'une d'elles restait sans réponse (`state = active`,
+  `wait_event = ClientRead` dans `pg_stat_activity`) jusqu'au timeout de
+  5 minutes de la fonction Vercel. Symptôme : l'accueil du dashboard, qui
+  lance une vingtaine de requêtes en parallèle, restait sur son squelette de
+  chargement alors que les autres pages répondaient.
+- `idle_timeout: 20`, `max_lifetime: 300`, `connect_timeout: 10` — sur
+  Vercel (Fluid compute), une instance garde ses connexions entre deux
+  requêtes : on ferme les inactives avant que le pooler ne les coupe et on
+  borne l'établissement d'une connexion.
 
 Le Client ID/Secret Google OAuth **ne sont pas** des variables d'env de
 l'app — ils se configurent directement dans Supabase (Authentication →
