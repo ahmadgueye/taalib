@@ -11,7 +11,7 @@ import { db } from "@/lib/db";
 import { seanceRessources, seanceThematiques, seances } from "@/lib/db/schema";
 import { slugify } from "@/lib/utils";
 
-export type ActionState = { error?: string } | undefined;
+export type ActionState = { error?: string; success?: string } | undefined;
 
 const seanceSchema = z.object({
   title: z.string().trim().min(1, "Le titre est requis."),
@@ -139,8 +139,8 @@ export async function updateSeance(
   revalidatePath("/dashboard/seances");
   revalidatePath("/seances");
   revalidatePath("/");
-  await setFlash("Séance enregistrée.");
-  redirect("/dashboard/seances");
+  // L'éditeur reste ouvert : le formulaire affiche le toast.
+  return { success: "Séance enregistrée." };
 }
 
 export async function deleteSeance(id: string) {

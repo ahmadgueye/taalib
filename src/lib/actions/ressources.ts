@@ -11,7 +11,7 @@ import { revalidateCoursTree } from "@/lib/actions/revalidate-tree";
 import { db } from "@/lib/db";
 import { ressources } from "@/lib/db/schema";
 
-export type ActionState = { error?: string } | undefined;
+export type ActionState = { error?: string; success?: string } | undefined;
 
 const baseFields = {
   title: z.string().trim().min(1, "Le titre est requis."),
@@ -111,8 +111,8 @@ export async function updateRessource(
   revalidatePath("/dashboard/ressources");
   revalidatePath("/thematiques");
   revalidateCoursTree();
-  await setFlash("Ressource enregistrée.");
-  redirect(`/dashboard/thematiques/${parsed.data.thematiqueId}`);
+  // L'éditeur reste ouvert : le formulaire affiche le toast.
+  return { success: "Ressource enregistrée." };
 }
 
 export async function deleteRessource(id: string) {

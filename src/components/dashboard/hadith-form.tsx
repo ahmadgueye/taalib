@@ -1,16 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
 import Link from "next/link";
 
 import { MarkdownEditorField } from "@/components/dashboard/markdown-editor-field";
 import { NarratorMultiSelect } from "@/components/dashboard/narrator-multi-select";
-import { SubmitButton } from "@/components/dashboard/submit-button";
-import { useFormLeaveGuard } from "@/components/dashboard/use-leave-guard";
+import {
+  EditorFormActions,
+  useEditorForm,
+} from "@/components/dashboard/use-editor-form";
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
@@ -22,11 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  createHadith,
-  updateHadith,
-  type ActionState,
-} from "@/lib/actions/hadiths";
+import { createHadith, updateHadith } from "@/lib/actions/hadiths";
 
 export function HadithForm({
   thematiqueOptions,
@@ -53,14 +49,11 @@ export function HadithForm({
   };
 }) {
   const action = hadith ? updateHadith.bind(null, hadith.id) : createHadith;
-  const [state, formAction] = useActionState<ActionState, FormData>(
-    action,
-    undefined
-  );
-  const { formRef, leaveDialog } = useFormLeaveGuard();
+  const { state, pending, dirty, formRef, onSubmit, leaveDialog } =
+    useEditorForm(action);
 
   return (
-    <form ref={formRef} action={formAction} className="max-w-lg">
+    <form ref={formRef} onSubmit={onSubmit} className="max-w-lg">
       {backToThematique && (
         <input type="hidden" name="backToThematique" value="1" />
       )}
@@ -149,8 +142,13 @@ export function HadithForm({
           />
           <FieldDescription>Facultatif.</FieldDescription>
         </Field>
-        {state?.error && <FieldError>{state.error}</FieldError>}
-        <SubmitButton>{hadith ? "Enregistrer" : "Créer"}</SubmitButton>
+        <EditorFormActions
+          pending={pending}
+          dirty={!!hadith && dirty}
+          error={state?.error}
+        >
+          {hadith ? "Enregistrer" : "Créer"}
+        </EditorFormActions>
       </FieldGroup>
       {leaveDialog}
     </form>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -103,35 +103,48 @@ function serialize(form: HTMLFormElement) {
 }
 
 // La même protection pour un formulaire non contrôlé : ses valeurs au moment
-// de partir sont comparées à celles de l'ouverture de la page. À brancher
-// avec `<form ref={formRef}>`, en affichant `leaveDialog`.
+// de partir sont comparées à la référence, prise à l'ouverture de la page puis
+// à chaque enregistrement réussi (`markSaved`). `dirty` suit la saisie pour
+// l'afficher. À brancher avec `<form ref={formRef}>`, en affichant
+// `leaveDialog`.
 export function useFormLeaveGuard() {
   const formRef = useRef<HTMLFormElement>(null);
   const initial = useRef<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
-  useEffect(() => {
-    const form = formRef.current;
-    if (!form) return;
-    initial.current = serialize(form);
-    // React réinitialise le formulaire après l'envoi : ce qui reste affiché
-    // devient la nouvelle référence.
-    function onReset() {
-      setTimeout(() => {
-        if (formRef.current) initial.current = serialize(formRef.current);
-      });
-    }
-    form.addEventListener("reset", onReset);
-    return () => form.removeEventListener("reset", onReset);
-  }, []);
-
-  const leaveDialog = useLeaveGuard(() => {
+  const isDirty = useCallback(() => {
     const form = formRef.current;
     return (
       form !== null &&
       initial.current !== null &&
       serialize(form) !== initial.current
     );
-  });
+  }, []);
 
-  return { formRef, leaveDialog };
+  const markSaved = useCallback(() => {
+    if (formRef.current) initial.current = serialize(formRef.current);
+    setDirty(false);
+  }, []);
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    initial.current = serialize(form);
+    // Après l'événement, pour lire les valeurs des champs déjà mises à jour.
+    function onEdit() {
+      setTimeout(() => setDirty(isDirty()));
+    }
+    form.addEventListener("input", onEdit);
+    form.addEventListener("change", onEdit);
+    form.addEventListener("click", onEdit);
+    return () => {
+      form.removeEventListener("input", onEdit);
+      form.removeEventListener("change", onEdit);
+      form.removeEventListener("click", onEdit);
+    };
+  }, [isDirty]);
+
+  const leaveDialog = useLeaveGuard(isDirty);
+
+  return { formRef, leaveDialog, dirty, markSaved };
 }

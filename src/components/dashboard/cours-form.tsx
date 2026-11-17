@@ -1,13 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
-
-import { SubmitButton } from "@/components/dashboard/submit-button";
-import { useFormLeaveGuard } from "@/components/dashboard/use-leave-guard";
+import {
+  EditorFormActions,
+  useEditorForm,
+} from "@/components/dashboard/use-editor-form";
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
@@ -20,11 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  createCours,
-  updateCours,
-  type ActionState,
-} from "@/lib/actions/cours";
+import { createCours, updateCours } from "@/lib/actions/cours";
 
 const statusOptions = [
   { value: "published", label: "Publié" },
@@ -43,14 +38,11 @@ export function CoursForm({
   };
 }) {
   const action = cours ? updateCours.bind(null, cours.id) : createCours;
-  const [state, formAction] = useActionState<ActionState, FormData>(
-    action,
-    undefined
-  );
-  const { formRef, leaveDialog } = useFormLeaveGuard();
+  const { state, pending, dirty, formRef, onSubmit, leaveDialog } =
+    useEditorForm(action);
 
   return (
-    <form ref={formRef} action={formAction} className="max-w-lg">
+    <form ref={formRef} onSubmit={onSubmit} className="max-w-lg">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="title">Titre</FieldLabel>
@@ -105,8 +97,13 @@ export function CoursForm({
           />
           <FieldDescription>Facultatif.</FieldDescription>
         </Field>
-        {state?.error && <FieldError>{state.error}</FieldError>}
-        <SubmitButton>{cours ? "Enregistrer" : "Créer"}</SubmitButton>
+        <EditorFormActions
+          pending={pending}
+          dirty={!!cours && dirty}
+          error={state?.error}
+        >
+          {cours ? "Enregistrer" : "Créer"}
+        </EditorFormActions>
       </FieldGroup>
       {leaveDialog}
     </form>

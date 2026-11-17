@@ -130,7 +130,9 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Éditeurs (cours, thématique, ressource, hadith, rapporteur, séance,
       classe, quiz) : modifier un champ puis cliquer un lien de la sidebar
       ouvre « Quitter sans enregistrer ? » ; « Rester sur la page » garde la
-      saisie ; sans modification, aucune question
+      saisie ; sans modification, aucune question ; « Enregistrer » garde la
+      page ouverte avec un toast (le fil d'Ariane suit un renommage) ; un
+      titre déjà pris affiche l'erreur sans effacer ce qui a été tapé
 - [ ] Ressources : créer chaque type (vidéo, PDF upload, lien, texte
       markdown), brouillon invisible côté public, réordonner
 - [ ] Hadiths : créer avec arabe + FR obligatoire, wolof optionnel

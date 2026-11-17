@@ -12,7 +12,7 @@ import { db } from "@/lib/db";
 import { cours } from "@/lib/db/schema";
 import { slugify } from "@/lib/utils";
 
-export type ActionState = { error?: string } | undefined;
+export type ActionState = { error?: string; success?: string } | undefined;
 
 const coursSchema = z.object({
   title: z.string().trim().min(1, "Le titre est requis."),
@@ -97,8 +97,8 @@ export async function updateCours(
   revalidatePath("/cours");
   revalidatePath("/");
   revalidateCoursTree();
-  await setFlash("Cours enregistré.");
-  redirect(`/dashboard/cours/${id}`);
+  // L'éditeur reste ouvert : le formulaire affiche le toast.
+  return { success: "Cours enregistré." };
 }
 
 export async function deleteCours(id: string) {

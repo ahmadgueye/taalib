@@ -59,9 +59,15 @@ flowchart TD
   qui existe déjà ailleurs.
 
 Dans le dashboard, chaque formulaire d'édition (cours, thématique, ressource,
-hadith, rapporteur, séance, réglages d'une classe, quiz) prévient avant de
-quitter la page avec des modifications non enregistrées
-(`use-leave-guard.tsx`) : un lien interne ouvre la boîte « Quitter sans
+hadith, rapporteur, séance, réglages d'une classe, quiz) se comporte de la
+même façon. Après « Enregistrer », on reste sur la page avec un toast (une
+création, elle, mène à la page de l'élément créé) ; la barre d'enregistrement
+reste collée en bas de l'écran et signale « Modifications non enregistrées ».
+Un enregistrement refusé (titre déjà pris…) affiche l'erreur sans effacer la
+saisie : les formulaires s'envoient sans la réinitialisation automatique de
+React (`use-editor-form.tsx`). Enfin, l'éditeur prévient avant de quitter la
+page avec des modifications non enregistrées (`use-leave-guard.tsx`) : un
+lien interne ouvre la boîte « Quitter sans
 enregistrer ? », la fermeture ou le rechargement de l'onglet l'alerte du
 navigateur (la seule permise à ce moment-là). Un clic avec Cmd/Ctrl, qui
 ouvre un nouvel onglet, passe sans question. Le bouton « retour » du

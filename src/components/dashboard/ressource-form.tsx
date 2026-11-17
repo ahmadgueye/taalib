@@ -1,14 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
-
 import { RessourceUrlField } from "@/components/dashboard/ressource-url-field";
-import { SubmitButton } from "@/components/dashboard/submit-button";
-import { useFormLeaveGuard } from "@/components/dashboard/use-leave-guard";
+import {
+  EditorFormActions,
+  useEditorForm,
+} from "@/components/dashboard/use-editor-form";
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
@@ -21,11 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  createRessource,
-  updateRessource,
-  type ActionState,
-} from "@/lib/actions/ressources";
+import { createRessource, updateRessource } from "@/lib/actions/ressources";
 
 const statusOptions = [
   { value: "published", label: "Publié" },
@@ -54,14 +49,11 @@ export function RessourceForm({
   const action = ressource
     ? updateRessource.bind(null, ressource.id)
     : createRessource;
-  const [state, formAction] = useActionState<ActionState, FormData>(
-    action,
-    undefined
-  );
-  const { formRef, leaveDialog } = useFormLeaveGuard();
+  const { state, pending, dirty, formRef, onSubmit, leaveDialog } =
+    useEditorForm(action);
 
   return (
-    <form ref={formRef} action={formAction} className="max-w-lg">
+    <form ref={formRef} onSubmit={onSubmit} className="max-w-lg">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="thematiqueId">Thématique</FieldLabel>
@@ -132,8 +124,13 @@ export function RessourceForm({
           />
           <FieldDescription>Facultatif.</FieldDescription>
         </Field>
-        {state?.error && <FieldError>{state.error}</FieldError>}
-        <SubmitButton>{ressource ? "Enregistrer" : "Créer"}</SubmitButton>
+        <EditorFormActions
+          pending={pending}
+          dirty={!!ressource && dirty}
+          error={state?.error}
+        >
+          {ressource ? "Enregistrer" : "Créer"}
+        </EditorFormActions>
       </FieldGroup>
       {leaveDialog}
     </form>

@@ -12,7 +12,7 @@ import { db } from "@/lib/db";
 import { hadithNarrators, hadiths, narrators } from "@/lib/db/schema";
 import { slugify } from "@/lib/utils";
 
-export type ActionState = { error?: string } | undefined;
+export type ActionState = { error?: string; success?: string } | undefined;
 
 const hadithSchema = z.object({
   title: z.string().trim().min(1, "Le titre est requis."),
@@ -171,13 +171,8 @@ export async function updateHadith(
   revalidatePath("/hadiths");
   revalidatePath("/thematiques");
   revalidateCoursTree();
-  // Ouvert depuis la page d'une thématique : on y revient.
-  await setFlash("Hadith enregistré.");
-  redirect(
-    formData.get("backToThematique")
-      ? `/dashboard/thematiques/${parsed.data.thematiqueId}`
-      : "/dashboard/hadiths"
-  );
+  // L'éditeur reste ouvert : le formulaire affiche le toast.
+  return { success: "Hadith enregistré." };
 }
 
 export async function deleteHadith(id: string) {

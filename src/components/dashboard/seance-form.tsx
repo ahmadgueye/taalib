@@ -1,25 +1,22 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 
 import { MarkdownEditorField } from "@/components/dashboard/markdown-editor-field";
-import { SubmitButton } from "@/components/dashboard/submit-button";
-import { useFormLeaveGuard } from "@/components/dashboard/use-leave-guard";
+import {
+  EditorFormActions,
+  useEditorForm,
+} from "@/components/dashboard/use-editor-form";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  createSeance,
-  updateSeance,
-  type ActionState,
-} from "@/lib/actions/seances";
+import { createSeance, updateSeance } from "@/lib/actions/seances";
 import { cn } from "@/lib/utils";
 
 const typeLabels = {
@@ -56,17 +53,14 @@ export function SeanceForm({
   const action = seance
     ? updateSeance.bind(null, seance.id)
     : createSeance;
-  const [state, formAction] = useActionState<ActionState, FormData>(
-    action,
-    undefined
-  );
-  const { formRef, leaveDialog } = useFormLeaveGuard();
+  const { state, pending, dirty, formRef, onSubmit, leaveDialog } =
+    useEditorForm(action);
 
   const [thematiqueSearch, setThematiqueSearch] = useState("");
   const [ressourceSearch, setRessourceSearch] = useState("");
 
   return (
-    <form ref={formRef} action={formAction} className="max-w-lg">
+    <form ref={formRef} onSubmit={onSubmit} className="max-w-lg">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="title">Titre</FieldLabel>
@@ -180,8 +174,13 @@ export function SeanceForm({
           )}
         </Field>
 
-        {state?.error && <FieldError>{state.error}</FieldError>}
-        <SubmitButton>{seance ? "Enregistrer" : "Créer"}</SubmitButton>
+        <EditorFormActions
+          pending={pending}
+          dirty={!!seance && dirty}
+          error={state?.error}
+        >
+          {seance ? "Enregistrer" : "Créer"}
+        </EditorFormActions>
       </FieldGroup>
       {leaveDialog}
     </form>
