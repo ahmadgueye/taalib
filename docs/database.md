@@ -47,6 +47,8 @@ erDiagram
     quiz ||--o{ quiz_tentatives : "attempted via"
     quiz_tentatives ||--o{ quiz_reponses : records
     quiz ||--o{ quiz_extra_attempts : "extra attempts"
+    profiles ||--o{ certificates : "earns"
+    thematiques |o--o{ certificates : "certifies"
     quiz_questions ||--o{ quiz_reponses : "answered via"
     quiz_choix ||--o{ quiz_reponses : "selected via"
 
@@ -126,6 +128,17 @@ erDiagram
         int passing_score "0-100, défaut 80"
         int max_attempts "null = illimité"
         boolean hide_corrections
+    }
+    certificates {
+        uuid id PK
+        text code UK "TAA-XXXX-XXXX"
+        uuid user_id FK
+        uuid thematique_id FK "null si supprimée"
+        text thematique_title
+        text cours_title
+        text_array lesson_titles
+        text_array quiz_titles
+        timestamptz issued_at
     }
     quiz_extra_attempts {
         uuid quiz_id FK
@@ -241,6 +254,12 @@ Points notables :
   de tentatives par étudiant (null = illimité) ; `quiz_extra_attempts`
   compte, par quiz et par étudiant, les tentatives accordées en plus
   (`0033_quiz_attempt_limit.sql`).
+- `certificates` : un certificat par étudiant et par thématique validée
+  (index unique `user_id` + `thematique_id`), avec les titres et la liste
+  de ce qui a été validé figés à l'émission (`0034_certificates.sql`).
+  Exception à la cascade ci-dessous : supprimer la thématique met
+  `thematique_id` à null et garde le certificat. Voir
+  [`domain.md`](./domain.md#certificats).
 - Toutes les FK vers `cours`/`thematiques`/`quiz` sont en
   `onDelete: "cascade"` : supprimer un cours supprime en cascade ses
   thématiques, ressources, hadiths et quiz. Pas de confirmation
@@ -256,7 +275,8 @@ dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 `0006_hadiths_rls.sql`, `0013_flat_lifeguard.sql`,
 `0019_quran_memorization_rls.sql`, `0023_classes.sql`, `0024_class_cours_unlocks.sql`,
 `0025_class_item_unlocks.sql`, `0027_private_content_rls.sql`,
-`0032_hadith_narrators.sql`, `0033_quiz_attempt_limit.sql`) :
+`0032_hadith_narrators.sql`, `0033_quiz_attempt_limit.sql`,
+`0034_certificates.sql`) :
 
 | Table | Lecture | Écriture |
 |---|---|---|
@@ -264,6 +284,7 @@ dans `drizzle/migrations/0001_rls_and_profile_trigger.sql`,
 | `profiles` | son propre profil ; tous pour `admin`/`contributor` (depuis `0027`) | `admin` uniquement (`is_admin()`), et seulement en `UPDATE` |
 | `ressource_progress`, `quran_memorization` | l'utilisateur lui-même (`auth.uid() = user_id`) | l'utilisateur lui-même, sur ses propres lignes uniquement |
 | `quiz_tentatives`, `quiz_reponses` | l'utilisateur lui-même (ses propres tentatives) | personne via l'API (depuis `0033`) : une tentative ne s'enregistre que par `submitQuizAttempt`, qui corrige côté serveur et applique la limite. Les policies `INSERT` de `0013` laissaient un étudiant insérer une tentative au score de son choix |
+| `certificates` | `admin` ou `contributor` uniquement : l'étudiant et la page publique les lisent via l'app (Drizzle) | personne via l'API : un certificat ne s'émet que côté serveur, quand une thématique est validée |
 | `classes` | `admin` uniquement (**pas** de lecture publique : `invite_code` ouvrirait la classe à quiconque interroge l'API REST) | `admin` uniquement |
 | `class_members` | `admin`, et l'étudiant pour ses propres lignes | `admin` uniquement (l'inscription par code passe par une Server Action, hors RLS) |
 | `class_cours`, `class_ressource_unlocks`, `class_quiz_unlocks` | `admin`, et les membres de la classe concernée | `admin` uniquement |

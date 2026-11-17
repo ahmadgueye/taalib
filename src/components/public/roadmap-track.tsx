@@ -1,13 +1,21 @@
 import Link from "next/link";
-import { Check, Hourglass } from "lucide-react";
+import { Award, Check, ChevronRight, Hourglass } from "lucide-react";
 
 import { ProgressIndicator } from "@/components/public/progress-indicator";
 import { ProgressRing } from "@/components/public/progress-ring";
 import { Badge } from "@/components/ui/badge";
+import { certificatePath } from "@/lib/certificates";
 import type { RoadmapStep } from "@/lib/db/queries/roadmap";
 import { cn } from "@/lib/utils";
 
-export function RoadmapTrack({ steps }: { steps: RoadmapStep[] }) {
+export function RoadmapTrack({
+  steps,
+  certificateCodes = {},
+}: {
+  steps: RoadmapStep[];
+  // Numéro du certificat de chaque thématique validée, par id.
+  certificateCodes?: Record<string, string>;
+}) {
   return (
     <div className="relative">
       {steps.length > 1 && (
@@ -24,7 +32,10 @@ export function RoadmapTrack({ steps }: { steps: RoadmapStep[] }) {
               index={index + 1}
               isNew={step.newCount > 0 && step.state === "active"}
             />
-            <StepCard step={step} />
+            <StepCard
+              step={step}
+              certificateCode={certificateCodes[step.thematique.id]}
+            />
           </li>
         ))}
       </ol>
@@ -78,7 +89,13 @@ function StepMarker({
   );
 }
 
-function StepCard({ step }: { step: RoadmapStep }) {
+function StepCard({
+  step,
+  certificateCode,
+}: {
+  step: RoadmapStep;
+  certificateCode?: string;
+}) {
   const { thematique, state } = step;
 
   if (state === "upcoming") {
@@ -111,10 +128,13 @@ function StepCard({ step }: { step: RoadmapStep }) {
       )
     : null;
 
-  return (
+  const card = (
     <Link
       href={`/thematiques/${thematique.slug}`}
-      className="flex-1 border p-4 transition-colors hover:bg-muted"
+      className={cn(
+        "p-4 transition-colors hover:bg-muted",
+        !certificateCode && "flex-1 border",
+      )}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
@@ -157,5 +177,22 @@ function StepCard({ step }: { step: RoadmapStep }) {
         </div>
       </div>
     </Link>
+  );
+
+  // Étape validée : son certificat s'ouvre sous la carte (deux liens
+  // côte à côte, jamais l'un dans l'autre).
+  if (!certificateCode) return card;
+  return (
+    <div className="flex flex-1 flex-col border">
+      {card}
+      <Link
+        href={certificatePath(certificateCode)}
+        className="flex items-center gap-2 border-t bg-muted px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-muted/60"
+      >
+        <Award className="size-4" />
+        Voir le certificat
+        <ChevronRight className="ml-auto size-4" />
+      </Link>
+    </div>
   );
 }

@@ -439,6 +439,52 @@ export const classQuizUnlocks = pgTable(
   (table) => [primaryKey({ columns: [table.classId, table.quizId] })]
 );
 
+// Certificat délivré à un étudiant qui a validé toute une thématique (voir
+// docs/domain.md, « Certificats »). Les titres et la liste de ce qui a été
+// validé sont figés à l'émission : renommer ou supprimer la thématique ne
+// change pas un certificat déjà délivré. Le nom du titulaire, lui, est lu
+// dans son profil.
+export const certificates = pgTable(
+  "certificates",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    // Numéro public (TAA-XXXX-XXXX), tiré au hasard : il sert d'adresse à la
+    // page de vérification et ne doit pas se deviner.
+    code: text("code").notNull().unique(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    thematiqueId: uuid("thematique_id").references(() => thematiques.id, {
+      onDelete: "set null",
+    }),
+    thematiqueTitle: text("thematique_title").notNull(),
+    coursTitle: text("cours_title").notNull(),
+    // Titres des leçons lues et des quiz réussis, dans l'ordre du cours.
+    lessonTitles: text("lesson_titles").array().notNull(),
+    quizTitles: text("quiz_titles").array().notNull(),
+    issuedAt: timestamp("issued_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("certificates_user_thematique_idx").on(
+      table.userId,
+      table.thematiqueId
+    ),
+  ]
+);
+
+export const certificatesRelations = relations(certificates, ({ one }) => ({
+  user: one(profiles, {
+    fields: [certificates.userId],
+    references: [profiles.id],
+  }),
+  thematique: one(thematiques, {
+    fields: [certificates.thematiqueId],
+    references: [thematiques.id],
+  }),
+}));
+
 export const coursRelations = relations(cours, ({ many }) => ({
   thematiques: many(thematiques),
 }));

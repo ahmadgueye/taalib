@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Check, MoveRight } from "lucide-react";
 
 import { BackButton } from "@/components/public/back-button";
 import { ProgressIndicator } from "@/components/public/progress-indicator";
 import { RessourcesHadithsTabs } from "@/components/public/ressources-hadiths-tabs";
+import { Button } from "@/components/ui/button";
 import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import {
@@ -13,6 +15,8 @@ import {
   canSeeThematique,
   showsUpcoming,
 } from "@/lib/content-access";
+import { certificatePath } from "@/lib/certificates";
+import { getCertificateForThematique } from "@/lib/db/queries/certificates";
 import { getCompletedRessourceIds } from "@/lib/db/queries/progress";
 import { getQuizScores } from "@/lib/db/queries/quiz-tentatives";
 import { getThematiqueBySlug } from "@/lib/db/queries/thematiques";
@@ -104,6 +108,9 @@ export default async function ThematiqueDetailPage({ params }: Props) {
         t.quiz.map((q) => q.id)
       )
     : undefined;
+  const certificate = profile
+    ? await getCertificateForThematique(profile.id, t.id)
+    : undefined;
   const progress =
     completedIds && t.ressources.length > 0
       ? (completedIds.size / t.ressources.length) * 100
@@ -135,6 +142,8 @@ export default async function ThematiqueDetailPage({ params }: Props) {
         )}
       </div>
 
+      {certificate && <ValidatedBanner certificate={certificate} />}
+
       <RessourcesHadithsTabs
         ressources={t.ressources}
         hadiths={t.hadiths}
@@ -144,5 +153,54 @@ export default async function ThematiqueDetailPage({ params }: Props) {
         quizScores={quizScores}
       />
     </div>
+  );
+}
+
+const dateFormat = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+// Thématique validée : rappel en tête de page, avec le lien vers la page
+// publique du certificat.
+function ValidatedBanner({
+  certificate,
+}: {
+  certificate: { code: string; issuedAt: Date };
+}) {
+  return (
+    <section
+      aria-labelledby="thematique-validee"
+      className="mt-6 flex flex-wrap items-center gap-4 bg-[#21140f] p-4 text-[#f5f5ed] sm:px-5 dark:bg-card"
+    >
+      <span
+        aria-hidden
+        className="flex size-9 shrink-0 rotate-45 items-center justify-center border-2 border-chart-1"
+      >
+        <Check className="size-4 -rotate-45 text-chart-1" strokeWidth={3} />
+      </span>
+      <div className="flex min-w-0 flex-[1_1_240px] flex-col gap-0.5">
+        <p className="text-[11px] font-bold tracking-[0.1em] uppercase opacity-75">
+          Thématique validée
+        </p>
+        <h2 id="thematique-validee" className="font-semibold">
+          Bravo, tu as tout lu et réussi tous les quiz.
+        </h2>
+        <p className="text-sm opacity-75">
+          Certificat {certificate.code} · {dateFormat.format(certificate.issuedAt)}
+        </p>
+      </div>
+      {/* Orange dans les deux thèmes, comme « Reprendre » sur /compte. */}
+      <Button
+        size="lg"
+        render={<Link href={certificatePath(certificate.code)} />}
+        nativeButton={false}
+        className="bg-chart-1 text-white hover:bg-chart-1/80"
+      >
+        Voir mon certificat
+        <MoveRight />
+      </Button>
+    </section>
   );
 }

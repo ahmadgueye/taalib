@@ -10,6 +10,12 @@ import { WelcomeToast } from "@/components/public/welcome-toast";
 import { Button } from "@/components/ui/button";
 import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
+import {
+  certificateCodesByThematique,
+  completedThematiqueIds,
+  getCertificatesForUser,
+  issueCertificates,
+} from "@/lib/db/queries/certificates";
 import { getAllCoursWithCounts } from "@/lib/db/queries/cours";
 import { getStudentRoadmap } from "@/lib/db/queries/roadmap";
 
@@ -73,6 +79,13 @@ export default async function Home({ searchParams }: Props) {
     );
   }
 
+  // Rattrape une thématique terminée sans action de l'étudiant (l'enseignant
+  // a retiré la dernière leçon qui restait, par exemple).
+  await issueCertificates(profile.id, completedThematiqueIds(roadmap));
+  const certificateCodes = certificateCodesByThematique(
+    await getCertificatesForUser(profile.id)
+  );
+
   return (
     <div className="flex flex-col gap-12 animate-in fade-in duration-300">
       <WelcomeToast show={showWelcome} />
@@ -107,7 +120,7 @@ export default async function Home({ searchParams }: Props) {
               Le contenu de ce cours arrive bientôt.
             </p>
           ) : (
-            <RoadmapTrack steps={c.steps} />
+            <RoadmapTrack steps={c.steps} certificateCodes={certificateCodes} />
           )}
         </section>
       ))}
