@@ -75,6 +75,14 @@ Toutes documentées avec leur provenance exacte dans `.env.example`. Résumé :
 | `QURAN_CLIENT_ID` / `QURAN_CLIENT_SECRET` | Console développeur Quran Foundation | OAuth2 client-credentials pour l'API Coran (server-only) |
 | `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys | Génération de questions de quiz par IA (server-only). Facultative : absente, le bouton « Générer avec l'IA » est masqué |
 
+Le client Postgres (`src/lib/db/index.ts`) ferme ses connexions inactives
+après 20 s (`idle_timeout`) et les renouvelle toutes les 5 minutes. Sur
+Vercel (Fluid compute), une instance garde ses connexions entre deux
+requêtes ; sans cela, une connexion coupée au repos par le pooler faisait
+attendre une requête jusqu'au timeout de 5 minutes (symptôme : l'accueil du
+dashboard, qui lance beaucoup de requêtes en parallèle, restait sur son
+squelette de chargement).
+
 Le Client ID/Secret Google OAuth **ne sont pas** des variables d'env de
 l'app — ils se configurent directement dans Supabase (Authentication →
 Providers → Google). Next.js ne les voit jamais.
