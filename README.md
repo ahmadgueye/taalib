@@ -19,7 +19,7 @@ Toute la doc de fond vit dans [`docs/`](./docs) :
 |---|---|
 | [`docs/architecture.md`](./docs/architecture.md) | Structure du projet, route groups, pattern Server Components/Actions |
 | [`docs/database.md`](./docs/database.md) | Schéma Drizzle, relations, migrations |
-| [`docs/domain.md`](./docs/domain.md) | Modèle métier : cours → thématiques → ressources/hadiths, séances, progression, Coran |
+| [`docs/domain.md`](./docs/domain.md) | Modèle métier : cours → thématiques → ressources/hadiths, séances, progression, certificats, Coran |
 | [`docs/auth.md`](./docs/auth.md) | Authentification Supabase, rôles, RLS |
 | [`docs/development.md`](./docs/development.md) | Environnement local (Supabase Docker), commandes, tests, flux Git |
 | [`docs/how-to.md`](./docs/how-to.md) | Recettes : ajouter une entité CRUD, une migration, un champ de formulaire, un test |

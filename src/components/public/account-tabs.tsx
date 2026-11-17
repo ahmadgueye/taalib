@@ -4,17 +4,22 @@ import type { ReactNode } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export type AccountTab = "progression" | "parametres";
+export type AccountTab = "progression" | "certificats" | "parametres";
 
 // L'onglet ouvert est reflété dans l'URL (?onglet=) sans recharger la page :
 // un lien peut viser un onglet, et un rechargement le conserve.
 export function AccountTabs({
   defaultTab,
   progression,
+  certificats,
+  certificateCount = 0,
   parametres,
 }: {
   defaultTab: AccountTab;
   progression: ReactNode;
+  // Absent pour le staff, qui n'a pas de feuille de route.
+  certificats?: ReactNode;
+  certificateCount?: number;
   parametres: ReactNode;
 }) {
   function handleChange(value: AccountTab) {
@@ -34,11 +39,24 @@ export function AccountTabs({
         <TabsTrigger value="progression" className="px-3">
           Progression
         </TabsTrigger>
+        {certificats && (
+          <TabsTrigger value="certificats" className="gap-1.5 px-3">
+            Certificats
+            {certificateCount > 0 && (
+              <span className="bg-foreground px-1.5 text-[11px] font-bold text-background tabular-nums">
+                {certificateCount}
+              </span>
+            )}
+          </TabsTrigger>
+        )}
         <TabsTrigger value="parametres" className="px-3">
           Paramètres
         </TabsTrigger>
       </TabsList>
       <TabsContent value="progression">{progression}</TabsContent>
+      {certificats && (
+        <TabsContent value="certificats">{certificats}</TabsContent>
+      )}
       <TabsContent value="parametres">{parametres}</TabsContent>
     </Tabs>
   );

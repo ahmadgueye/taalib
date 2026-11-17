@@ -7,6 +7,7 @@ import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { canSeeQuiz } from "@/lib/content-access";
 import { db } from "@/lib/db";
+import { syncCertificates } from "@/lib/db/queries/certificates";
 import {
   quiz,
   quizQuestions,
@@ -74,7 +75,8 @@ export async function submitQuizAttempt(
     where: and(eq(quiz.id, parsed.data.quizId), eq(quiz.status, "published")),
   });
   // Idem pour un quiz pas encore débloqué pour la classe de l'étudiant.
-  if (!publishedQuiz || !canSeeQuiz(await getContentAccess(), publishedQuiz.id)) {
+  const access = await getContentAccess();
+  if (!publishedQuiz || !canSeeQuiz(access, publishedQuiz.id)) {
     return { error: "Quiz introuvable." };
   }
 
@@ -144,12 +146,15 @@ export async function submitQuizAttempt(
 
   const { status } = saved;
   const attemptsLeft = status.left === null ? null : status.left - 1;
+  const passedNow = isPassing(score, questions.length, publishedQuiz.passingScore);
   const showCorrections = canSeeCorrections(publishedQuiz, {
     left: attemptsLeft,
-    passed:
-      status.passed ||
-      isPassing(score, questions.length, publishedQuiz.passingScore),
+    passed: status.passed || passedNow,
   });
+  // Un premier quiz réussi peut terminer la thématique.
+  if (passedNow && !status.passed) {
+    await syncCertificates(profile.id, access);
+  }
 
   return {
     tentativeId: saved.tentativeId,

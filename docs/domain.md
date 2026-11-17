@@ -94,9 +94,10 @@ avec le nombre de thématiques, de leçons et de quiz publiés
 (`getStudentClasses`) : « En cours depuis le … » ou « Ancien élève depuis
 le … » (`left_at` renseigné). Une classe dont il a été retiré n'a plus de
 ligne dans `class_members` et n'apparaît donc pas ; sans aucune classe, un
-lien vers `/rejoindre`. Le staff ne voit pas ce bloc. Viennent ensuite deux
-onglets
-(`account-tabs.tsx`), reflétés dans l'URL (`?onglet=parametres`) :
+lien vers `/rejoindre`. Le staff ne voit pas ce bloc. Viennent ensuite trois
+onglets (deux pour le staff, sans Certificats)
+(`account-tabs.tsx`), reflétés dans l'URL (`?onglet=certificats`,
+`?onglet=parametres`) :
 
 - **Progression** (par défaut) :
   - trois chiffres : leçons lues, versets maîtrisés, quiz réussis / tentés ;
@@ -114,6 +115,11 @@ onglets
   - un résumé de la mémorisation du Coran (`quran-progress-card.tsx` : même
     pourcentage que `/memorisation`, répartition maîtrisés / en cours / à
     renforcer, dernière sourate travaillée), seul dans la colonne de droite.
+- **Certificats** (étudiants seulement, avec leur nombre) : un tableau, un
+  certificat par ligne (thématique, cours, date, numéro, « Copier le lien »
+  et lien vers la page publique), puis « Prochains certificats » : les
+  thématiques en cours, avec les leçons lues et les quiz qui restent à
+  réussir. Voir [Certificats](#certificats).
 - **Paramètres** : le nom, modifiable à tout moment, l'e-mail, le thème
   (clair, sombre ou celui de l'appareil, `theme-choice.tsx`) et la
   déconnexion. Un compte sans nom (onboarding) arrive directement sur cet
@@ -262,6 +268,51 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   question limitée à la classe (`getQuizSubmissionStats` et
   `getQuizQuestionStats` acceptent une liste d'étudiants). Le suivi s'ouvre
   toujours sur « Par étudiant ».
+
+## Certificats
+
+Un étudiant reçoit un **certificat** pour chaque thématique validée : la
+même règle que l'étape « Terminé » de la [feuille de route](#feuille-de-route)
+(tout le contenu publié débloqué, toutes les leçons lues, tous les quiz
+réussis). Rien n'est saisi par l'enseignant.
+
+- **Émission** — `issueCertificates` (`lib/db/queries/certificates.ts`)
+  crée une ligne `certificates` par thématique terminée qui n'en a pas
+  encore. Elle tourne dans `markRessourceCompleted` et `submitQuizAttempt`
+  (via `syncCertificates`, quand une leçon lue ou un premier quiz réussi
+  termine la thématique : la date est celle de la validation), et sur
+  l'accueil et `/compte`, pour rattraper une thématique terminée sans action
+  de l'étudiant (l'enseignant a retiré la dernière leçon qui restait). Le
+  staff n'a pas de feuille de route, donc pas de certificat.
+- **Acquis** — un certificat n'est jamais retiré : si l'enseignant ajoute
+  ensuite une leçon ou un quiz, l'étape repasse « en cours » mais le
+  certificat reste. Les titres (thématique, cours) et la
+  liste des leçons lues et des quiz réussis sont figés à l'émission ;
+  supprimer la thématique garde le certificat (`thematique_id` passe à
+  null). Seul le nom du titulaire est lu dans son profil, pour qu'une faute
+  corrigée se reflète partout.
+- **Numéro** — `TAA-XXXX-XXXX`, tiré au hasard (`generateCertificateCode`,
+  `lib/certificates.ts`, même alphabet sans ambiguïté que les codes
+  d'invitation) : on ne peut pas parcourir les certificats des autres.
+- **Page publique** — `/certificats/[numéro]`, ouverte sans compte (absente
+  de `PROTECTED_PREFIXES` dans `proxy.ts`) mais jamais indexée (`noindex`).
+  Elle montre le certificat (`certificate-document.tsx` : bandeau aux logos
+  de Taalib et de Bayān, texte, motif, signature du fondateur (« M. Ahmad », puis « Ahmad, Fondateur Bayān »
+  en écriture manuscrite stylisée, Herr Von Muellerhoff avec des lettres
+  légèrement désalignées, et non sa vraie
+  signature puisque la page est publique), sceau, QR code vers la page,
+  dessiné pour 1123 × 794 px en unités de conteneur pour se réduire sur
+  téléphone), un bouton « Copier le lien », la liste de ce qui a été
+  validé et la mention « ni diplôme reconnu par l'État, ni ijāza ». Un
+  numéro inconnu, ou un titulaire sans nom, répond « Certificat
+  introuvable » (`notFound()` : comme les autres pages qui streament, la
+  réponse reste un 200, marqué `noindex`). Pas de PDF pour l'instant : le lien est la preuve.
+  L'adresse imprimée et le QR code viennent de `NEXT_PUBLIC_SITE_URL`.
+- **Accès** — sur la feuille de route, une étape validée porte « Voir le
+  certificat » ; la page de la thématique, un encart « Thématique validée »
+  avec « Voir mon certificat » ; `/compte`, l'onglet Certificats. Sans nom,
+  `/compte` invite à l'ajouter et ne propose pas encore les liens.
+- Le logo Bayān (`public/brand/bayan-mark-*.png`) vient de bayanun.com.
 
 ## Feuille de route
 

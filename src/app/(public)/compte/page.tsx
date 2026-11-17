@@ -1,17 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { MoveRight } from "lucide-react";
+import { ChevronRight, MoveRight } from "lucide-react";
 
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { AccountTabs, type AccountTab } from "@/components/public/account-tabs";
+import { CopyLinkButton } from "@/components/public/copy-link-button";
 import { FullNameForm } from "@/components/public/full-name-form";
 import { QuranProgressCard } from "@/components/public/quran-progress-card";
 import { ThemeChoice } from "@/components/public/theme-choice";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
+import { certificatePath } from "@/lib/certificates";
 import { type ContentAccess } from "@/lib/content-access";
+import {
+  completedThematiqueIds,
+  getCertificatesForUser,
+  issueCertificates,
+  type CertificateSummary,
+} from "@/lib/db/queries/certificates";
 import { getStudentClasses } from "@/lib/db/queries/classes";
 import { getLastReadCoursId, getSuiviCours } from "@/lib/db/queries/progress";
 import {
@@ -23,6 +39,7 @@ import {
   getStudentRoadmap,
   pickResume,
   todoHref,
+  type RoadmapCours,
   type RoadmapTodo,
 } from "@/lib/db/queries/roadmap";
 import { getChapters } from "@/lib/quran/queries";
@@ -47,7 +64,11 @@ type CoursSuivi = {
 async function getCoursSuivis(
   userId: string,
   access: ContentAccess,
-): Promise<{ cours: CoursSuivi[]; todo: RoadmapTodo[] }> {
+): Promise<{
+  cours: CoursSuivi[];
+  todo: RoadmapTodo[];
+  roadmap: RoadmapCours[];
+}> {
   if (access.all) {
     const suivi = await getSuiviCours(userId, access);
     return {
@@ -59,6 +80,7 @@ async function getCoursSuivis(
         total: totalRessources,
       })),
       todo: [],
+      roadmap: [],
     };
   }
   const { cours, todo } = await getStudentRoadmap(userId, access);
@@ -71,6 +93,7 @@ async function getCoursSuivis(
       total: c.steps.reduce((n, s) => n + s.ressourceProgress.total, 0),
     })),
     todo,
+    roadmap: cours,
   };
 }
 
@@ -154,6 +177,157 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
+const shortDateFormat = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+// Onglet Certificats : un certificat par ligne, avec le lien vers sa page
+// publique, puis les thématiques en cours (le prochain certificat).
+function CertificatesTab({
+  certificates,
+  upcoming,
+  hasName,
+}: {
+  certificates: CertificateSummary[];
+  upcoming: (RoadmapCours["steps"][number] & { coursTitle: string })[];
+  hasName: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-8">
+      {/* La page publique affiche le nom : sans nom, rien à partager. */}
+      {!hasName && certificates.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border border-chart-1 bg-chart-1/10 px-4 py-3.5 text-sm">
+          <span>
+            Ton nom figurera sur tes certificats. Ajoute-le avant de les
+            partager.
+          </span>
+          <Link
+            href="/compte?onglet=parametres"
+            className="font-bold underline underline-offset-2"
+          >
+            Ajouter mon nom
+          </Link>
+        </div>
+      )}
+
+      <section aria-labelledby="certificats" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <SectionTitle id="certificats">Mes certificats</SectionTitle>
+          <p className="text-sm text-muted-foreground">
+            Chaque certificat a une page publique : toute personne qui reçoit
+            son lien peut voir ton nom et la thématique validée. Ne partage le
+            lien qu&apos;avec qui tu veux.
+          </p>
+        </div>
+        {certificates.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Termine une thématique (toutes ses leçons lues, tous ses quiz
+            réussis) pour obtenir ton premier certificat.
+          </p>
+        ) : (
+          <div className="border bg-background">
+            <Table>
+              <TableHeader className="bg-muted">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>Thématique</TableHead>
+                  <TableHead>Cours</TableHead>
+                  <TableHead>Délivré le</TableHead>
+                  <TableHead>Numéro</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {certificates.map((c) => (
+                  <TableRow key={c.code}>
+                    <TableCell className="font-semibold whitespace-normal">
+                      {hasName ? (
+                        <Link
+                          href={certificatePath(c.code)}
+                          className="hover:underline"
+                        >
+                          {c.thematiqueTitle}
+                        </Link>
+                      ) : (
+                        c.thematiqueTitle
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {c.coursTitle}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground tabular-nums">
+                      {shortDateFormat.format(c.issuedAt)}
+                    </TableCell>
+                    <TableCell className="text-xs font-bold tracking-wide">
+                      {c.code}
+                    </TableCell>
+                    <TableCell>
+                      {hasName && (
+                        <div className="flex justify-end gap-1">
+                          <CopyLinkButton
+                            path={certificatePath(c.code)}
+                            variant="ghost"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon-lg"
+                            render={<Link href={certificatePath(c.code)} />}
+                            nativeButton={false}
+                            aria-label={`Voir le certificat ${c.thematiqueTitle}`}
+                          >
+                            <ChevronRight />
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </section>
+
+      {upcoming.length > 0 && (
+        <section aria-labelledby="prochains" className="flex flex-col gap-1.5">
+          <h2 id="prochains">
+            <Eyebrow>Prochains certificats</Eyebrow>
+          </h2>
+          <ul className="divide-y border bg-background">
+            {upcoming.map((s) => {
+              const quizLeft = s.quizCount - s.quizPassed;
+              return (
+                <li key={s.thematique.id}>
+                  <Link
+                    href={`/thematiques/${s.thematique.slug}`}
+                    className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3.5 py-3 transition-colors hover:bg-muted"
+                  >
+                    <span className="flex min-w-0 flex-col">
+                      <span className="font-medium">{s.thematique.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {s.coursTitle}
+                      </span>
+                    </span>
+                    <span className="text-sm text-muted-foreground tabular-nums">
+                      {s.ressourceProgress.completed}/{s.ressourceProgress.total}{" "}
+                      leçons
+                      {quizLeft > 0 &&
+                        ` · ${quizLeft} quiz à réussir`}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}
+
 type Props = {
   searchParams: Promise<{ next?: string; onglet?: string }>;
 };
@@ -182,10 +356,21 @@ export default async function ComptePage({ searchParams }: Props) {
     getRecentChapterActivity(profile.id),
   ]);
 
+  // Le staff n'a pas de feuille de route, donc pas de certificat.
+  let certificates: CertificateSummary[] = [];
+  if (!access.all) {
+    await issueCertificates(profile.id, completedThematiqueIds(suivi.roadmap));
+    certificates = await getCertificatesForUser(profile.id);
+  }
+
   // Sans nom, l'étudiant arrive ici pour compléter son profil : on ouvre
   // directement les paramètres.
   const defaultTab: AccountTab =
-    onglet === "parametres" || !profile.fullName ? "parametres" : "progression";
+    onglet === "parametres" || !profile.fullName
+      ? "parametres"
+      : onglet === "certificats" && !access.all
+        ? "certificats"
+        : "progression";
 
   const firstName = profile.fullName?.trim().split(/\s+/)[0];
   const initials = initialsOf(profile.fullName, profile.email);
@@ -430,6 +615,18 @@ export default async function ComptePage({ searchParams }: Props) {
     </div>
   );
 
+  const certificats = access.all ? undefined : (
+    <CertificatesTab
+      certificates={certificates}
+      upcoming={suivi.roadmap.flatMap((c) =>
+        c.steps
+          .filter((s) => s.state === "active")
+          .map((s) => ({ ...s, coursTitle: c.title })),
+      )}
+      hasName={Boolean(profile.fullName)}
+    />
+  );
+
   const parametres = (
     <div className="flex flex-col gap-4">
       <section
@@ -519,6 +716,8 @@ export default async function ComptePage({ searchParams }: Props) {
         key={defaultTab}
         defaultTab={defaultTab}
         progression={progression}
+        certificats={certificats}
+        certificateCount={certificates.length}
         parametres={parametres}
       />
     </div>

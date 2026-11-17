@@ -8,6 +8,7 @@ import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
 import { canSeeRessource } from "@/lib/content-access";
 import { db } from "@/lib/db";
+import { syncCertificates } from "@/lib/db/queries/certificates";
 import { ressourceProgress, ressources } from "@/lib/db/schema";
 
 const progressSchema = z.object({
@@ -35,7 +36,8 @@ export async function markRessourceCompleted(
       eq(ressources.status, "published")
     ),
   });
-  if (!ressource || !canSeeRessource(await getContentAccess(), ressource.id)) {
+  const access = await getContentAccess();
+  if (!ressource || !canSeeRessource(access, ressource.id)) {
     return { error: "Ressource introuvable." };
   }
 
@@ -45,6 +47,8 @@ export async function markRessourceCompleted(
     .onConflictDoNothing({
       target: [ressourceProgress.userId, ressourceProgress.ressourceId],
     });
+  // La dernière leçon lue peut terminer la thématique.
+  await syncCertificates(profile.id, access);
 
   revalidatePath(parsed.data.path);
   return {};
