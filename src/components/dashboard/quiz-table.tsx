@@ -6,7 +6,7 @@ import { BarChart3, Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DeleteButton } from "@/components/dashboard/delete-button";
+import { QuizDeleteButton } from "@/components/dashboard/quiz-delete-button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -24,7 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { deleteQuiz } from "@/lib/actions/quiz";
 import {
   ressourceStatusConfig,
   type RessourceStatus,
@@ -211,10 +210,7 @@ export function QuizTable({
                   >
                     <Pencil className="size-4" />
                   </Button>
-                  <DeleteButton
-                    action={deleteQuiz.bind(null, quiz.id)}
-                    itemLabel={quiz.title}
-                  />
+                  <QuizDeleteButton quizId={quiz.id} title={quiz.title} />
                 </TableCell>
               </TableRow>
             ))}

@@ -155,6 +155,11 @@ Passer le compte en `contributor` puis `admin` dans Studio
       réordonner, dupliquer, replier une question ; supprimer puis
       « Annuler » dans le toast ; « Aperçu élève » permet de répondre et de
       voir la correction sans rien enregistrer
+- [ ] Quiz avec des tentatives : retirer une question déjà répondue demande
+      confirmation (« Garder la question » ne change rien) ; la corbeille de
+      la liste des quiz ou d'une thématique annonce « N tentatives de M
+      étudiants seront supprimées » et propose « Passer en brouillon »
+      (quiz publié) ; sans tentative, la confirmation simple
 - [ ] Quiz → « Importer » : « Copier le prompt NotebookLM » copie le prompt ;
       coller une réponse au format `Q:` / `- [x]` affiche le nombre de
       questions reconnues et les blocs ignorés ; « Ajouter » les place

@@ -22,6 +22,15 @@ import {
 import { SubmitButton } from "@/components/dashboard/submit-button";
 import { useLeaveGuard } from "@/components/dashboard/use-leave-guard";
 import { QuizAttempt } from "@/components/public/quiz-attempt";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -132,6 +141,7 @@ export function QuizEditor({
   initialQuestions,
   initialTab,
   aiEnabled = false,
+  answeredCounts = {},
 }: {
   quiz?: {
     id: string;
@@ -150,6 +160,8 @@ export function QuizEditor({
   initialTab?: string;
   // Génération par IA proposée seulement si la clé API est configurée.
   aiEnabled?: boolean;
+  // Tentatives qui ont répondu à chaque question enregistrée (par id).
+  answeredCounts?: Record<string, number>;
 }) {
   const [meta, setMeta] = useState<Meta>(() => ({
     title: quiz?.title ?? "",
@@ -267,6 +279,20 @@ export function QuizEditor({
       copy,
       ...qs.slice(index + 1),
     ]);
+  }
+
+  // Retirer une question à laquelle des étudiants ont répondu efface leurs
+  // réponses à l'enregistrement : on demande d'abord.
+  const [removalIndex, setRemovalIndex] = useState<number | null>(null);
+  const removalAnswers =
+    removalIndex === null
+      ? 0
+      : (answeredCounts[questions[removalIndex]?.id ?? ""] ?? 0);
+
+  function askRemoveQuestion(index: number) {
+    const id = questions[index].id;
+    if (id && (answeredCounts[id] ?? 0) > 0) setRemovalIndex(index);
+    else removeQuestion(index);
   }
 
   function removeQuestion(index: number) {
@@ -406,7 +432,7 @@ export function QuizEditor({
                   onTypeChange={(type) => setQuestionType(question.key, type)}
                   onMove={(to) => setQuestions((qs) => move(qs, index, to))}
                   onDuplicate={() => duplicateQuestion(index)}
-                  onRemove={() => removeQuestion(index)}
+                  onRemove={() => askRemoveQuestion(index)}
                   onChoixChange={(cKey, patch) =>
                     updateChoix(question.key, cKey, patch)
                   }
@@ -643,6 +669,40 @@ export function QuizEditor({
         questions={questions}
       />
       {leaveDialog}
+      <AlertDialog
+        open={removalIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemovalIndex(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Retirer la question {(removalIndex ?? 0) + 1} ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {removalAnswers > 1
+                ? `${removalAnswers} tentatives y ont répondu.`
+                : "Une tentative y a répondu."}{" "}
+              En enregistrant le quiz sans cette question, ces réponses seront
+              effacées de l&apos;historique des étudiants. Leurs scores déjà
+              obtenus ne changent pas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Garder la question</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (removalIndex !== null) removeQuestion(removalIndex);
+                setRemovalIndex(null);
+              }}
+            >
+              Retirer
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

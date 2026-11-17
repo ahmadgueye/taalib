@@ -217,6 +217,15 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   l'éditeur est supprimé, avec les réponses qui s'y rattachaient (passer une
   question de QCM à Vrai/Faux remplace ses choix). Un score déjà obtenu
   n'est pas recalculé si une bonne réponse change.
+- **Protéger l'historique des élèves** — retirer dans l'éditeur une
+  question à laquelle des tentatives ont répondu (`getAnsweredQuestionCounts`)
+  demande d'abord confirmation, en disant combien ; « Garder la question »
+  annule. Supprimer un quiz (`quiz-delete-button.tsx`) annonce combien de
+  tentatives et d'étudiants seront effacés (`getQuizDeletionImpact`) ; s'il
+  en a et qu'il est publié, la confirmation propose « Passer en brouillon »
+  (`unpublishQuiz`) : le quiz disparaît pour les étudiants, leurs tentatives
+  restent. Retirer un choix déjà coché, supprimer une thématique ou un
+  cours efface aussi des réponses, sans avertissement dédié pour l'instant.
 
 - **Passage** — `/quiz/[id]` (`quiz-attempt.tsx`) rappelle en haut le
   nombre de tentatives et le meilleur score de l'élève, avec un lien vers

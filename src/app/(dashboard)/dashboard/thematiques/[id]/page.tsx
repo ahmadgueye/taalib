@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs";
 import { DeleteButton } from "@/components/dashboard/delete-button";
+import { QuizDeleteButton } from "@/components/dashboard/quiz-delete-button";
 import { SortableReorderList } from "@/components/dashboard/sortable-reorder-list";
 import { deleteHadith } from "@/lib/actions/hadiths";
-import { deleteQuiz, reorderQuiz } from "@/lib/actions/quiz";
+import { reorderQuiz } from "@/lib/actions/quiz";
 import { deleteRessource, reorderRessources } from "@/lib/actions/ressources";
 import { getThematiqueTree } from "@/lib/db/queries/thematiques";
 
@@ -206,10 +207,7 @@ export default async function ThematiquePage({ params }: Props) {
                       href={`/dashboard/quiz/${q.id}`}
                       label={q.title}
                     />
-                    <DeleteButton
-                      action={deleteQuiz.bind(null, q.id)}
-                      itemLabel={q.title}
-                    />
+                    <QuizDeleteButton quizId={q.id} title={q.title} />
                   </div>
                 ),
               }))}
