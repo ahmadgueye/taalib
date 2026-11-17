@@ -20,12 +20,15 @@ export type ClassProgressInput = {
     email: string;
     fullName: string | null;
     leftAt: Date | null;
+    // Un nouvel inscrit n'est pas signalé inactif avant d'en avoir eu le temps.
+    joinedAt?: Date;
   }[];
   // Ressources et quiz publiés, débloqués pour la classe.
   ressources: { id: string; unlockedAt: Date }[];
   // `maxAttempts` : limite de tentatives du quiz (null ou absent = illimité).
   quiz: {
     id: string;
+    title?: string;
     unlockedAt: Date;
     passingScore: number;
     maxAttempts?: number | null;
@@ -246,4 +249,81 @@ export function buildClassProgress(input: ClassProgressInput): StudentProgress[]
 export function isInactive(lastActivityAt: Date | null, now: Date): boolean {
   if (!lastActivityAt) return true;
   return now.getTime() - lastActivityAt.getTime() > INACTIVE_AFTER_DAYS * 86_400_000;
+}
+
+// Un quiz est signalé quand, parmi au moins ce nombre d'étudiants qui l'ont
+// tenté, moins de la moitié l'a réussi.
+export const STRUGGLING_MIN_ATTEMPTED = 2;
+
+export type ClassWatchlist = {
+  blocked: { userId: string; name: string; quizId: string; quizTitle: string }[];
+  inactive: { userId: string; name: string; lastActivityAt: Date | null }[];
+  strugglingQuiz: {
+    quizId: string;
+    quizTitle: string;
+    passed: number;
+    attempted: number;
+  }[];
+};
+
+// Ce qui demande l'attention de l'enseignant dans une classe, pour l'accueil
+// du dashboard. Les anciens élèves n'y figurent pas.
+export function buildClassWatchlist(
+  input: ClassProgressInput,
+  now: Date
+): ClassWatchlist {
+  const active = input.members.filter((m) => m.leftAt === null);
+  const titles = new Map(input.quiz.map((q) => [q.id, q.title ?? "Quiz"]));
+  const progress = new Map(
+    buildClassProgress(input).map((p) => [p.userId, p])
+  );
+
+  const blocked = active.flatMap((member) =>
+    memberQuizStates(input, member)
+      .filter((q) => q.blocked)
+      .map((q) => ({
+        userId: member.userId,
+        name: member.fullName ?? member.email,
+        quizId: q.quizId,
+        quizTitle: titles.get(q.quizId)!,
+      }))
+  );
+
+  const inactive = active
+    .map((member) => ({
+      member,
+      lastActivityAt: progress.get(member.userId)?.lastActivityAt ?? null,
+    }))
+    .filter(({ member, lastActivityAt }) => {
+      const since =
+        member.joinedAt && (!lastActivityAt || member.joinedAt > lastActivityAt)
+          ? member.joinedAt
+          : lastActivityAt;
+      return isInactive(since, now);
+    })
+    // Les plus anciens d'abord, ceux qui n'ont jamais rien fait en tête.
+    .sort(
+      (a, b) =>
+        (a.lastActivityAt?.getTime() ?? 0) - (b.lastActivityAt?.getTime() ?? 0)
+    )
+    .map(({ member, lastActivityAt }) => ({
+      userId: member.userId,
+      name: member.fullName ?? member.email,
+      lastActivityAt,
+    }));
+
+  const strugglingQuiz = Object.entries(buildClassQuizProgress(input))
+    .filter(
+      ([, q]) =>
+        q.attempted >= STRUGGLING_MIN_ATTEMPTED && q.passed * 2 < q.attempted
+    )
+    .map(([quizId, q]) => ({
+      quizId,
+      quizTitle: titles.get(quizId)!,
+      passed: q.passed,
+      attempted: q.attempted,
+    }))
+    .sort((a, b) => a.passed / a.attempted - b.passed / b.attempted);
+
+  return { blocked, inactive, strugglingQuiz };
 }

@@ -10,7 +10,7 @@ import { setFlash } from "@/lib/actions/flash";
 import { db } from "@/lib/db";
 import { hadithNarrators, narrators } from "@/lib/db/schema";
 
-export type ActionState = { error?: string } | undefined;
+export type ActionState = { error?: string; success?: string } | undefined;
 
 const narratorSchema = z.object({
   name: z.string().trim().min(1, "Le nom est requis."),
@@ -70,8 +70,8 @@ export async function updateNarrator(
   }
 
   revalidateNarrators();
-  await setFlash("Rapporteur enregistré.");
-  redirect("/dashboard/rapporteurs");
+  // L'éditeur reste ouvert : le formulaire affiche le toast.
+  return { success: "Rapporteur enregistré." };
 }
 
 // Rattache tous les hadiths du rapporteur `id` au rapporteur `targetId`, puis

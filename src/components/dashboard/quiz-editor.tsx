@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -20,7 +20,17 @@ import {
   ImportedQuestionList,
 } from "@/components/dashboard/quiz-generate-dialog";
 import { SubmitButton } from "@/components/dashboard/submit-button";
+import { useLeaveGuard } from "@/components/dashboard/use-leave-guard";
 import { QuizAttempt } from "@/components/public/quiz-attempt";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -124,35 +134,6 @@ function snapshot(meta: Meta, questions: QuestionDraft[]) {
   return JSON.stringify({ meta, questions });
 }
 
-// Prévient avant de quitter la page avec des modifications non enregistrées :
-// fermeture de l'onglet, et clic sur un lien interne (sidebar, fil d'Ariane).
-function useLeaveGuard(dirty: boolean) {
-  useEffect(() => {
-    if (!dirty) return;
-    const message =
-      "Tu as des modifications non enregistrées. Quitter quand même ?";
-
-    function onBeforeUnload(event: BeforeUnloadEvent) {
-      event.preventDefault();
-    }
-    function onClick(event: MouseEvent) {
-      const link = (event.target as Element).closest?.("a[href]");
-      if (!link || link.getAttribute("target") === "_blank") return;
-      if (!window.confirm(message)) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    }
-
-    window.addEventListener("beforeunload", onBeforeUnload);
-    document.addEventListener("click", onClick, true);
-    return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload);
-      document.removeEventListener("click", onClick, true);
-    };
-  }, [dirty]);
-}
-
 export function QuizEditor({
   quiz,
   thematiqueOptions,
@@ -160,6 +141,7 @@ export function QuizEditor({
   initialQuestions,
   initialTab,
   aiEnabled = false,
+  answeredCounts = {},
 }: {
   quiz?: {
     id: string;
@@ -178,6 +160,8 @@ export function QuizEditor({
   initialTab?: string;
   // Génération par IA proposée seulement si la clé API est configurée.
   aiEnabled?: boolean;
+  // Tentatives qui ont répondu à chaque question enregistrée (par id).
+  answeredCounts?: Record<string, number>;
 }) {
   const [meta, setMeta] = useState<Meta>(() => ({
     title: quiz?.title ?? "",
@@ -219,7 +203,7 @@ export function QuizEditor({
   const [importOpen, setImportOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
   const dirty = snapshot(meta, questions) !== saved;
-  useLeaveGuard(dirty);
+  const leaveDialog = useLeaveGuard(() => dirty);
 
   function updateQuestion(key: string, patch: Partial<QuestionDraft>) {
     setQuestions((qs) =>
@@ -295,6 +279,20 @@ export function QuizEditor({
       copy,
       ...qs.slice(index + 1),
     ]);
+  }
+
+  // Retirer une question à laquelle des étudiants ont répondu efface leurs
+  // réponses à l'enregistrement : on demande d'abord.
+  const [removalIndex, setRemovalIndex] = useState<number | null>(null);
+  const removalAnswers =
+    removalIndex === null
+      ? 0
+      : (answeredCounts[questions[removalIndex]?.id ?? ""] ?? 0);
+
+  function askRemoveQuestion(index: number) {
+    const id = questions[index].id;
+    if (id && (answeredCounts[id] ?? 0) > 0) setRemovalIndex(index);
+    else removeQuestion(index);
   }
 
   function removeQuestion(index: number) {
@@ -434,7 +432,7 @@ export function QuizEditor({
                   onTypeChange={(type) => setQuestionType(question.key, type)}
                   onMove={(to) => setQuestions((qs) => move(qs, index, to))}
                   onDuplicate={() => duplicateQuestion(index)}
-                  onRemove={() => removeQuestion(index)}
+                  onRemove={() => askRemoveQuestion(index)}
                   onChoixChange={(cKey, patch) =>
                     updateChoix(question.key, cKey, patch)
                   }
@@ -670,6 +668,41 @@ export function QuizEditor({
         title={meta.title}
         questions={questions}
       />
+      {leaveDialog}
+      <AlertDialog
+        open={removalIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemovalIndex(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Retirer la question {(removalIndex ?? 0) + 1} ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {removalAnswers > 1
+                ? `${removalAnswers} tentatives y ont répondu.`
+                : "Une tentative y a répondu."}{" "}
+              En enregistrant le quiz sans cette question, ces réponses seront
+              effacées de l&apos;historique des étudiants. Leurs scores déjà
+              obtenus ne changent pas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Garder la question</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (removalIndex !== null) removeQuestion(removalIndex);
+                setRemovalIndex(null);
+              }}
+            >
+              Retirer
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

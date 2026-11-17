@@ -127,6 +127,12 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Cours : créer, modifier, supprimer ; statut `coming_soon` ↔ `published` ;
       champ « Nom en arabe » (facultatif) affiché en ruq'a sur `/cours`
 - [ ] Thématiques : créer, glisser-déposer pour réordonner, supprimer
+- [ ] Éditeurs (cours, thématique, ressource, hadith, rapporteur, séance,
+      classe, quiz) : modifier un champ puis cliquer un lien de la sidebar
+      ouvre « Quitter sans enregistrer ? » ; « Rester sur la page » garde la
+      saisie ; sans modification, aucune question ; « Enregistrer » garde la
+      page ouverte avec un toast (le fil d'Ariane suit un renommage) ; un
+      titre déjà pris affiche l'erreur sans effacer ce qui a été tapé
 - [ ] Ressources : créer chaque type (vidéo, PDF upload, lien, texte
       markdown), brouillon invisible côté public, réordonner
 - [ ] Hadiths : créer avec arabe + FR obligatoire, wolof optionnel
@@ -149,6 +155,11 @@ Passer le compte en `contributor` puis `admin` dans Studio
       réordonner, dupliquer, replier une question ; supprimer puis
       « Annuler » dans le toast ; « Aperçu élève » permet de répondre et de
       voir la correction sans rien enregistrer
+- [ ] Quiz avec des tentatives : retirer une question déjà répondue demande
+      confirmation (« Garder la question » ne change rien) ; la corbeille de
+      la liste des quiz ou d'une thématique annonce « N tentatives de M
+      étudiants seront supprimées » et propose « Passer en brouillon »
+      (quiz publié) ; sans tentative, la confirmation simple
 - [ ] Quiz → « Importer » : « Copier le prompt NotebookLM » copie le prompt ;
       coller une réponse au format `Q:` / `- [x]` affiche le nombre de
       questions reconnues et les blocs ignorés ; « Ajouter » les place
@@ -190,6 +201,12 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Utilisateurs : section « Comptes » en lecture seule, recherche par nom
       ou e-mail, liens vers la fiche de l'élève dans chacune de ses classes
 - [ ] Accueil du dashboard : plus de ligne « en attente d'autorisation »
+- [ ] Accueil du dashboard (admin) : « À surveiller » liste, par classe,
+      les étudiants bloqués sur un quiz (« Accorder une tentative » les
+      retire de la liste), les quiz peu réussis (lien vers la page du quiz
+      pour la classe) et les inactifs depuis plus de 7 jours ; un ancien
+      élève n'y figure jamais ; sans rien à signaler : « Rien à signaler
+      dans tes classes. » ; absent pour un contributeur
 - [ ] Classe → Suivi s'ouvre sur « Par étudiant » (même après un
       rechargement) ; « Par quiz » : chaque quiz débloqué avec réussi /
       effectif, pas tenté, moyenne, bloqués ;

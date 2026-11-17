@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, countDistinct, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -369,4 +369,19 @@ export async function getTentativeDetail(tentativeId: string, userId: string) {
   }));
 
   return { tentative, corrections };
+}
+
+// Nombre de tentatives qui ont répondu à chaque question du quiz : retirer
+// une question efface ces réponses, l'éditeur prévient avant.
+export async function getAnsweredQuestionCounts(quizId: string) {
+  const rows = await db
+    .select({
+      questionId: quizReponses.questionId,
+      tentatives: countDistinct(quizReponses.tentativeId),
+    })
+    .from(quizReponses)
+    .innerJoin(quizQuestions, eq(quizQuestions.id, quizReponses.questionId))
+    .where(eq(quizQuestions.quizId, quizId))
+    .groupBy(quizReponses.questionId);
+  return Object.fromEntries(rows.map((r) => [r.questionId, r.tentatives]));
 }

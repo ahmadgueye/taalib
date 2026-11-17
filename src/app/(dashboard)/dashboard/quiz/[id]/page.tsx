@@ -10,6 +10,7 @@ import { QuizEditor } from "@/components/dashboard/quiz-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getQuizWithQuestions } from "@/lib/db/queries/quiz";
+import { getAnsweredQuestionCounts } from "@/lib/db/queries/quiz-tentatives";
 import { getAllThematiques } from "@/lib/db/queries/thematiques";
 import { toQuestionDrafts } from "@/lib/quiz-drafts";
 import { isQuizGenerationEnabled } from "@/lib/quiz-generation";
@@ -23,9 +24,10 @@ type Props = {
 // enregistrés ensemble.
 export default async function QuizPage({ params, searchParams }: Props) {
   const [{ id }, { onglet }] = await Promise.all([params, searchParams]);
-  const [quiz, thematiques] = await Promise.all([
+  const [quiz, thematiques, answeredCounts] = await Promise.all([
     getQuizWithQuestions(id),
     getAllThematiques(),
+    getAnsweredQuestionCounts(id),
   ]);
 
   if (!quiz) notFound();
@@ -66,6 +68,7 @@ export default async function QuizPage({ params, searchParams }: Props) {
           thematiqueOptions={thematiqueOptions}
           initialQuestions={toQuestionDrafts(quiz.questions)}
           aiEnabled={isQuizGenerationEnabled()}
+          answeredCounts={answeredCounts}
           initialTab={onglet}
         />
       </div>

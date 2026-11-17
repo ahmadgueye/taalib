@@ -13,6 +13,7 @@ import {
   Plus,
 } from "lucide-react";
 
+import { ClassWatchlist } from "@/components/dashboard/class-watchlist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +32,7 @@ import {
   seances,
   thematiques,
 } from "@/lib/db/schema";
+import { getClassesWatchlist } from "@/lib/db/queries/class-progress";
 import { getAllClasses } from "@/lib/db/queries/classes";
 import {
   getDashboardTodo,
@@ -111,6 +113,7 @@ export default async function DashboardHomePage() {
     recentEdits,
     upcomingSeances,
     classList,
+    watchlist,
     [coursCount],
     [thematiquesCount],
     [ressourcesCount],
@@ -122,6 +125,7 @@ export default async function DashboardHomePage() {
     getRecentEdits(8),
     getUpcomingSeances(3),
     isAdmin ? getAllClasses() : Promise.resolve([]),
+    isAdmin ? getClassesWatchlist(now) : Promise.resolve([]),
     db.select({ value: count() }).from(cours),
     db.select({ value: count() }).from(thematiques),
     db.select({ value: count() }).from(ressources),
@@ -189,6 +193,13 @@ export default async function DashboardHomePage() {
 
       <div className="mt-8 grid gap-10 lg:grid-cols-3">
         <div className="flex flex-col gap-10 lg:col-span-2">
+          {isAdmin && classList.length > 0 && (
+            <section>
+              <SectionTitle>À surveiller</SectionTitle>
+              <ClassWatchlist lists={watchlist} now={now} />
+            </section>
+          )}
+
           <section>
             <SectionTitle>À traiter</SectionTitle>
             {todoItems.length === 0 ? (

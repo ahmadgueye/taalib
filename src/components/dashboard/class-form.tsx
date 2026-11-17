@@ -1,23 +1,18 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { toast } from "sonner";
-
-import { SubmitButton } from "@/components/dashboard/submit-button";
+import {
+  EditorFormActions,
+  useEditorForm,
+} from "@/components/dashboard/use-editor-form";
 import {
   Field,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  createClass,
-  updateClass,
-  type ActionState,
-} from "@/lib/actions/classes";
+import { createClass, updateClass } from "@/lib/actions/classes";
 
 export function ClassForm({
   classe,
@@ -25,17 +20,11 @@ export function ClassForm({
   classe?: { id: string; name: string; description: string | null };
 }) {
   const action = classe ? updateClass.bind(null, classe.id) : createClass;
-  const [state, formAction] = useActionState<ActionState, FormData>(
-    action,
-    undefined
-  );
-
-  useEffect(() => {
-    if (state?.success) toast.success(state.success);
-  }, [state]);
+  const { state, pending, dirty, formRef, onSubmit, leaveDialog } =
+    useEditorForm(action);
 
   return (
-    <form action={formAction} className="max-w-lg">
+    <form ref={formRef} onSubmit={onSubmit} className="max-w-lg">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="name">Nom</FieldLabel>
@@ -57,9 +46,15 @@ export function ClassForm({
           />
           <FieldDescription>Facultatif.</FieldDescription>
         </Field>
-        {state?.error && <FieldError>{state.error}</FieldError>}
-        <SubmitButton>{classe ? "Enregistrer" : "Créer"}</SubmitButton>
+        <EditorFormActions
+          pending={pending}
+          dirty={!!classe && dirty}
+          error={state?.error}
+        >
+          {classe ? "Enregistrer" : "Créer"}
+        </EditorFormActions>
       </FieldGroup>
+      {leaveDialog}
     </form>
   );
 }

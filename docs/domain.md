@@ -58,6 +58,21 @@ flowchart TD
   n'est pas un conteneur qui possède du contenu : elle pointe vers du contenu
   qui existe déjà ailleurs.
 
+Dans le dashboard, chaque formulaire d'édition (cours, thématique, ressource,
+hadith, rapporteur, séance, réglages d'une classe, quiz) se comporte de la
+même façon. Après « Enregistrer », on reste sur la page avec un toast (une
+création, elle, mène à la page de l'élément créé) ; la barre d'enregistrement
+reste collée en bas de l'écran et signale « Modifications non enregistrées ».
+Un enregistrement refusé (titre déjà pris…) affiche l'erreur sans effacer la
+saisie : les formulaires s'envoient sans la réinitialisation automatique de
+React (`use-editor-form.tsx`). Enfin, l'éditeur prévient avant de quitter la
+page avec des modifications non enregistrées (`use-leave-guard.tsx`) : un
+lien interne ouvre la boîte « Quitter sans
+enregistrer ? », la fermeture ou le rechargement de l'onglet l'alerte du
+navigateur (la seule permise à ce moment-là). Un clic avec Cmd/Ctrl, qui
+ouvre un nouvel onglet, passe sans question. Le bouton « retour » du
+navigateur n'est pas intercepté.
+
 ## Progression utilisateur
 
 `ressource_progress` (table pivot `user_id` + `ressource_id`) enregistre
@@ -202,6 +217,15 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   l'éditeur est supprimé, avec les réponses qui s'y rattachaient (passer une
   question de QCM à Vrai/Faux remplace ses choix). Un score déjà obtenu
   n'est pas recalculé si une bonne réponse change.
+- **Protéger l'historique des élèves** — retirer dans l'éditeur une
+  question à laquelle des tentatives ont répondu (`getAnsweredQuestionCounts`)
+  demande d'abord confirmation, en disant combien ; « Garder la question »
+  annule. Supprimer un quiz (`quiz-delete-button.tsx`) annonce combien de
+  tentatives et d'étudiants seront effacés (`getQuizDeletionImpact`) ; s'il
+  en a et qu'il est publié, la confirmation propose « Passer en brouillon »
+  (`unpublishQuiz`) : le quiz disparaît pour les étudiants, leurs tentatives
+  restent. Retirer un choix déjà coché, supprimer une thématique ou un
+  cours efface aussi des réponses, sans avertissement dédié pour l'instant.
 
 - **Passage** — `/quiz/[id]` (`quiz-attempt.tsx`) rappelle en haut le
   nombre de tentatives et le meilleur score de l'élève, avec un lien vers
@@ -584,6 +608,17 @@ elle qui détermine ce qu'un étudiant voit, voir
   Tri par colonne, les moins avancés en leçons d'abord. Les anciens élèves
   sont repliés à part et jugés sur ce qui était débloqué avant leur départ.
   Réservé à l'admin, comme le reste de la page.
+  - **À surveiller (accueil du dashboard)** — les mêmes données résumées
+    pour toutes les classes (`getClassesWatchlist`, calcul pur
+    `buildClassWatchlist`, affichage `class-watchlist.tsx`), seulement les
+    classes qui ont quelque chose à signaler, et sans les anciens élèves :
+    les étudiants bloqués sur un quiz, avec « Accorder une tentative » sur
+    place ; les quiz peu réussis (au moins 2 étudiants l'ont tenté
+    — `STRUGGLING_MIN_ATTEMPTED` — et moins de la moitié l'a réussi), qui
+    ouvrent la page du quiz pour la classe ; les étudiants inactifs depuis
+    plus de 7 jours, les plus anciens d'abord. Un nouvel inscrit n'est
+    signalé qu'après 7 jours sans activité depuis son arrivée. Cinq lignes au
+    plus par groupe, le reste renvoie au suivi de la classe.
   - **Détail d'un étudiant** — le nom ouvre
     `/dashboard/classes/[id]/etudiants/[userId]` (`notFound()` si l'étudiant
     n'est pas membre de la classe, actif ou ancien) : les mêmes chiffres en

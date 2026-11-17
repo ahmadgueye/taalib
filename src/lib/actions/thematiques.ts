@@ -12,7 +12,7 @@ import { db } from "@/lib/db";
 import { thematiques } from "@/lib/db/schema";
 import { slugify } from "@/lib/utils";
 
-export type ActionState = { error?: string } | undefined;
+export type ActionState = { error?: string; success?: string } | undefined;
 
 const thematiqueSchema = z.object({
   title: z.string().trim().min(1, "Le titre est requis."),
@@ -98,8 +98,8 @@ export async function updateThematique(
   revalidatePath("/dashboard/thematiques");
   revalidatePath("/cours");
   revalidateCoursTree();
-  await setFlash("Thématique enregistrée.");
-  redirect(`/dashboard/thematiques/${id}`);
+  // L'éditeur reste ouvert : le formulaire affiche le toast.
+  return { success: "Thématique enregistrée." };
 }
 
 export async function deleteThematique(id: string) {

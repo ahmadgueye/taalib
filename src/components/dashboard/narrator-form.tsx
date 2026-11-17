@@ -1,20 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
-
-import { SubmitButton } from "@/components/dashboard/submit-button";
 import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+  EditorFormActions,
+  useEditorForm,
+} from "@/components/dashboard/use-editor-form";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  createNarrator,
-  updateNarrator,
-  type ActionState,
-} from "@/lib/actions/narrators";
+import { createNarrator, updateNarrator } from "@/lib/actions/narrators";
 
 export function NarratorForm({
   narrator,
@@ -24,13 +16,11 @@ export function NarratorForm({
   const action = narrator
     ? updateNarrator.bind(null, narrator.id)
     : createNarrator;
-  const [state, formAction] = useActionState<ActionState, FormData>(
-    action,
-    undefined
-  );
+  const { state, pending, dirty, formRef, onSubmit, leaveDialog } =
+    useEditorForm(action);
 
   return (
-    <form action={formAction} className="max-w-lg">
+    <form ref={formRef} onSubmit={onSubmit} className="max-w-lg">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="name">Nom</FieldLabel>
@@ -42,9 +32,15 @@ export function NarratorForm({
             required
           />
         </Field>
-        {state?.error && <FieldError>{state.error}</FieldError>}
-        <SubmitButton>{narrator ? "Enregistrer" : "Créer"}</SubmitButton>
+        <EditorFormActions
+          pending={pending}
+          dirty={!!narrator && dirty}
+          error={state?.error}
+        >
+          {narrator ? "Enregistrer" : "Créer"}
+        </EditorFormActions>
       </FieldGroup>
+      {leaveDialog}
     </form>
   );
 }

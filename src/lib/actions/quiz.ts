@@ -1,6 +1,15 @@
 "use server";
 
-import { and, eq, inArray, max, notInArray, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  countDistinct,
+  eq,
+  inArray,
+  max,
+  notInArray,
+  sql,
+} from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -16,6 +25,7 @@ import {
   quizChoix,
   quizExtraAttempts,
   quizQuestions,
+  quizTentatives,
 } from "@/lib/db/schema";
 import { toQuestionDrafts, type QuestionDraft } from "@/lib/quiz-drafts";
 
@@ -244,6 +254,34 @@ export async function updateQuiz(
   };
 }
 
+// Ce que la suppression d'un quiz effacerait : ses tentatives (et les
+// réponses qui vont avec), pour la confirmation.
+export async function getQuizDeletionImpact(id: string) {
+  await requireContributor();
+  const [row] = await db
+    .select({
+      status: quiz.status,
+      attempts: count(quizTentatives.id),
+      students: countDistinct(quizTentatives.userId),
+    })
+    .from(quiz)
+    .leftJoin(quizTentatives, eq(quizTentatives.quizId, quiz.id))
+    .where(eq(quiz.id, id))
+    .groupBy(quiz.id);
+  return row ?? null;
+}
+
+// L'alternative à la suppression : le quiz disparaît pour les étudiants mais
+// leurs tentatives restent.
+export async function unpublishQuiz(id: string) {
+  await requireContributor();
+  await db
+    .update(quiz)
+    .set({ status: "draft", updatedAt: new Date() })
+    .where(eq(quiz.id, id));
+  revalidateQuiz(id);
+}
+
 export async function deleteQuiz(id: string) {
   await requireContributor();
   await db.delete(quiz).where(eq(quiz.id, id));
@@ -295,6 +333,7 @@ export async function grantQuizAttempt(
   revalidatePath("/dashboard/classes/[id]", "page");
   revalidatePath("/dashboard/classes/[id]/etudiants/[userId]", "page");
   revalidatePath("/dashboard/classes/[id]/quiz/[quizId]", "page");
+  revalidatePath("/dashboard");
   revalidatePath(`/quiz/${quizId}`);
   return undefined;
 }

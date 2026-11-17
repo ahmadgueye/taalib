@@ -68,7 +68,9 @@ deux layouts et deux publics différents :
   systématiquement le même quatuor de pages :
   `dashboard/foo/page.tsx` (liste), `dashboard/foo/new/page.tsx` (création),
   `dashboard/foo/[id]/edit/page.tsx` (édition), plus un composant `foo-form.tsx`
-  et `foo-table.tsx` partagés entre create/edit et list. `quiz` est une
+  et `foo-table.tsx` partagés entre create/edit et list. Les formulaires
+  passent par `useEditorForm` (`use-editor-form.tsx`) : l'édition reste sur
+  la page avec un toast, la création redirige depuis l'action. `quiz` est une
   exception : une seule page, `dashboard/quiz/[id]/page.tsx`, édite ses
   questions et ses réglages en deux onglets, enregistrés ensemble (`quiz-editor.tsx`, aussi utilisé par
   `quiz/new`) ; les anciennes adresses `[id]/edit` et `[id]/questions`
@@ -86,7 +88,9 @@ deux layouts et deux publics différents :
   (les hadiths seulement s'ils ont été ouverts depuis une thématique). Il n'y a
   plus de liste à plat des thématiques : `dashboard/thematiques` redirige vers
   les cours. L'accueil
-  `dashboard/page.tsx` est orienté tâches : ce qui attend une action
+  `dashboard/page.tsx` est orienté tâches : pour l'admin, « À surveiller »
+  (élèves bloqués ou inactifs, quiz peu réussis, toutes classes confondues,
+  voir [Classes](./domain.md#classes)), puis ce qui attend une action
   (brouillons, cours « Bientôt disponible »),
   les derniers éléments modifiés avec un lien vers leur édition, les
   prochaines séances et les classes (requêtes dans
