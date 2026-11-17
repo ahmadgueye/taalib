@@ -301,8 +301,9 @@ réussis). Rien n'est saisi par l'enseignant.
   en écriture manuscrite stylisée, Herr Von Muellerhoff avec des lettres
   légèrement désalignées, et non sa vraie
   signature puisque la page est publique), sceau, QR code vers la page,
-  dessiné pour 1123 × 794 px en unités de conteneur pour se réduire sur
-  téléphone), un bouton « Copier le lien », la liste de ce qui a été
+  en paysage A4, et en portrait sous 36rem de large pour rester lisible sur
+  téléphone ; chaque version est en unités de conteneur et garde sa mise en
+  page à toutes les largeurs), un bouton « Copier le lien », la liste de ce qui a été
   validé et la mention « ni diplôme reconnu par l'État, ni ijāza ». Un
   numéro inconnu, ou un titulaire sans nom, répond « Certificat
   introuvable » (`notFound()` : comme les autres pages qui streament, la

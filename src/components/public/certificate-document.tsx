@@ -4,10 +4,24 @@ import QRCode from "qrcode";
 import { certificateUrl, validationSummary } from "@/lib/certificates";
 import { LOGO_HEIGHT, LOGO_PATH, LOGO_WIDTH } from "@/lib/logo-path";
 
-// Le certificat est dessiné pour 1123 × 794 px (A4 paysage) et toutes ses
-// mesures sont en unités de conteneur : il garde exactement sa mise en page,
-// réduit, sur un téléphone.
-const DESIGN_WIDTH = 1123;
+// Deux mises en page du même certificat, choisies par la largeur de son
+// conteneur : paysage (A4, dessiné pour 1123 × 794 px) et, sous 36rem (un
+// téléphone), portrait (dessiné pour 360 px de large), où le texte reste
+// lisible. Dans chacune, toutes les mesures sont en unités de conteneur : la
+// mise en page est conservée, réduite ou agrandie, à toutes les largeurs.
+type Unit = (px: number) => string;
+const containerUnit =
+  (designWidth: number): Unit =>
+  (px) =>
+    `${((px * 100) / designWidth).toFixed(3)}cqw`;
+const landscape = containerUnit(1123);
+const portrait = containerUnit(360);
+// Les éléments partagés (signature, sceau…) sont dessinés à l'échelle du
+// paysage : en portrait, on les réduit.
+const scaled =
+  (unit: Unit, factor: number): Unit =>
+  (px) =>
+    unit(px * factor);
 
 // Signature du fondateur : une écriture manuscrite stylisée, volontairement
 // pas sa vraie signature (l'image est publique). Chargée seulement ici.
@@ -18,7 +32,6 @@ const signatureFont = Herr_Von_Muellerhoff({
   weight: "400",
   preload: false,
 });
-const u = (px: number) => `${((px * 100) / DESIGN_WIDTH).toFixed(3)}cqw`;
 
 // Couleurs fixes : un certificat reste crème et brun, même en thème sombre.
 const INK = "#21140f";
@@ -55,184 +68,286 @@ export type CertificateData = {
 };
 
 export function CertificateDocument({
-  certificate: c,
+  certificate,
 }: {
   certificate: CertificateData;
 }) {
-  const url = certificateUrl(c.code);
-  const logoHeight = 46;
-
+  // Une seule des deux versions est affichée : l'autre est en display: none,
+  // donc absente aussi pour les lecteurs d'écran.
   return (
-    <div style={{ containerType: "inline-size" }} className="w-full">
-      <article
-        aria-label={`Certificat de réussite de ${c.recipientName}`}
+    <div className="@container w-full">
+      <div className="@max-xl:hidden">
+        <LandscapeCertificate c={certificate} />
+      </div>
+      <div className="@xl:hidden">
+        <PortraitCertificate c={certificate} />
+      </div>
+    </div>
+  );
+}
+
+function LandscapeCertificate({ c }: { c: CertificateData }) {
+  const u = landscape;
+  const url = certificateUrl(c.code);
+  return (
+    <Frame c={c} unit={u} aspectRatio="1123 / 794" patternId="girih-landscape">
+      <div
         style={{
-          aspectRatio: "1123 / 794",
-          padding: u(14),
-          background: INK,
-          color: INK,
+          margin: u(10),
+          padding: `0 ${u(48)} ${u(54)}`,
+          borderWidth: "1px",
+          borderColor: "rgba(33,20,15,0.22)",
         }}
-        className="font-sans"
+        className="relative flex flex-1 flex-col"
       >
-        <div
-          style={{ background: CREAM }}
-          className="relative flex h-full flex-col overflow-hidden"
-        >
-          <GirihPattern />
-
-          <header
-            style={{ height: u(96), gap: u(28), background: INK }}
-            className="relative flex shrink-0 items-center justify-center"
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <p style={{ fontSize: u(20), color: TEXT_SOFT }}>
+            Ce certificat est décerné à
+          </p>
+          <p
+            style={{ marginTop: u(14), fontSize: u(80), lineHeight: 1.05 }}
+            className="font-heading font-bold"
           >
-            <svg
-              role="img"
-              aria-label="Taalib"
-              viewBox={`0 0 ${LOGO_WIDTH} ${LOGO_HEIGHT}`}
-              style={{
-                height: u(logoHeight),
-                width: u((logoHeight * LOGO_WIDTH) / LOGO_HEIGHT),
-              }}
-            >
-              <path d={LOGO_PATH} fill={CREAM} />
-            </svg>
-            <span
-              aria-hidden
-              style={{
-                width: u(1.5),
-                height: u(46),
-                background: "rgba(245,245,237,0.55)",
-              }}
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element -- petit
-                logo fixe, sans intérêt à passer par next/image */}
-            <img
-              src="/brand/bayan-mark-cream.png"
-              alt="Bayān"
-              style={{ width: u(46), height: u(46) }}
-            />
-          </header>
-
-          <div
+            {c.recipientName}
+          </p>
+          <Ornament unit={u} />
+          <p style={{ marginTop: u(22), fontSize: u(20), color: TEXT_SOFT }}>
+            pour avoir validé l&apos;intégralité de la thématique
+          </p>
+          <p
             style={{
-              margin: u(10),
-              padding: `0 ${u(48)} ${u(54)}`,
-              borderWidth: "1px",
-              borderColor: "rgba(33,20,15,0.22)",
+              marginTop: u(10),
+              fontSize: u(48),
+              lineHeight: 1.12,
+              maxWidth: u(880),
             }}
-            className="relative flex flex-1 flex-col"
+            className="font-heading font-bold text-balance"
           >
-            <div className="flex flex-1 flex-col items-center justify-center text-center">
-              <p style={{ fontSize: u(20), color: TEXT_SOFT }}>
-                Ce certificat est décerné à
-              </p>
-              <p
-                style={{ marginTop: u(14), fontSize: u(80), lineHeight: 1.05 }}
-                className="font-heading font-bold"
-              >
-                {c.recipientName}
-              </p>
-              <Ornament />
-              <p style={{ marginTop: u(22), fontSize: u(20), color: TEXT_SOFT }}>
-                pour avoir validé l&apos;intégralité de la thématique
-              </p>
-              <p
-                style={{
-                  marginTop: u(10),
-                  fontSize: u(48),
-                  lineHeight: 1.12,
-                  maxWidth: u(880),
-                }}
-                className="font-heading font-bold text-balance"
-              >
-                {c.thematiqueTitle}
-              </p>
-              <p style={{ marginTop: u(14), fontSize: u(20), color: TEXT_SOFT }}>
-                du cours {c.coursTitle}
-              </p>
-              <p style={{ marginTop: u(26), fontSize: u(16), color: TEXT_SOFT }}>
-                le {dateFormat.format(c.issuedAt)}, après{" "}
-                {validationSummary(c.lessonCount, c.quizCount)}
-              </p>
-            </div>
+            {c.thematiqueTitle}
+          </p>
+          <p style={{ marginTop: u(14), fontSize: u(20), color: TEXT_SOFT }}>
+            du cours {c.coursTitle}
+          </p>
+          <p style={{ marginTop: u(26), fontSize: u(16), color: TEXT_SOFT }}>
+            {issuedLine(c)}
+          </p>
+        </div>
 
-            <div
-              style={{ gap: u(24) }}
-              className="grid grid-cols-3 items-center"
-            >
-              <div style={{ gap: u(14) }} className="flex items-center">
-                <QrCode url={url} size={u(92)} padding={u(5)} />
-                <div
-                  style={{ gap: u(3), fontSize: u(12), color: TEXT_SOFT }}
-                  className="flex min-w-0 flex-col"
-                >
-                  <span>Vérifier ce certificat :</span>
-                  <span className="font-semibold break-all" style={{ color: INK }}>
-                    {url.replace(/^https?:\/\//, "").replace(c.code, "")}
-                  </span>
-                  <span
-                    className="font-bold tracking-wide"
-                    style={{ color: INK }}
-                  >
-                    {c.code}
-                  </span>
-                </div>
-              </div>
-
-              <div
-                style={{ gap: u(4) }}
-                className="flex flex-col items-center text-center"
-              >
-                {/* La signature déborde sur le trait, comme à la main. */}
-                <span
-                  aria-hidden
-                  style={{
-                    fontSize: u(54),
-                    lineHeight: 1,
-                    marginBottom: u(-18),
-                    color: INK,
-                  }}
-                  className={`${signatureFont.className} whitespace-nowrap`}
-                >
-                  {SIGNATURE.map(([char, rotate, dy, scale], i) => (
-                    <span
-                      key={i}
-                      style={{
-                        transform: `translateY(${u(dy)}) rotate(${rotate}deg) scale(${scale})`,
-                      }}
-                      className="inline-block"
-                    >
-                      {char === " " ? "\u00a0" : char}
-                    </span>
-                  ))}
-                </span>
-                <span
-                  aria-hidden
-                  style={{
-                    width: u(200),
-                    height: "1px",
-                    marginBottom: u(8),
-                    background: "rgba(33,20,15,0.35)",
-                  }}
-                />
-                <span style={{ fontSize: u(14) }}>
-                  <strong>Ahmad</strong>, Fondateur Bayān
-                </span>
-              </div>
-
-              <div className="flex justify-end">
-                <Seal />
-              </div>
-            </div>
+        <div style={{ gap: u(24) }} className="grid grid-cols-3 items-center">
+          <VerifyBlock c={c} url={url} unit={u} qrSize={92} textSize={12} />
+          <Signature unit={u} nameSize={u(14)} />
+          <div className="flex justify-end">
+            <Seal unit={u} />
           </div>
         </div>
-      </article>
+      </div>
+    </Frame>
+  );
+}
+
+function PortraitCertificate({ c }: { c: CertificateData }) {
+  const p = portrait;
+  const url = certificateUrl(c.code);
+  return (
+    <Frame c={c} unit={scaled(p, 0.62)} patternId="girih-portrait">
+      <div
+        style={{
+          margin: p(6),
+          padding: `${p(30)} ${p(18)} ${p(40)}`,
+          borderWidth: "1px",
+          borderColor: "rgba(33,20,15,0.22)",
+        }}
+        className="relative flex flex-col items-center text-center"
+      >
+        <p style={{ fontSize: p(14), color: TEXT_SOFT }}>
+          Ce certificat est décerné à
+        </p>
+        <p
+          style={{ marginTop: p(8), fontSize: p(34), lineHeight: 1.1 }}
+          className="font-heading font-bold text-balance"
+        >
+          {c.recipientName}
+        </p>
+        <Ornament unit={scaled(p, 0.6)} />
+        <p style={{ marginTop: p(16), fontSize: p(14), color: TEXT_SOFT }}>
+          pour avoir validé l&apos;intégralité de la thématique
+        </p>
+        <p
+          style={{ marginTop: p(6), fontSize: p(23), lineHeight: 1.15 }}
+          className="font-heading font-bold text-balance"
+        >
+          {c.thematiqueTitle}
+        </p>
+        <p style={{ marginTop: p(8), fontSize: p(14), color: TEXT_SOFT }}>
+          du cours {c.coursTitle}
+        </p>
+        <p style={{ marginTop: p(14), fontSize: p(13), color: TEXT_SOFT }}>
+          {issuedLine(c)}
+        </p>
+
+        <div style={{ marginTop: p(34) }}>
+          <Signature unit={scaled(p, 0.75)} nameSize={p(13)} />
+        </div>
+
+        <div
+          style={{ marginTop: p(30), gap: p(12) }}
+          className="flex w-full items-center justify-between text-left"
+        >
+          <VerifyBlock c={c} url={url} unit={p} qrSize={64} textSize={10} />
+          <Seal unit={scaled(p, 0.6)} />
+        </div>
+      </div>
+    </Frame>
+  );
+}
+
+function issuedLine(c: CertificateData) {
+  return `le ${dateFormat.format(c.issuedAt)}, après ${validationSummary(c.lessonCount, c.quizCount)}`;
+}
+
+// Cadre brun, fond crème à motif et bandeau aux logos de Taalib et de Bayān,
+// communs aux deux mises en page. `unit` règle la taille du bandeau.
+function Frame({
+  c,
+  unit: u,
+  aspectRatio,
+  patternId,
+  children,
+}: {
+  c: CertificateData;
+  unit: Unit;
+  aspectRatio?: string;
+  patternId: string;
+  children: React.ReactNode;
+}) {
+  const logoHeight = 46;
+  return (
+    <article
+      aria-label={`Certificat de réussite de ${c.recipientName}`}
+      style={{ aspectRatio, padding: u(14), background: INK, color: INK }}
+      className="font-sans"
+    >
+      <div
+        style={{ background: CREAM }}
+        className="relative flex h-full flex-col overflow-hidden"
+      >
+        <GirihPattern id={patternId} />
+        <header
+          style={{ height: u(96), gap: u(28), background: INK }}
+          className="relative flex shrink-0 items-center justify-center"
+        >
+          <svg
+            role="img"
+            aria-label="Taalib"
+            viewBox={`0 0 ${LOGO_WIDTH} ${LOGO_HEIGHT}`}
+            style={{
+              height: u(logoHeight),
+              width: u((logoHeight * LOGO_WIDTH) / LOGO_HEIGHT),
+            }}
+          >
+            <path d={LOGO_PATH} fill={CREAM} />
+          </svg>
+          <span
+            aria-hidden
+            style={{
+              width: "1.5px",
+              height: u(46),
+              background: "rgba(245,245,237,0.55)",
+            }}
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element -- petit
+              logo fixe, sans intérêt à passer par next/image */}
+          <img
+            src="/brand/bayan-mark-cream.png"
+            alt="Bayān"
+            style={{ width: u(46), height: u(46) }}
+          />
+        </header>
+        {children}
+      </div>
+    </article>
+  );
+}
+
+// QR code et adresse de la page publique.
+function VerifyBlock({
+  c,
+  url,
+  unit: u,
+  qrSize,
+  textSize,
+}: {
+  c: CertificateData;
+  url: string;
+  unit: Unit;
+  qrSize: number;
+  textSize: number;
+}) {
+  return (
+    <div style={{ gap: u(14) }} className="flex min-w-0 items-center">
+      <QrCode url={url} size={u(qrSize)} padding={u(qrSize / 18)} />
+      <div
+        style={{ gap: u(3), fontSize: u(textSize), color: TEXT_SOFT }}
+        className="flex min-w-0 flex-col"
+      >
+        <span>Vérifier ce certificat :</span>
+        <span className="font-semibold break-all" style={{ color: INK }}>
+          {url.replace(/^https?:\/\//, "").replace(c.code, "")}
+        </span>
+        <span className="font-bold tracking-wide" style={{ color: INK }}>
+          {c.code}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// Signature du fondateur posée sur le trait, puis son nom.
+function Signature({ unit: u, nameSize }: { unit: Unit; nameSize: string }) {
+  return (
+    <div style={{ gap: u(4) }} className="flex flex-col items-center text-center">
+      {/* La signature déborde sur le trait, comme à la main. */}
+      <span
+        aria-hidden
+        style={{
+          fontSize: u(54),
+          lineHeight: 1,
+          marginBottom: u(-18),
+          color: INK,
+        }}
+        className={`${signatureFont.className} whitespace-nowrap`}
+      >
+        {SIGNATURE.map(([char, rotate, dy, scale], i) => (
+          <span
+            key={i}
+            style={{
+              transform: `translateY(${u(dy)}) rotate(${rotate}deg) scale(${scale})`,
+            }}
+            className="inline-block"
+          >
+            {char === " " ? " " : char}
+          </span>
+        ))}
+      </span>
+      <span
+        aria-hidden
+        style={{
+          width: u(200),
+          height: "1px",
+          marginBottom: u(8),
+          background: "rgba(33,20,15,0.35)",
+        }}
+      />
+      <span style={{ fontSize: nameSize }}>
+        <strong>Ahmad</strong>, Fondateur Bayān
+      </span>
     </div>
   );
 }
 
 // Séparateur sous le nom : un trait, l'étoile à quatre branches du logo
 // Bayān (celle du motif de fond), un trait.
-function Ornament() {
+function Ornament({ unit: u }: { unit: Unit }) {
   const line = { width: u(72), height: "1px", background: "rgba(33,20,15,0.3)" };
   return (
     <div
@@ -253,34 +368,28 @@ function Ornament() {
 }
 
 // Losanges très clairs, avec à chaque croisement la petite étoile à quatre
-// branches du logo Bayān.
-function GirihPattern() {
+// branches du logo Bayān. Motif de taille fixe : il se répète sur toute la
+// surface, quel que soit le format.
+function GirihPattern({ id }: { id: string }) {
   return (
-    <svg
-      aria-hidden
-      viewBox="0 0 1095 766"
-      preserveAspectRatio="xMidYMid slice"
-      className="absolute inset-0 size-full"
-    >
+    <svg aria-hidden className="absolute inset-0 size-full">
       <defs>
-        <pattern
-          id="certificate-girih"
-          width="56"
-          height="56"
-          patternUnits="userSpaceOnUse"
-        >
-          <path
-            d="M28 0L56 28L28 56L0 28Z"
-            fill="none"
-            stroke="rgba(33,20,15,0.07)"
-          />
-          <path
-            d="M28 20Q29.5 26.5 36 28Q29.5 29.5 28 36Q26.5 29.5 20 28Q26.5 26.5 28 20Z"
-            fill="rgba(33,20,15,0.07)"
-          />
+        <pattern id={id} width="48" height="48" patternUnits="userSpaceOnUse">
+          <g transform="scale(0.8571)">
+            <path
+              d="M28 0L56 28L28 56L0 28Z"
+              fill="none"
+              stroke="rgba(33,20,15,0.07)"
+              strokeWidth="1.17"
+            />
+            <path
+              d="M28 20Q29.5 26.5 36 28Q29.5 29.5 28 36Q26.5 29.5 20 28Q26.5 26.5 28 20Z"
+              fill="rgba(33,20,15,0.07)"
+            />
+          </g>
         </pattern>
       </defs>
-      <rect width="1095" height="766" fill="url(#certificate-girih)" />
+      <rect width="100%" height="100%" fill={`url(#${id})`} />
     </svg>
   );
 }
@@ -289,7 +398,7 @@ function GirihPattern() {
 // Bayān au centre et deux rubans orange. La boîte ne compte que l'étoile :
 // les rubans en débordent, pour que l'étoile s'aligne au centre du pied de
 // page avec le QR code et la signature.
-function Seal() {
+function Seal({ unit: u }: { unit: Unit }) {
   const ribbon = {
     top: u(72),
     width: u(26),
@@ -308,7 +417,7 @@ function Seal() {
     <div
       aria-hidden
       style={{ width: u(120), height: u(92) }}
-      className="relative"
+      className="relative shrink-0"
     >
       <div style={{ ...ribbon, left: u(30) }} className="absolute rotate-[14deg]" />
       <div style={{ ...ribbon, left: u(64) }} className="absolute -rotate-[14deg]" />
