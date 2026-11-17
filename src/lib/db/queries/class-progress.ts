@@ -1,13 +1,15 @@
-import { and, count, eq, inArray, max } from "drizzle-orm";
+import { and, asc, count, eq, inArray, max } from "drizzle-orm";
 
 import {
   buildClassProgress,
   buildClassQuizProgress,
+  buildClassWatchlist,
   type ClassProgressInput,
 } from "@/lib/class-progress";
 import { db } from "@/lib/db";
 import {
   classCours,
+  classes,
   classMembers,
   classQuizUnlocks,
   classRessourceUnlocks,
@@ -37,6 +39,30 @@ export async function getClassProgressData(classId: string) {
     : { students: [], quizzes: {} };
 }
 
+// Ce qui demande l'attention dans chaque classe, pour l'accueil du
+// dashboard : seules les classes qui ont quelque chose à signaler.
+export async function getClassesWatchlist(now: Date) {
+  const classList = await db
+    .select({ id: classes.id, name: classes.name })
+    .from(classes)
+    .orderBy(asc(classes.name));
+  const lists = await Promise.all(
+    classList.map(async (c) => {
+      const input = await loadClassProgressInput(c.id);
+      return input
+        ? { classId: c.id, className: c.name, ...buildClassWatchlist(input, now) }
+        : null;
+    })
+  );
+  return lists.filter(
+    (l) =>
+      l !== null &&
+      (l.blocked.length > 0 ||
+        l.inactive.length > 0 ||
+        l.strugglingQuiz.length > 0)
+  ) as NonNullable<(typeof lists)[number]>[];
+}
+
 async function loadClassProgressInput(
   classId: string
 ): Promise<ClassProgressInput | null> {
@@ -46,6 +72,7 @@ async function loadClassProgressInput(
       email: profiles.email,
       fullName: profiles.fullName,
       leftAt: classMembers.leftAt,
+      joinedAt: classMembers.joinedAt,
     })
     .from(classMembers)
     .innerJoin(profiles, eq(profiles.id, classMembers.userId))
@@ -89,6 +116,7 @@ async function loadClassProgressInput(
       db
         .select({
           id: classQuizUnlocks.quizId,
+          title: quiz.title,
           unlockedAt: classQuizUnlocks.unlockedAt,
           passingScore: quiz.passingScore,
           maxAttempts: quiz.maxAttempts,

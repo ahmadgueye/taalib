@@ -196,6 +196,12 @@ Passer le compte en `contributor` puis `admin` dans Studio
 - [ ] Utilisateurs : section « Comptes » en lecture seule, recherche par nom
       ou e-mail, liens vers la fiche de l'élève dans chacune de ses classes
 - [ ] Accueil du dashboard : plus de ligne « en attente d'autorisation »
+- [ ] Accueil du dashboard (admin) : « À surveiller » liste, par classe,
+      les étudiants bloqués sur un quiz (« Accorder une tentative » les
+      retire de la liste), les quiz peu réussis (lien vers la page du quiz
+      pour la classe) et les inactifs depuis plus de 7 jours ; un ancien
+      élève n'y figure jamais ; sans rien à signaler : « Rien à signaler
+      dans tes classes. » ; absent pour un contributeur
 - [ ] Classe → Suivi s'ouvre sur « Par étudiant » (même après un
       rechargement) ; « Par quiz » : chaque quiz débloqué avec réussi /
       effectif, pas tenté, moyenne, bloqués ;

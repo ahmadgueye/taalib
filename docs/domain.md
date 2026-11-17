@@ -599,6 +599,17 @@ elle qui détermine ce qu'un étudiant voit, voir
   Tri par colonne, les moins avancés en leçons d'abord. Les anciens élèves
   sont repliés à part et jugés sur ce qui était débloqué avant leur départ.
   Réservé à l'admin, comme le reste de la page.
+  - **À surveiller (accueil du dashboard)** — les mêmes données résumées
+    pour toutes les classes (`getClassesWatchlist`, calcul pur
+    `buildClassWatchlist`, affichage `class-watchlist.tsx`), seulement les
+    classes qui ont quelque chose à signaler, et sans les anciens élèves :
+    les étudiants bloqués sur un quiz, avec « Accorder une tentative » sur
+    place ; les quiz peu réussis (au moins 2 étudiants l'ont tenté
+    — `STRUGGLING_MIN_ATTEMPTED` — et moins de la moitié l'a réussi), qui
+    ouvrent la page du quiz pour la classe ; les étudiants inactifs depuis
+    plus de 7 jours, les plus anciens d'abord. Un nouvel inscrit n'est
+    signalé qu'après 7 jours sans activité depuis son arrivée. Cinq lignes au
+    plus par groupe, le reste renvoie au suivi de la classe.
   - **Détail d'un étudiant** — le nom ouvre
     `/dashboard/classes/[id]/etudiants/[userId]` (`notFound()` si l'étudiant
     n'est pas membre de la classe, actif ou ancien) : les mêmes chiffres en

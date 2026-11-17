@@ -88,7 +88,9 @@ deux layouts et deux publics différents :
   (les hadiths seulement s'ils ont été ouverts depuis une thématique). Il n'y a
   plus de liste à plat des thématiques : `dashboard/thematiques` redirige vers
   les cours. L'accueil
-  `dashboard/page.tsx` est orienté tâches : ce qui attend une action
+  `dashboard/page.tsx` est orienté tâches : pour l'admin, « À surveiller »
+  (élèves bloqués ou inactifs, quiz peu réussis, toutes classes confondues,
+  voir [Classes](./domain.md#classes)), puis ce qui attend une action
   (brouillons, cours « Bientôt disponible »),
   les derniers éléments modifiés avec un lien vers leur édition, les
   prochaines séances et les classes (requêtes dans

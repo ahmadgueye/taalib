@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildClassProgress,
   buildClassQuizProgress,
+  buildClassWatchlist,
   isInactive,
   type ClassProgressInput,
 } from "@/lib/class-progress";
@@ -191,5 +192,70 @@ describe("buildClassQuizProgress", () => {
       blocked: 1,
       averageScore: 70,
     });
+  });
+});
+
+describe("buildClassWatchlist", () => {
+  const members = [
+    { userId: "u1", email: "a@x.test", fullName: "Aïcha", leftAt: null, joinedAt: day(1) },
+    { userId: "u2", email: "b@x.test", fullName: "Bilal", leftAt: null, joinedAt: day(1) },
+    // Ancien élève : jamais signalé.
+    { userId: "u3", email: "c@x.test", fullName: "Cheikh", leftAt: day(20), joinedAt: day(1) },
+  ];
+  const quiz = [
+    { id: "q1", title: "Quiz 1", unlockedAt: day(1), passingScore: 80, maxAttempts: 1 },
+  ];
+  const fail = (userId: string, n: number) => ({
+    userId,
+    quizId: "q1",
+    score: 2,
+    totalQuestions: 10,
+    completedAt: day(n),
+  });
+
+  it("lists active students blocked on a quiz, with its title", () => {
+    const watch = buildClassWatchlist(
+      input({ members, quiz, attempts: [fail("u1", 25), fail("u3", 10)] }),
+      day(26)
+    );
+    expect(watch.blocked).toEqual([
+      { userId: "u1", name: "Aïcha", quizId: "q1", quizTitle: "Quiz 1" },
+    ]);
+  });
+
+  it("flags inactive active students, oldest first, but not someone who just joined", () => {
+    const watch = buildClassWatchlist(
+      input({
+        members: [
+          ...members,
+          { userId: "u4", email: "d@x.test", fullName: "Diallo", leftAt: null, joinedAt: day(28) },
+        ],
+        quiz,
+        attempts: [fail("u1", 15)],
+      }),
+      day(30)
+    );
+    expect(watch.inactive.map((s) => s.name)).toEqual(["Bilal", "Aïcha"]);
+    expect(watch.inactive[0].lastActivityAt).toBeNull();
+  });
+
+  it("flags a quiz that fewer than half of the students who tried passed", () => {
+    const pass = { ...fail("u2", 3), score: 9 };
+    const failing = buildClassWatchlist(
+      input({ members, quiz, attempts: [fail("u1", 2), fail("u3", 2)] }),
+      day(3)
+    );
+    expect(failing.strugglingQuiz).toEqual([
+      { quizId: "q1", quizTitle: "Quiz 1", passed: 0, attempted: 2 },
+    ]);
+    // Un seul essai ne suffit pas, et la moitié de réussite non plus.
+    expect(
+      buildClassWatchlist(input({ members, quiz, attempts: [fail("u1", 2)] }), day(3))
+        .strugglingQuiz
+    ).toEqual([]);
+    expect(
+      buildClassWatchlist(input({ members, quiz, attempts: [fail("u1", 2), pass] }), day(3))
+        .strugglingQuiz
+    ).toEqual([]);
   });
 });
