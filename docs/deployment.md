@@ -78,14 +78,16 @@ Toutes documentées avec leur provenance exacte dans `.env.example`. Résumé :
 Le client Postgres (`src/lib/db/index.ts`) est réglé pour le pooler
 Supabase en mode transaction :
 
-- `max_pipeline: 0` — une requête à la fois par connexion. Par défaut,
-  postgres-js envoie au-delà de 10 requêtes simultanées plusieurs requêtes à
-  la suite sur une même connexion (pipelining), ce que le pooler ne gère
-  pas : l'une d'elles restait sans réponse (`state = active`,
-  `wait_event = ClientRead` dans `pg_stat_activity`) jusqu'au timeout de
-  5 minutes de la fonction Vercel. Symptôme : l'accueil du dashboard, qui
-  lance une vingtaine de requêtes en parallèle, restait sur son squelette de
-  chargement alors que les autres pages répondaient.
+- **Ne pas** régler `max_pipeline: 0` : postgres-js ne réserve la
+  connexion d'une transaction que si `sent.length < max_pipeline`, donc
+  avec 0 chaque `db.transaction` échoue (`UNSAFE_TRANSACTION`). Symptôme
+  observé : la page « Cette page n'a pas pu s'afficher » après la
+  validation d'un quiz, et l'échec de toutes les écritures en transaction
+  (quiz, hadiths, narrateurs, classes, mémorisation). Le blocage de
+  l'accueil du dashboard que ce réglage visait (une requête restée sans
+  réponse, `state = active`, `wait_event = ClientRead` dans
+  `pg_stat_activity`, jusqu'au timeout de 5 minutes de la fonction Vercel)
+  reste à traiter autrement.
 - `idle_timeout: 20`, `max_lifetime: 300`, `connect_timeout: 10` — sur
   Vercel (Fluid compute), une instance garde ses connexions entre deux
   requêtes : on ferme les inactives avant que le pooler ne les coupe et on
