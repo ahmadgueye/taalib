@@ -234,7 +234,8 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   (`getStudentQuizzes`, `lib/db/queries/student-quizzes.ts`). Chacun a un
   statut (`lib/quiz-list.ts`) : à faire (jamais tenté), à retenter (raté,
   des tentatives restent), plus de tentative, réussi. Trois filtres en
-  onglets, gardés dans l'URL (`?filtre=`) : « À faire » par défaut (jamais
+  onglets, gardés dans l'URL (`?filtre=`) et filtrés côté navigateur
+  (`quiz-list-view.tsx`, sans aller-retour serveur) : « À faire » par défaut (jamais
   tentés d'abord, puis à retenter ; son compteur est mis en avant),
   « Réussis », « Échoués » (tout quiz raté). « Quiz » est dans l'en-tête et
   dans la barre du bas sur mobile, à la place de « Recherche », avec une
