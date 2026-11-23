@@ -54,8 +54,8 @@ vérifie en plus ce que l'utilisateur a le droit de voir
 deux layouts et deux publics différents :
 
 - **`(public)/`** — le site côté étudiant, avec le layout public. Ouverts
-  sans compte : accueil (vitrine), `/coran` et `/rejoindre` (inscription à
-  une classe par code). Le reste exige un compte et n'affiche que le contenu
+  sans compte : `/coran` et `/rejoindre` (inscription à une classe par
+  code) ; l'accueil renvoie un visiteur sur `/login`. Le reste exige un compte et n'affiche que le contenu
   débloqué pour les classes de l'étudiant : `/cours`, `/thematiques`,
   `/ressources`, `/quiz`, `/hadiths`, `/seances`, `/recherche`,
   `/memorisation`, `/compte`. Voir
@@ -143,7 +143,7 @@ Règles implicites à connaître :
   par entité (`cours-form.tsx`, `cours-table.tsx`, etc.), plus des utilitaires
   partagés (`sortable-reorder-list.tsx` pour le drag & drop d'ordre via
   `@dnd-kit`, `markdown-editor-field.tsx`).
-- **`components/public/`** — le site vitrine : `quran-reader.tsx` (le plus
+- **`components/public/`** — le site côté étudiant : `quran-reader.tsx` (le plus
   gros composant du repo, voir [`domain.md`](./domain.md#lecteur-du-coran)),
   `quran-audio-player.tsx` (lecture + surbrillance mot-à-mot),
   `memorization-workspace.tsx` (page `/memorisation`, assemble
@@ -155,9 +155,8 @@ Règles implicites à connaître :
   `roadmap-track.tsx` (feuille de route de l'accueil, voir
   [`domain.md`](./domain.md#feuille-de-route)), recherche (`search-command.tsx`),
   suivi de progression (`next-chapter-button.tsx`, `progress-ring.tsx`),
-  accueil visiteur (`vitrine-door.tsx` = porte animée du hero,
-  `vitrine-features.tsx` = trois aperçus animés ; leurs animations sont les
-  classes `vitrine-*` de `globals.css`).
+  profil (`profile-form.tsx`, utilisé par l'onboarding `/bienvenue` et les
+  paramètres de `/compte`).
 - **`components/layout/`** — header/footer/nav partagés entre pages publiques,
   thème (dark/light via `next-themes`).
 

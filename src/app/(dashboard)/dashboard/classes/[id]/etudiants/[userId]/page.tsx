@@ -13,6 +13,7 @@ import {
   getRessourceCompletionDates,
 } from "@/lib/db/queries/class-progress";
 import { getClassById, getClassCoursOutline } from "@/lib/db/queries/classes";
+import { getStudentContact } from "@/lib/db/queries/users";
 import {
   getMemorizationStatus,
   getRecentChapterActivity,
@@ -32,6 +33,13 @@ type Props = {
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
 
+function ageOn(birthDate: string, now: Date) {
+  const [y, m, d] = birthDate.split("-").map(Number);
+  const beforeBirthday =
+    now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d);
+  return now.getFullYear() - y - (beforeBirthday ? 1 : 0);
+}
+
 function formatPercent(value: number) {
   return value > 0 && value < 10 ? value.toFixed(1) : String(Math.round(value));
 }
@@ -41,10 +49,11 @@ export default async function ClassStudentPage({ params }: Props) {
   if (profile?.role !== "admin") notFound();
 
   const { id, userId } = await params;
-  const [classe, progress, outline] = await Promise.all([
+  const [classe, progress, outline, contact] = await Promise.all([
     getClassById(id),
     getClassProgress(id),
     getClassCoursOutline(id),
+    getStudentContact(userId),
   ]);
   const student = progress.find((s) => s.userId === userId);
   if (!classe || !student) notFound();
@@ -137,6 +146,34 @@ export default async function ClassStudentPage({ params }: Props) {
         {student.leftAt &&
           ` · ancien élève depuis le ${dateFormat.format(student.leftAt)}`}
       </p>
+      {contact && (contact.phone || contact.address || contact.birthDate) && (
+        <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+          {contact.phone && (
+            <div className="flex gap-1.5">
+              <dt className="text-muted-foreground">Téléphone</dt>
+              <dd>
+                <a href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`} className="underline-offset-4 hover:underline">
+                  {contact.phone}
+                </a>
+              </dd>
+            </div>
+          )}
+          {contact.birthDate && (
+            <div className="flex gap-1.5">
+              <dt className="text-muted-foreground">Né(e) le</dt>
+              <dd>
+                {dateFormat.format(new Date(`${contact.birthDate}T00:00:00`))} ({ageOn(contact.birthDate, now)} ans)
+              </dd>
+            </div>
+          )}
+          {contact.address && (
+            <div className="flex gap-1.5">
+              <dt className="text-muted-foreground">Adresse</dt>
+              <dd className="whitespace-pre-line">{contact.address}</dd>
+            </div>
+          )}
+        </dl>
+      )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (

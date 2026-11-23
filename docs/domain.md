@@ -135,10 +135,11 @@ onglets (deux pour le staff, sans Certificats)
   et lien vers la page publique), puis « Prochains certificats » : les
   thématiques en cours, avec les leçons lues et les quiz qui restent à
   réussir. Voir [Certificats](#certificats).
-- **Paramètres** : le nom, modifiable à tout moment, l'e-mail, le thème
-  (clair, sombre ou celui de l'appareil, `theme-choice.tsx`) et la
-  déconnexion. Un compte sans nom (onboarding) arrive directement sur cet
-  onglet.
+- **Paramètres** : le profil (`profile-form.tsx` : prénom, nom et, pour un
+  étudiant, téléphone, date de naissance et adresse), modifiable à tout
+  moment, l'e-mail, le thème (clair, sombre ou celui de l'appareil,
+  `theme-choice.tsx`) et la déconnexion. Un profil incomplet est d'abord
+  envoyé sur `/bienvenue` (voir [`auth.md`](./auth.md)).
 
 ### Menu du compte
 
@@ -621,7 +622,8 @@ elle qui détermine ce qu'un étudiant voit, voir
     plus par groupe, le reste renvoie au suivi de la classe.
   - **Détail d'un étudiant** — le nom ouvre
     `/dashboard/classes/[id]/etudiants/[userId]` (`notFound()` si l'étudiant
-    n'est pas membre de la classe, actif ou ancien) : les mêmes chiffres en
+    n'est pas membre de la classe, actif ou ancien) : ses coordonnées
+    (téléphone, date de naissance avec l'âge, adresse), les mêmes chiffres en
     cartes, puis chaque cours avec ce que l'étudiant voit de la classe
     (leçons lues avec leur date ou « à lire », quiz avec le meilleur score et
     le nombre de tentatives ou « pas tenté » ; pour un quiz limité, « 2/2
@@ -630,11 +632,11 @@ elle qui détermine ce qu'un étudiant voit, voir
     et sa mémorisation : le
     tableau de bord de `/memorisation` (`memorization-dashboard.tsx`) et une
     barre par sourate suivie (maîtrisés / à renforcer).
-- **Rejoindre** — `/rejoindre` (saisie du code) et `/rejoindre/[code]`. Le
+- **Rejoindre** — `/rejoindre` (saisie du code, aussi deuxième étape de
+  l'inscription avec `?bienvenue=1`) et `/rejoindre/[code]`. Le
   code est normalisé (majuscules, sans espaces ni tirets). Un visiteur non
   connecté est envoyé vers `/login?next=/rejoindre/CODE` et revient sur la
-  page après connexion (et après l'onboarding du nom pour un nouveau
-  compte). L'inscription se fait par un bouton (`joinClass`,
+  page après connexion (et après l'onboarding pour un nouveau compte). L'inscription se fait par un bouton (`joinClass`,
   `lib/actions/class-join.ts`), jamais au simple chargement de la page ; elle
   est ouverte à tout utilisateur connecté et idempotente ; un ancien élève
   qui la rejoint de nouveau redevient membre actif (fermer les inscriptions
@@ -642,8 +644,9 @@ elle qui détermine ce qu'un étudiant voit, voir
 
 ## Accès au contenu
 
-Le catalogue est **réservé aux étudiants du programme Bayān**. Seuls l'accueil
-(vitrine), `/coran`, `/login` et `/rejoindre` sont ouverts sans compte.
+Le catalogue est **réservé aux étudiants du programme Bayān**. Seuls `/coran`,
+`/login` et `/rejoindre` sont ouverts sans compte ; l'accueil renvoie un
+visiteur sur `/login`.
 
 - **Staff** (`admin`, `contributor`) : voit tout, comme avant.
 - **Étudiant** (`viewer`) : ne voit que ce qui est débloqué pour l'une de ses

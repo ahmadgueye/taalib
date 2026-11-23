@@ -55,7 +55,12 @@ erDiagram
     profiles {
         uuid id PK "= auth.users.id"
         text email
-        text full_name
+        text full_name "recomposé : prénom + nom"
+        text first_name
+        text last_name
+        text phone "étudiant"
+        text address "étudiant"
+        date birth_date "étudiant"
         role role "admin | contributor | viewer"
     }
     cours {

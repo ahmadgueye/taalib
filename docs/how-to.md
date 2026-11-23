@@ -72,7 +72,7 @@ Fichiers à créer/modifier, dans l'ordre :
    `src/lib/actions/authorization.test.ts` : le test vérifie que chaque action
    refuse un utilisateur non autorisé avant de toucher la base.
 
-8. **Page(s) publique(s)**, si l'entité doit être visible côté site vitrine —
+8. **Page(s) publique(s)**, si l'entité doit être visible côté étudiant —
    suivre le pattern de `src/app/(public)/cours/page.tsx` et
    `src/app/(public)/cours/[slug]/page.tsx`. Pas d'`opengraph-image.tsx` par
    page : une page réservée n'est jamais vue par un réseau social (voir

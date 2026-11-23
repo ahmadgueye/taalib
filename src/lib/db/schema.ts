@@ -44,7 +44,16 @@ export type MemorizationStatus =
 export const profiles = pgTable("profiles", {
   id: uuid("id").primaryKey(),
   email: text("email").notNull(),
+  // Recomposé à partir du prénom et du nom à chaque enregistrement du profil :
+  // c'est lui que l'app affiche partout.
   fullName: text("full_name"),
+  // Renseignés par l'étudiant à l'inscription (lib/profile-info.ts), visibles
+  // par les admins sur sa fiche de classe.
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  phone: text("phone"),
+  address: text("address"),
+  birthDate: date("birth_date"),
   role: roleEnum("role").notNull().default("viewer"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

@@ -6,7 +6,7 @@ import { ChevronRight, MoveRight } from "lucide-react";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { AccountTabs, type AccountTab } from "@/components/public/account-tabs";
 import { CopyLinkButton } from "@/components/public/copy-link-button";
-import { FullNameForm } from "@/components/public/full-name-form";
+import { ProfileForm } from "@/components/public/profile-form";
 import { QuranProgressCard } from "@/components/public/quran-progress-card";
 import { ThemeChoice } from "@/components/public/theme-choice";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { getContentAccess } from "@/lib/auth/content-access";
 import { getCurrentProfile } from "@/lib/auth/get-session";
+import { isProfileComplete, profileFormDefaults } from "@/lib/profile-info";
 import { certificatePath } from "@/lib/certificates";
 import { type ContentAccess } from "@/lib/content-access";
 import {
@@ -336,6 +337,9 @@ export default async function ComptePage({ searchParams }: Props) {
   const { next, onglet } = await searchParams;
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login?next=/compte");
+  if (!isProfileComplete(profile)) {
+    redirect(`/bienvenue?next=${encodeURIComponent(next ?? "/compte")}`);
+  }
 
   const access = await getContentAccess();
   const [
@@ -363,10 +367,8 @@ export default async function ComptePage({ searchParams }: Props) {
     certificates = await getCertificatesForUser(profile.id);
   }
 
-  // Sans nom, l'étudiant arrive ici pour compléter son profil : on ouvre
-  // directement les paramètres.
   const defaultTab: AccountTab =
-    onglet === "parametres" || !profile.fullName
+    onglet === "parametres"
       ? "parametres"
       : onglet === "certificats" && !access.all
         ? "certificats"
@@ -645,15 +647,14 @@ export default async function ComptePage({ searchParams }: Props) {
               Profil
             </h2>
             <p className="text-sm text-muted-foreground">
-              {profile.fullName
-                ? "Ton nom tel qu'il apparaît dans tes classes."
-                : "Ajoute ton nom pour compléter ton profil."}
+              Tes informations personnelles.
             </p>
           </div>
         </div>
-        <FullNameForm
-          defaultValue={profile.fullName ?? undefined}
-          next={next ?? "/compte?onglet=parametres"}
+        <ProfileForm
+          defaults={profileFormDefaults(profile)}
+          next="/compte?onglet=parametres"
+          staff={profile.role !== "viewer"}
         />
         <div>
           <p className="text-sm font-medium">E-mail</p>

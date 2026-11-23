@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
+import { isProfileComplete } from "@/lib/profile-info";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -18,13 +19,15 @@ export async function GET(request: Request) {
     } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && user) {
       const [profile] = await db
-        .select({ fullName: profiles.fullName })
+        .select()
         .from(profiles)
         .where(eq(profiles.id, user.id))
         .limit(1);
 
-      if (!profile?.fullName) {
-        const onboardingUrl = new URL("/compte", origin);
+      // Nouvel inscrit, ou étudiant inscrit avant l'ajout des informations
+      // du profil : il les renseigne avant d'aller plus loin.
+      if (!profile || !isProfileComplete(profile)) {
+        const onboardingUrl = new URL("/bienvenue", origin);
         onboardingUrl.searchParams.set("next", next);
         return NextResponse.redirect(onboardingUrl);
       }

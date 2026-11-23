@@ -16,10 +16,8 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
       ou seed)
 
 ## 1. Visiteur non connecté
-- [ ] Accueil : vitrine avec « Se connecter », « Rejoindre une classe »,
-      « Lire le Qur'an », lien vers bayanun.com ; aucun cours ni thématique
-      affiché ; l'en-tête n'a que Quran et Connexion (pas de Cours, Hadith ni
-      recherche), la barre mobile que Accueil et Quran
+- [ ] `/` redirige vers `/login` (sans `?next=`), qui présente Taalib et
+      s'intitule « Connexion ou inscription »
 - [ ] `/cours`, `/thematiques/...`, `/ressources/...`, `/quiz/...`,
       `/hadiths`, `/seances`, `/recherche` redirigent vers
       `/login?next=...`, et on revient sur la page après connexion
@@ -34,10 +32,19 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
 
 ## 2. Connexion
 - [ ] `/login` : saisir un e-mail → message « Un lien de connexion… »
-- [ ] Lien reçu dans Mailpit → arrivée sur `/compte` (nouveau compte) pour
-      renseigner le nom
-- [ ] Après le nom : retour vers la page demandée (ex. partir de
-      `/memorisation`)
+- [ ] Lien reçu dans Mailpit → arrivée sur `/bienvenue` (nouveau compte) :
+      prénom, nom, téléphone, date de naissance, adresse, tous obligatoires ;
+      un téléphone invalide affiche une erreur sans effacer la saisie
+- [ ] Étudiant sans classe : après le formulaire, « Dernière étape : ta
+      classe » (`/rejoindre?bienvenue=1`) ; « Je n'ai pas encore de code »
+      mène à l'accueil, qui redemande le code
+- [ ] Étudiant déjà dans une classe : après le formulaire, retour vers la
+      page demandée (ex. partir de `/memorisation`)
+- [ ] Étudiant inscrit avec seulement un nom complet : renvoyé sur
+      `/bienvenue` depuis l'accueil, prénom et nom pré-remplis
+- [ ] Compte staff sans nom : `/bienvenue` ne demande que prénom et nom
+- [ ] Fiche de l'étudiant dans le dashboard (admin) : téléphone, date de
+      naissance avec l'âge, adresse
 - [ ] Déconnexion puis reconnexion avec le même e-mail
 - [ ] Un compte neuf est `viewer` : il n'a aucun message d'attente ni
       indication de dashboard ; `/dashboard` le renvoie vers l'accueil avec le

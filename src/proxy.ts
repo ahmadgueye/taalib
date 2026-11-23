@@ -3,12 +3,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
 // Pages qui exigent un compte. Le catalogue est réservé aux étudiants
-// du programme Bayān ; restent ouverts l'accueil (vitrine), /coran, /login et
-// /rejoindre. Ce n'est qu'un raccourci UX : chaque page vérifie aussi l'accès
-// de l'utilisateur au contenu (lib/auth/content-access.ts).
+// du programme Bayān ; restent ouverts /coran, /login et /rejoindre.
+// L'accueil n'a pas de vitrine : un visiteur y est envoyé sur /login.
+// Ce n'est qu'un raccourci UX : chaque page vérifie aussi l'accès de
+// l'utilisateur au contenu (lib/auth/content-access.ts).
 const PROTECTED_PREFIXES = [
   "/dashboard",
   "/compte",
+  "/bienvenue",
   "/cours",
   "/thematiques",
   "/ressources",
@@ -20,6 +22,7 @@ const PROTECTED_PREFIXES = [
 ];
 
 function isProtected(pathname: string) {
+  if (pathname === "/") return true;
   return PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
@@ -30,10 +33,12 @@ export async function proxy(request: NextRequest) {
 
   if (!user && isProtected(request.nextUrl.pathname)) {
     const redirectUrl = new URL("/login", request.url);
-    redirectUrl.searchParams.set(
-      "next",
-      request.nextUrl.pathname + request.nextUrl.search
-    );
+    if (request.nextUrl.pathname !== "/") {
+      redirectUrl.searchParams.set(
+        "next",
+        request.nextUrl.pathname + request.nextUrl.search
+      );
+    }
     return NextResponse.redirect(redirectUrl);
   }
 

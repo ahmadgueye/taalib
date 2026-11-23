@@ -64,3 +64,18 @@ export async function getAccounts(): Promise<AccountRow[]> {
       .map((m) => ({ id: m.id, name: m.name, former: m.leftAt !== null })),
   }));
 }
+
+// Coordonnées renseignées par l'étudiant à l'inscription (lib/profile-info.ts),
+// affichées sur sa fiche de classe (réservée aux admins).
+export async function getStudentContact(userId: string) {
+  const [row] = await db
+    .select({
+      phone: profiles.phone,
+      address: profiles.address,
+      birthDate: profiles.birthDate,
+    })
+    .from(profiles)
+    .where(eq(profiles.id, userId))
+    .limit(1);
+  return row ?? null;
+}

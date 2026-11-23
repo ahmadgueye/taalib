@@ -29,10 +29,20 @@ sequenceDiagram
   sur `/login` et repassent par **la même** route de callback,
   `src/app/auth/callback/route.ts` (`exchangeCodeForSession(code)` fonctionne
   aussi bien pour un code OAuth que pour un code de lien magique).
-- Le callback redirige vers `/compte?next=...` (onboarding, saisie du nom) si
-  le profil n'a pas encore de `fullName`, sinon directement vers `next` (ou
-  `/dashboard` par défaut). Après la saisie du nom, `updateFullNameAction`
-  renvoie vers `next`. Un `viewer` qui arrive sur `/dashboard` (valeur par
+- `/login` sert aussi à l'inscription : un compte est créé à la première
+  connexion. L'accueil n'a pas de vitrine : un visiteur sur `/` est envoyé
+  sur `/login` par `src/proxy.ts`, et la déconnexion y ramène.
+- Le callback redirige vers `/bienvenue?next=...` (onboarding) si le profil
+  est incomplet (`isProfileComplete`, `lib/profile-info.ts`) : un étudiant
+  doit renseigner prénom, nom, téléphone, adresse et date de naissance, le
+  staff seulement prénom et nom. Sinon il va directement vers `next` (ou
+  `/dashboard` par défaut). Après l'onboarding, `updateProfileAction`
+  (`lib/actions/auth.ts`) renvoie vers `next`, sauf pour un étudiant sans
+  classe qui passe d'abord par la saisie du code (`/rejoindre?bienvenue=1`,
+  étape non bloquante : « Je n'ai pas encore de code » mène à l'accueil). Un
+  étudiant inscrit avant l'ajout de ces informations est renvoyé sur
+  `/bienvenue` par le callback, l'accueil et `/compte`, avec son nom complet
+  déjà découpé en prénom et nom. Un `viewer` qui arrive sur `/dashboard` (valeur par
   défaut quand aucune page n'était demandée, par exemple après un clic sur
   « Connexion » dans l'en-tête) est renvoyé vers `/?welcome=1`, ce qui
   affiche un toast « Bienvenue sur Taalib ! » (`welcome-toast.tsx`).

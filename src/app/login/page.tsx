@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import {
   Card,
@@ -14,6 +13,8 @@ import { MagicLinkForm } from "@/components/public/magic-link-form";
 
 export const metadata: Metadata = {
   title: "Connexion — Taalib",
+  description:
+    "Connecte-toi ou inscris-toi sur Taalib, la plateforme de cours du programme Bayān.",
   robots: { index: false, follow: false },
 };
 
@@ -26,19 +27,23 @@ export default async function LoginPage({ searchParams }: Props) {
 
   return (
     <div className="flex min-h-full flex-1 flex-col items-center justify-center px-6 py-16">
-      <Link
-        href="/"
+      {/* Plus de lien vers l'accueil : sans compte, il renvoie ici. */}
+      <p
         lang="ar"
-        className="flex mb-8 items-center gap-2 font-logo-arabic text-2xl font-bold tracking-tight"
+        className="mb-3 flex items-center gap-2 font-logo-arabic text-2xl font-bold tracking-tight"
       >
-        {/* <BookOpen className="size-5" /> */}
         طالب
-      </Link>
+      </p>
+      <p className="mb-8 max-w-sm text-center text-sm text-muted-foreground">
+        La plateforme d&apos;apprentissage du programme{" "}
+        <span className="font-semibold text-foreground">Bayān</span> : tes
+        cours, tes ressources et tes quiz, au rythme de ta classe.
+      </p>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="font-heading">Connexion</CardTitle>
+          <CardTitle className="font-heading">Connexion ou inscription</CardTitle>
           <CardDescription>
-            Connecte-toi pour suivre ta progression dans les cours.
+            Première fois ? Ton compte est créé à la connexion.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
