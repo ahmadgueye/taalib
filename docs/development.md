@@ -92,6 +92,8 @@ simulés.
 | `lib/class-progress.test.ts` | Suivi des étudiants : leçons et quiz comptés sur ce que la classe a débloqué, meilleure tentative et moyenne, quiz bloqués (tentatives épuisées, tentatives accordées déduites), bilan par quiz sur les étudiants qui le voient, ancien élève jugé sur ce qui était débloqué avant son départ, mémorisation au prorata des mots, dernière activité, seuil d'inactivité de 7 jours |
 | `lib/db/queries/roadmap.test.ts` | Feuille de route : ordre des cours, états `upcoming` / `active` / `completed`, classe terminée réduite aux étapes débloquées, liste « À faire » (quiz après les leçons de sa thématique), badge « Nouveau » |
 | `lib/content-access.test.ts`, `lib/auth/content-access.test.ts` | Ce que voit un visiteur, un étudiant, le staff |
+| `lib/quiz-list.test.ts` | Page `/quiz` : statut de chaque quiz (à faire, à retenter, plus de tentative, réussi, tentatives accordées comptées) et filtres (jamais tentés d'abord dans « À faire ») |
+| `lib/profile-info.test.ts`, `lib/phone.test.ts` | Profil étudiant complet ou non, champs requis ; téléphone validé pour le pays choisi, indicatif saisi prioritaire, enregistré en E.164 |
 
 Non couvert : les politiques RLS en base (elles demandent la base locale), les
 composants et pages, et tout test de bout en bout dans un navigateur.

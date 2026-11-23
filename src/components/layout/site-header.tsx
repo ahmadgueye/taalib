@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Search } from "lucide-react";
 
 import { AccountMenu } from "@/components/layout/account-menu";
 import { SiteNavLinks } from "@/components/layout/site-nav-links";
@@ -22,8 +23,11 @@ function initialsOf(fullName: string | null, email: string) {
 
 export async function SiteHeader({
   profile,
+  pendingQuizzes = 0,
 }: {
   profile: Awaited<ReturnType<typeof getCurrentProfile>>;
+  // Quiz à faire ou à retenter : pastille sur « Quiz ».
+  pendingQuizzes?: number;
 }) {
   return (
     <header className="sticky top-0 z-30 border-b bg-background">
@@ -38,11 +42,27 @@ export async function SiteHeader({
             طالب
           </Link>
           <div className="hidden h-6 w-px bg-border sm:block" />
-          <SiteNavLinks signedIn={Boolean(profile)} />
+          <SiteNavLinks
+            signedIn={Boolean(profile)}
+            pendingQuizzes={pendingQuizzes}
+          />
         </div>
         <div className="flex items-center justify-end gap-2">
           {(profile?.role === "admin" || profile?.role === "contributor") && (
             <StaffModeSwitch current="site" />
+          )}
+          {/* Sur mobile, la recherche n'a pas d'onglet dans la barre du bas. */}
+          {profile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="sm:hidden"
+              aria-label="Rechercher"
+              render={<Link href="/recherche" />}
+              nativeButton={false}
+            >
+              <Search className="size-5" />
+            </Button>
           )}
           <ThemeToggle />
           {profile ? (

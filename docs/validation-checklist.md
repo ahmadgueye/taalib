@@ -89,6 +89,15 @@ quelques ressources et un quiz depuis `/dashboard/classes`.
       « Page introuvable », titre d'onglet générique
 - [ ] Sur la dernière ressource débloquée : pas de « chapitre suivant » vers
       une ressource verrouillée
+- [ ] `/quiz` : uniquement les quiz débloqués ; « À faire » ouvert par
+      défaut avec son compteur mis en avant, jamais tentés d'abord ;
+      « Réussis » et « Échoués » (un quiz sans tentative restante y dit de
+      demander une tentative à l'enseignant) ; le filtre reste dans l'URL
+- [ ] Pastille orange sur « Quiz » (en-tête et barre mobile) avec le nombre
+      de quiz à faire ou à retenter ; elle baisse après un quiz réussi et
+      disparaît quand tout est fait ; jamais pour le staff
+- [ ] Mobile : la barre du bas montre Accueil, Cours, Quiz, Qur'an, Hadiths ;
+      la loupe de l'en-tête ouvre `/recherche`
 - [ ] Recherche, ⌘K et `/recherche` : uniquement du contenu débloqué ; mot
       français avec accent, mot arabe, filtre par type (la recherche est
       sensible aux accents, c'est une limite connue)

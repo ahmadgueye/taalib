@@ -57,7 +57,7 @@ deux layouts et deux publics différents :
   sans compte : `/coran` et `/rejoindre` (inscription à une classe par
   code) ; l'accueil renvoie un visiteur sur `/login`. Le reste exige un compte et n'affiche que le contenu
   débloqué pour les classes de l'étudiant : `/cours`, `/thematiques`,
-  `/ressources`, `/quiz`, `/hadiths`, `/seances`, `/recherche`,
+  `/ressources`, `/quiz` (liste et passage), `/hadiths`, `/seances`, `/recherche`,
   `/memorisation`, `/compte`. Voir
   [`domain.md`](./domain.md#accès-au-contenu).
 - **`(dashboard)/dashboard/`** — l'admin, protégé par `proxy.ts` +

@@ -229,6 +229,19 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   restent. Retirer un choix déjà coché, supprimer une thématique ou un
   cours efface aussi des réponses, sans avertissement dédié pour l'instant.
 
+- **Liste** — `/quiz` réunit tous les quiz débloqués de l'élève (tous les
+  quiz publiés pour le staff), dans l'ordre du programme
+  (`getStudentQuizzes`, `lib/db/queries/student-quizzes.ts`). Chacun a un
+  statut (`lib/quiz-list.ts`) : à faire (jamais tenté), à retenter (raté,
+  des tentatives restent), plus de tentative, réussi. Trois filtres en
+  onglets, gardés dans l'URL (`?filtre=`) : « À faire » par défaut (jamais
+  tentés d'abord, puis à retenter ; son compteur est mis en avant),
+  « Réussis », « Échoués » (tout quiz raté). « Quiz » est dans l'en-tête et
+  dans la barre du bas sur mobile, à la place de « Recherche », avec une
+  pastille orange (`quiz-count-badge.tsx`) du nombre de quiz à faire ou à
+  retenter, calculé par le layout public (`countPendingQuizzes`) ; pas de
+  pastille pour le staff, ni quand tout est fait. Elle se met à jour après
+  une tentative (le quiz rafraîchit la page).
 - **Passage** — `/quiz/[id]` (`quiz-attempt.tsx`) rappelle en haut le
   nombre de tentatives et le meilleur score de l'élève, avec un lien vers
   son historique (`/quiz/[id]/historique`), s'il a déjà tenté le quiz ;
@@ -416,7 +429,8 @@ seule fonction `searchCatalogue()`, avec filtres optionnels par type
 d'entité et par type de ressource (`lib/search-types.ts` définit
 `ALL_ENTITY_TYPES` / `ALL_RESSOURCE_TYPES`, la source de vérité pour les
 valeurs possibles). UI : `search-command.tsx` (palette de commande, cmdk, ⌘K) +
-`/recherche` (page dédiée). La palette désactive le filtrage intégré de cmdk
+`/recherche` (page dédiée ; sur mobile, la loupe de l'en-tête y mène, la
+barre du bas n'ayant pas d'onglet Recherche). La palette désactive le filtrage intégré de cmdk
 (`shouldFilter={false}`) : le serveur filtre déjà, et un second filtrage
 masquerait des résultats trouvés via la description. Limites connues : la
 recherche est sensible aux accents (« priere » ne trouve pas « prière ») et ne
