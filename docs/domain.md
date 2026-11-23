@@ -136,7 +136,8 @@ onglets (deux pour le staff, sans Certificats)
   thématiques en cours, avec les leçons lues et les quiz qui restent à
   réussir. Voir [Certificats](#certificats).
 - **Paramètres** : le profil (`profile-form.tsx` : prénom, nom et, pour un
-  étudiant, téléphone, date de naissance et adresse), modifiable à tout
+  étudiant, téléphone — pays et numéro, voir [`auth.md`](./auth.md) —,
+  date de naissance et adresse), modifiable à tout
   moment, l'e-mail, le thème (clair, sombre ou celui de l'appareil,
   `theme-choice.tsx`) et la déconnexion. Un profil incomplet est d'abord
   envoyé sur `/bienvenue` (voir [`auth.md`](./auth.md)).
@@ -628,7 +629,8 @@ elle qui détermine ce qu'un étudiant voit, voir
   - **Détail d'un étudiant** — le nom ouvre
     `/dashboard/classes/[id]/etudiants/[userId]` (`notFound()` si l'étudiant
     n'est pas membre de la classe, actif ou ancien) : ses coordonnées
-    (téléphone, date de naissance avec l'âge, adresse), les mêmes chiffres en
+    (téléphone au format international, date de naissance avec l'âge,
+    adresse), les mêmes chiffres en
     cartes, puis chaque cours avec ce que l'étudiant voit de la classe
     (leçons lues avec leur date ou « à lire », quiz avec le meilleur score et
     le nombre de tentatives ou « pas tenté » ; pour un quiz limité, « 2/2

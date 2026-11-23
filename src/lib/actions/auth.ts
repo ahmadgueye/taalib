@@ -39,6 +39,7 @@ export async function updateProfileAction(
   const values = {
     firstName: field("firstName"),
     lastName: field("lastName"),
+    phoneCountry: field("phoneCountry"),
     phone: field("phone"),
     address: field("address"),
     birthDate: field("birthDate"),

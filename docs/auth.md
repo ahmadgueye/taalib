@@ -35,7 +35,11 @@ sequenceDiagram
 - Le callback redirige vers `/bienvenue?next=...` (onboarding) si le profil
   est incomplet (`isProfileComplete`, `lib/profile-info.ts`) : un étudiant
   doit renseigner prénom, nom, téléphone, adresse et date de naissance, le
-  staff seulement prénom et nom. Sinon il va directement vers `next` (ou
+  staff seulement prénom et nom. Le téléphone se saisit en deux parties,
+  pays (drapeau + indicatif, Sénégal par défaut) et numéro national mis en
+  forme pendant la saisie (`phone-field.tsx`) ; il est validé pour ce pays
+  avec `libphonenumber-js` et enregistré au format E.164 (`+221771234567`,
+  `lib/phone.ts`). Sinon il va directement vers `next` (ou
   `/dashboard` par défaut). Après l'onboarding, `updateProfileAction`
   (`lib/actions/auth.ts`) renvoie vers `next`, sauf pour un étudiant sans
   classe qui passe d'abord par la saisie du code (`/rejoindre?bienvenue=1`,

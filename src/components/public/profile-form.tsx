@@ -10,13 +10,16 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { PhoneField } from "@/components/public/phone-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { updateProfileAction, type ActionState } from "@/lib/actions/auth";
+import { DEFAULT_PHONE_COUNTRY, isPhoneCountry } from "@/lib/phone";
 
 type Values = {
   firstName: string;
   lastName: string;
+  phoneCountry: string;
   phone: string;
   address: string;
   birthDate: string;
@@ -75,17 +78,16 @@ export function ProfileForm({
             <div className="grid gap-4 sm:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="phone">Téléphone</FieldLabel>
-                <Input
+                <PhoneField
                   id="phone"
-                  name="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  defaultValue={values.phone}
+                  defaultCountry={
+                    isPhoneCountry(values.phoneCountry)
+                      ? values.phoneCountry
+                      : DEFAULT_PHONE_COUNTRY
+                  }
+                  defaultNumber={values.phone}
                   required
                 />
-                <FieldDescription>
-                  Avec l&apos;indicatif, ex. +221 77 123 45 67.
-                </FieldDescription>
               </Field>
               <Field>
                 <FieldLabel htmlFor="birthDate">Date de naissance</FieldLabel>

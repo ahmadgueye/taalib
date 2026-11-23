@@ -156,7 +156,8 @@ Règles implicites à connaître :
   [`domain.md`](./domain.md#feuille-de-route)), recherche (`search-command.tsx`),
   suivi de progression (`next-chapter-button.tsx`, `progress-ring.tsx`),
   profil (`profile-form.tsx`, utilisé par l'onboarding `/bienvenue` et les
-  paramètres de `/compte`).
+  paramètres de `/compte`, avec `phone-field.tsx` = pays + numéro de
+  téléphone), résultat d'un quiz (`quiz-result-card.tsx`).
 - **`components/layout/`** — header/footer/nav partagés entre pages publiques,
   thème (dark/light via `next-themes`).
 

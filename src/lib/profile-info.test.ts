@@ -20,7 +20,8 @@ const complete: ProfileInfo = {
 const input = {
   firstName: "Awa",
   lastName: "Diop",
-  phone: "+221 77 123 45 67",
+  phoneCountry: "SN",
+  phone: "77 123 45 67",
   address: "Dakar",
   birthDate: "2001-04-12",
 };
@@ -73,14 +74,28 @@ describe("profileFormDefaults", () => {
       }),
     ).toMatchObject({ firstName: "Awa", lastName: "Fatou Diop" });
   });
+
+  it("sépare le pays et le numéro national enregistrés", () => {
+    expect(profileFormDefaults(complete)).toMatchObject({
+      phoneCountry: "SN",
+      phone: "77 123 45 67",
+    });
+  });
 });
 
 describe("profileInfoSchema", () => {
   const student = profileInfoSchema({ staff: false });
   const staff = profileInfoSchema({ staff: true });
 
-  it("accepte un profil étudiant complet", () => {
-    expect(student.safeParse(input).success).toBe(true);
+  it("accepte un profil étudiant complet, téléphone au format E.164", () => {
+    const parsed = student.safeParse(input);
+    expect(parsed.success && parsed.data.phone).toBe("+221771234567");
+  });
+
+  it("valide le téléphone pour le pays choisi", () => {
+    expect(student.safeParse({ ...input, phoneCountry: "US" }).success).toBe(
+      false,
+    );
   });
 
   it("refuse un champ étudiant vide", () => {

@@ -14,6 +14,7 @@ import {
 } from "@/lib/db/queries/class-progress";
 import { getClassById, getClassCoursOutline } from "@/lib/db/queries/classes";
 import { getStudentContact } from "@/lib/db/queries/users";
+import { formatPhone } from "@/lib/phone";
 import {
   getMemorizationStatus,
   getRecentChapterActivity,
@@ -153,7 +154,7 @@ export default async function ClassStudentPage({ params }: Props) {
               <dt className="text-muted-foreground">Téléphone</dt>
               <dd>
                 <a href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`} className="underline-offset-4 hover:underline">
-                  {contact.phone}
+                  {formatPhone(contact.phone)}
                 </a>
               </dd>
             </div>

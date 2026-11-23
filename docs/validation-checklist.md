@@ -35,6 +35,12 @@ Studio (changer un rôle dans `public.profiles`) : http://127.0.0.1:54323
 - [ ] Lien reçu dans Mailpit → arrivée sur `/bienvenue` (nouveau compte) :
       prénom, nom, téléphone, date de naissance, adresse, tous obligatoires ;
       un téléphone invalide affiche une erreur sans effacer la saisie
+- [ ] Téléphone : Sénégal (+221) par défaut ; le sélecteur met en tête
+      Sénégal, France, Mali, Côte d'Ivoire, Mauritanie, Gambie, Guinée ; la
+      recherche trouve « cote » (Côte d'Ivoire) et « 33 » (France seule) ;
+      le numéro se met en forme en tapant et s'efface sans bloquer sur les
+      espaces ; taper « +33… » bascule le pays ; enregistré en
+      `+221771234567` en base
 - [ ] Étudiant sans classe : après le formulaire, « Dernière étape : ta
       classe » (`/rejoindre?bienvenue=1`) ; « Je n'ai pas encore de code »
       mène à l'accueil, qui redemande le code

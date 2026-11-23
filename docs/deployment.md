@@ -2,7 +2,10 @@
 
 ## Hébergement
 
-- **App** : Vercel, build Next.js standard (`npm run build`).
+- **App** : Vercel, build Next.js standard (`npm run build`, imposé par
+  `buildCommand` dans `vercel.json`). Le script `prebuild` (comme `predev`)
+  lance `scripts/copy-flags.mjs`, qui copie les drapeaux du sélecteur
+  d'indicatif téléphonique dans `public/flags/` (ignoré par git).
 - **Base de données + Auth** : Supabase (Postgres managé + Auth OAuth).
 - **CI** : GitHub Actions (`.github/workflows/ci.yml`) sur chaque push/PR vers
   `main` : `lint` (0 warning toléré), `typecheck`, `test`, `build`.
