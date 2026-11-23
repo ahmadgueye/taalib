@@ -259,6 +259,7 @@ describe("submitQuizAttempt access", () => {
         attemptsLeft: 1,
         showCorrections: false,
         corrections: [],
+        passed: false,
       });
     });
 
@@ -267,6 +268,14 @@ describe("submitQuizAttempt access", () => {
       if ("error" in res) throw new Error(res.error);
       expect(res.showCorrections).toBe(true);
       expect(res.corrections).toHaveLength(2);
+      expect(res.passed).toBe(true);
+      expect(res).toMatchObject({ attemptPassed: true, passingScore: 80 });
+    });
+
+    it("stays passed after a failed retry of a passed quiz", async () => {
+      mocks.previousAttempts = [{ score: 2, totalQuestions: 2 }];
+      const res = await submitQuizAttempt(QUIZ, failing);
+      expect(res).toMatchObject({ passed: true, attemptPassed: false });
     });
 
     it("shows the corrections after the last attempt", async () => {

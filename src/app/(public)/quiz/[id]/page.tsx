@@ -91,7 +91,8 @@ export default async function QuizPage({ params }: Props) {
           </Button>
         </div>
       )}
-      {status.left !== null && status.left > 0 && (
+      {/* Quiz réussi : les tentatives restantes ne concernent plus l'étudiant. */}
+      {status.left !== null && status.left > 0 && !status.passed && (
         <p className="mt-2 text-sm text-muted-foreground">
           <span className="font-medium text-destructive">
             {status.used === 0

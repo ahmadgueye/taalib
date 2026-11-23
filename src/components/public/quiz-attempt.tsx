@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { QuizCorrections } from "@/components/public/quiz-corrections";
+import { QuizResultCard } from "@/components/public/quiz-result-card";
 import {
   submitQuizAttempt,
   type SubmitQuizResult,
@@ -22,13 +23,10 @@ type Question = {
 };
 
 type QuizResult = Extract<SubmitQuizResult, { score: number }>;
-
-function encouragement(score: number, total: number) {
-  const ratio = total > 0 ? score / total : 0;
-  if (ratio >= 0.8) return "Excellent travail, continue comme ça !";
-  if (ratio >= 0.5) return "Bien joué ! Regarde tes erreurs pour progresser.";
-  return "Courage ! Relis les leçons, puis réessaie.";
-}
+// L'aperçu du dashboard n'a pas de seuil de réussite : pas de verdict.
+type ResultView = Omit<QuizResult, "passingScore"> & {
+  passingScore: number | null;
+};
 
 export function QuizAttempt({
   quizId,
@@ -47,12 +45,20 @@ export function QuizAttempt({
   ) => Pick<QuizResult, "score" | "corrections">;
 }) {
   const [answers, setAnswers] = useState<Record<string, Set<string>>>({});
-  const [result, setResult] = useState<QuizResult | null>(null);
+  const [result, setResult] = useState<ResultView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [missing, setMissing] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const resultRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+
+  // Le bouton Valider est en bas du quiz : on remonte au résultat, affiché à
+  // la place des questions.
+  useEffect(() => {
+    if (result)
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [result]);
 
   const answeredCount = questions.filter(
     (q) => (answers[q.id]?.size ?? 0) > 0
@@ -110,6 +116,9 @@ export function QuizAttempt({
         total: questions.length,
         showCorrections: true,
         attemptsLeft: null,
+        passed: false,
+        attemptPassed: false,
+        passingScore: null,
       });
       return;
     }
@@ -139,40 +148,17 @@ export function QuizAttempt({
 
   if (result) {
     return (
-      <div className="mt-8">
-        <div className="rounded-lg border p-4">
-          <p className="font-heading text-2xl font-semibold">
-            {result.score}/{result.total}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Résultat de cette tentative
-          </p>
-          <p className="mt-2 text-sm font-medium">
-            {encouragement(result.score, result.total)}
-          </p>
-          {result.attemptsLeft !== null && (
-            <p className="mt-2 text-sm font-medium text-destructive">
-              {result.attemptsLeft === 0
-                ? "Tu as utilisé toutes tes tentatives pour ce quiz."
-                : `Il te reste ${result.attemptsLeft} tentative${
-                    result.attemptsLeft > 1 ? "s" : ""
-                  }.`}
-            </p>
-          )}
-        </div>
+      <div ref={resultRef} className="mt-8 scroll-mt-24">
+        <QuizResultCard
+          score={result.score}
+          total={result.total}
+          passingScore={result.passingScore}
+          attemptPassed={result.attemptPassed}
+          quizPassed={result.passed}
+          attemptsLeft={result.attemptsLeft}
+        />
 
-        <div className="mt-6">
-          {result.showCorrections ? (
-            <QuizCorrections corrections={result.corrections} />
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              La correction détaillée sera disponible quand tu auras réussi le
-              quiz ou utilisé toutes tes tentatives.
-            </p>
-          )}
-        </div>
-
-        <div className="mt-6 flex gap-3">
+        <div className="mt-4 flex flex-wrap gap-3">
           {result.attemptsLeft !== 0 && (
             <Button variant="outline" onClick={restart}>
               Recommencer
@@ -186,6 +172,16 @@ export function QuizAttempt({
             >
               Voir l&apos;historique
             </Button>
+          )}
+        </div>
+        <div className="mt-6">
+          {result.showCorrections ? (
+            <QuizCorrections corrections={result.corrections} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              La correction détaillée sera disponible quand tu auras réussi le
+              quiz ou utilisé toutes tes tentatives.
+            </p>
           )}
         </div>
       </div>

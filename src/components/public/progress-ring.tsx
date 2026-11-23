@@ -1,11 +1,18 @@
+import { cn } from "@/lib/utils";
+
 export function ProgressRing({
   value,
   size = 44,
   strokeWidth = 4,
+  indicatorClassName,
+  label,
 }: {
   value: number;
   size?: number;
   strokeWidth?: number;
+  // Couleur de l'arc (vert par défaut) et durée de son animation.
+  indicatorClassName?: string;
+  label?: string;
 }) {
   const clamped = Math.min(100, Math.max(0, value));
   const radius = (size - strokeWidth) / 2;
@@ -18,7 +25,7 @@ export function ProgressRing({
       height={size}
       className="-rotate-90 shrink-0"
       role="img"
-      aria-label={`Progression : ${Math.round(clamped)}%`}
+      aria-label={label ?? `Progression : ${Math.round(clamped)}%`}
     >
       <circle
         cx={size / 2}
@@ -35,7 +42,10 @@ export function ProgressRing({
         strokeDasharray={circumference}
         strokeDashoffset={offset}
         strokeLinecap="round"
-        className="fill-none stroke-emerald-600 transition-[stroke-dashoffset] duration-300 dark:stroke-emerald-400"
+        className={cn(
+          "fill-none stroke-emerald-600 transition-[stroke-dashoffset] duration-300 dark:stroke-emerald-400",
+          indicatorClassName,
+        )}
       />
     </svg>
   );

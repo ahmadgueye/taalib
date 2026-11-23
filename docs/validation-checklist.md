@@ -180,10 +180,14 @@ Passer le compte en `contributor` puis `admin` dans Studio
       questions fidèles aux leçons, avec leur coût réel ; « Ajouter » les
       place repliées dans l'éditeur, sans enregistrer
 - [ ] Quiz avec « Nombre de tentatives maximum » à 2 : l'élève voit « Ce quiz
-      est limité à 2 tentatives », puis « Il te reste 1 tentative » ; après la
+      est limité à 2 tentatives », puis « Il te reste 1 tentative » (le
+      message disparaît dès que le quiz est réussi) ; après la
       2e, le quiz est verrouillé (et une soumission forcée est refusée) ;
       dans les Soumissions, la colonne affiche « 2 / 2 » et « Accorder une
       tentative » débloque une 3e
+- [ ] Après « Valider », la page remonte à la carte de résultat : verte
+      avec « Quiz réussi » au-dessus du seuil, orange avec « Pas encore
+      validé », le seuil et les tentatives restantes en dessous
 - [ ] Même quiz avec « Masquer la correction » : après un échec avec des
       tentatives restantes, seul le score s'affiche (soumission et
       historique) ; la correction apparaît après une réussite ou la

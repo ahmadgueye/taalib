@@ -233,7 +233,12 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
   son historique (`/quiz/[id]/historique`), s'il a déjà tenté le quiz ;
   il affiche les questions,
   collecte les réponses côté client puis les soumet à `submitQuizAttempt`
-  (`lib/actions/quiz-tentatives.ts`).
+  (`lib/actions/quiz-tentatives.ts`). Après « Valider », la page remonte au
+  résultat (`quiz-result-card.tsx`) : un anneau de score animé, le score en
+  grand et un verdict — « Quiz réussi » (vert), « Quiz déjà validé » pour
+  un nouvel essai d'un quiz réussi, ou « Pas encore validé » (orange) avec
+  le seuil de réussite et les tentatives restantes. « Recommencer » et
+  « Voir l'historique » suivent, puis la correction.
 - **Correction côté serveur uniquement** — le calcul est dans
   `gradeQuestions` (`lib/quiz-grading.ts`), partagé avec l'aperçu du
   dashboard. L'action recharge les
@@ -247,8 +252,8 @@ choix (`quiz_choix`, un ou plusieurs marqués `is_correct`).
 - **Limite de tentatives** — facultative, dans les Réglages du quiz
   (`quiz.maxAttempts`, vide = illimité). `submitQuizAttempt` compte les
   tentatives dans la transaction (verrou par étudiant et par quiz) et refuse
-  au-delà ; la page du quiz affiche les tentatives restantes, puis se
-  verrouille. Dans les Soumissions, « Accorder une tentative » en ajoute une
+  au-delà ; la page du quiz affiche les tentatives restantes (plus une fois
+  le quiz réussi : elles ne concernent plus l'élève), puis se verrouille. Dans les Soumissions, « Accorder une tentative » en ajoute une
   à un étudiant (`grantQuizAttempt`, table `quiz_extra_attempts`) :
   indispensable, car un quiz non réussi bloque l'étape de la feuille de
   route. Avec une limite, l'option « Masquer la correction »

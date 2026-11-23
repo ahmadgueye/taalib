@@ -42,6 +42,12 @@ export type SubmitQuizResult =
       showCorrections: boolean;
       // null : quiz illimité.
       attemptsLeft: number | null;
+      // Le quiz est réussi (par cette tentative ou une précédente) : les
+      // tentatives restantes ne concernent plus l'étudiant.
+      passed: boolean;
+      // Cette tentative atteint le seuil de réussite (en %).
+      attemptPassed: boolean;
+      passingScore: number;
     };
 
 const NO_ATTEMPT_LEFT = "Tu as utilisé toutes tes tentatives pour ce quiz.";
@@ -163,5 +169,8 @@ export async function submitQuizAttempt(
     corrections: showCorrections ? corrections : [],
     showCorrections,
     attemptsLeft,
+    passed: status.passed || passedNow,
+    attemptPassed: passedNow,
+    passingScore: publishedQuiz.passingScore,
   };
 }
